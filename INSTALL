@@ -1,0 +1,22 @@
+Requirements: 
+
+apt-get install 
+asterisk1.6.2 asterisk1.6.2-chan_sip asterisk1.6.2-ael asterisk1.6.2-pgsql
+postgresql9.0-server postgresql9.0 
+apache2  apache2-mod_fastcgi 
+
+
+
+perl-NetSDS (may be included in the package) 
+perl-Class-Accessor-Class
+perl-Data-Structure-Util
+perl-Unix-Syslog
+perl-Config-General 
+perl-JSON
+perl-libwww
+perl-TimeDate
+perl-Proc-Daemon
+
+cd NetSDS-Conference 
+make install 
+
