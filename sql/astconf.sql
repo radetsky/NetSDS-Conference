@@ -54,7 +54,7 @@ CREATE TRIGGER Users_stamp BEFORE UPDATE ON Users
 CREATE TABLE Admins(
  admin_id serial primary key,
  user_id integer NOT NULL REFERENCES Users(user_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
- login varchar(30) NOT NULL,
+ login varchar(30) NOT NULL UNIQUE,
  passwd_hash varchar(30) NOT NULL,
  is_admin boolean
 );
@@ -68,7 +68,7 @@ CREATE TABLE Operators_of_Conferences(
 CREATE TABLE Phones(
  phone_id serial primary key,
  user_id integer NOT NULL REFERENCES Users(user_id) ON UPDATE RESTRICT ON DELETE CASCADE,
- phone_number varchar(30) NOT NULL,
+ phone_number varchar(30) NOT NULL UNIQUE,
  order_nmb integer NOT NULL,
  change_date timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -93,7 +93,8 @@ CREATE TABLE Change_log(
 	change_id serial primary key,
 	auth_user varchar(100) NOT NULL,
 	created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	db_query text
+	db_query text,
+	db_params text
 );
 
 INSERT INTO USERS (full_name) VALUES ('Администратор конференции');
