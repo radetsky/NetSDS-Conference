@@ -1,0 +1,81 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<title>Система управления совещаниями</title>
+		<link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico">
+		<link type="text/css" href="css/jquery-ui-1.8.5.custom.css" rel="stylesheet" />
+		<script type="text/javascript" src="js/jquery-1.4.2.min.js"></script>
+		<script type="text/javascript" src="js/jquery-ui-1.8.5.custom.min.js"></script>
+		<script type="text/javascript" src="js/almost_ready.js"></script>
+		<script type="text/javascript">
+			$(document).ready(function(){
+				$("#tabs").tabs();
+
+				$("#orgs").load('/orgs.pl');
+				$("#posns").load('/posns.pl');
+				$("#users").load('/user_list.pl');
+				$("#cnfrs").load('/cnfrs.pl');
+
+				$('#add_org').dialog({ autoOpen: false });
+				$('#add_pos').dialog({ autoOpen: false });
+				$('#edit_user').dialog({ autoOpen: false });
+				$('#edit_cnfr').dialog({ autoOpen: false });
+			});
+
+			function edit_cnfr(confid) {
+				$("#edit_cnfr").load('/cnfr_form.pl', {id: confid}, function(data) {
+					$("#edit_cnfr").dialog("open");
+				});
+			}
+
+
+		</script>
+	</head>
+	<body>
+		<div id="tabs">
+			<ul>
+				<li><a href="#cnfrs"><span>Совещания</span></a></li>
+				<li><a href="#users"><span>Пользователи</span></a></li>
+				<li><a href="#posns"><span>Должности</span></a></li>
+				<li><a href="#orgs"><span>Организации</span></a></li>
+			</ul>
+			<div id="cnfrs">
+			</div>
+			<div id="users">
+			</div>
+			<div id="posns">
+			</div>
+			<div id="orgs">
+			</div>
+		</div>
+		<!--<div id="add_org" style="display: none;" title="Добавить имя организации">-->
+		<div id="add_org" style="display: none;">
+			<form>
+				<fieldset>
+					<legend id="orglegend">Добавить организацию:</legend>
+					<input type="text" name="orgname" id="orgname" value=""/>
+					<input type="hidden" name="orgid" id="orgid" value="new"/>
+					<input id="orgbutton" type="button" onclick="send_org();return false;" value="Создать"/>
+					<input type="button" onclick="close_org_dialog();return false;" value="Отменить"/>
+				</fieldset>
+			</form>
+		</div>
+		<!--<div id="add_pos" style="display: none;" title="Добавить должность">-->
+		<div id="add_pos" style="display: none;">
+			<form>
+				<fieldset>
+					<legend id="poslegend">Добавить должность:</legend>
+					<input type="text" name="posname" id="posname" value=""/>
+					<input type="hidden" name="posid" id="posid" value="new"/>
+					<input id="posbutton" type="button" onclick="send_pos();return false;" value="Создать"/>
+					<input type="button" onclick="close_pos_dialog();return false;" value="Отменить"/>
+				</fieldset>
+			</form>
+		</div>
+		<div id="edit_user" style="display: none;">
+		</div>
+		<div id="edit_cnfr" style="display: none;">
+		</div>
+	</body>
+</html>

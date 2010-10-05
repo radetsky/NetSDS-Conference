@@ -1,0 +1,4 @@
+AuthType basic
+AuthName "Страница управления совещаниями"
+AuthUserFile /usr/local/www/asterisk/.htpasswd
+Require valid-user
