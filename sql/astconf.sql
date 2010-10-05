@@ -28,6 +28,7 @@ CREATE TABLE Conferences(
  shedule_time time,
  auth_type varchar(30),
  auth_string varchar(30),
+ auto_assemble boolean,
  lost_control boolean,
  need_record boolean,
  number_B varchar(20),
