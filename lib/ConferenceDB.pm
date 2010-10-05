@@ -12,11 +12,16 @@ $conference = ConferenceDB->new;
 
 =cut
 
+my $HTPASSWD = "/usr/local/sbin/htpasswd";
+
 my $dbh;
+
+my $error;
 
 sub _connect {
 	unless(defined $dbh and $dbh->ping()) {
-		$dbh = DBI->connect("dbi:Pg:dbname=astconf", 'astconf', 'Rjyathtywbz', {AutoCommit => 0});
+		$dbh = DBI->connect("dbi:Pg:dbname=astconf", 'astconf', 'Rjyathtywbz',
+												{AutoCommit => 0, RaiseError => 1});
 	}
 }
 
@@ -129,8 +134,12 @@ $users[0]{'organization'}  -- название организации
 $users[0]{'department'}    -- название отдела
 $users[0]{'position'}      -- название должности
 $users[0]{'email'}         -- e-mail адрес
+@{users[0]{'phones'})      -- array номеров пользователя, выстроенный по приоритету номеров
+@{users[0]{'phones_id'})   -- соответствующие по индексу array номерам
+пользователя, id номеров пользователя
 
-Если какое-либо из полей не определено, то значение этого элемента массива будет пробел.
+Если какое-либо из полей не определено, то значение этого элемента массива будет
+пустая строка.
 
 =cut
 
@@ -139,22 +148,55 @@ sub get_user_list {
 	my @users = ();
 
 	my $q = "select u.user_id, u.full_name, u.department, u.email, o.org_name, ".
-					"p.position_name FROM users as u left outer join organizations as o on ".
-					"(u.org_id=o.org_id) left outer join positions as p on ".
-					"(u.position_id=p.position_id)";
+					"p.position_name, ph.phone_number, ph_phone_id FROM users as u left outer join ".
+					"organizations as o on (u.org_id=o.org_id) left outer join positions ".
+					"as p on (u.position_id=p.position_id) left outer join phones as ph on ".
+					"(u.user_id=ph.user_id) ORDER BY p.position_order, u.user_id, ph.order_nmb";
 	$self->_connect();
 	my $sth = $dbh->prepare($q);
 	$sth->execute();
+	my $uid;
+	my @phs = ();
+	my @phs_id = ();
+	my %row = ();
 	while(my @tmp = $sth->fetchrow_array()) {
-		my %row = ();
-		$row{'id'} = $tmp[0];
-		$row{'name'} = (defined $tmp[1])? $tmp[1] : " ";
-		$row{'organization'} = (defined $tmp[4])? $tmp[4] : " ";
-		$row{'department'} = (defined $tmp[2])? $tmp[2] : " ";
-		$row{'position'} = (defined $tmp[5])? $tmp[5] : " ";
-		$row{'email'} = (defined $tmp[3])? $tmp[3] : " ";
-		push @users, \%row;
+		if($#users < 0 and $#phs < 0) {
+			$uid = $tmp[0];
+			$row{'id'} = $tmp[0];
+			$row{'name'} = (defined $tmp[1])? $tmp[1] : " ";
+			$row{'organization'} = (defined $tmp[4])? $tmp[4] : " ";
+			$row{'department'} = (defined $tmp[2])? $tmp[2] : " ";
+			$row{'position'} = (defined $tmp[5])? $tmp[5] : " ";
+			$row{'email'} = (defined $tmp[3])? $tmp[3] : " ";
+			push @phs, (defined $tmp[6])? $tmp[6] : " ";
+			push @phs_id, (defined $tmp[7])? $tmp[7] : " ";
+		} elsif( $uid ne $tmp[0] ) {
+			my @tphs = (@phs);
+			my @tphs_id = (@phs_id);
+			$row{'phones'} = \@tphs;
+			$row{'phones_id'} = \@tphs_id;
+			my %trow = %row;
+			push @users, \%trow;
+			%row = ();
+			@phs = ();
+			@tphs_id = ();
+			$row{'id'} = $tmp[0];
+			$uid = $row{'id'};
+			$row{'name'} = (defined $tmp[1])? $tmp[1] : " ";
+			$row{'organization'} = (defined $tmp[4])? $tmp[4] : " ";
+			$row{'department'} = (defined $tmp[2])? $tmp[2] : " ";
+			$row{'position'} = (defined $tmp[5])? $tmp[5] : " ";
+			$row{'email'} = (defined $tmp[3])? $tmp[3] : " ";
+			push @phs, (defined $tmp[6])? $tmp[6] : " ";
+			push @phs_id, (defined $tmp[7])? $tmp[7] : " ";
+		} else {
+			push @phs, (defined $tmp[6])? $tmp[6] : " ";
+			push @phs_id, (defined $tmp[7])? $tmp[7] : " ";
+		}
 	}
+	$row{'phones'} = \@phs;
+	$row{'phones_id'} = \@phs_id;
+	push @users, \%row;
 	return @users;
 }
 
@@ -173,6 +215,7 @@ $res{'position_id'} - id должности
 $res{'position_name'} - название должности
 $res{'login'} - логин пользователя, если он является оператором
 $res{'is_admin'} - является ли оператор администратором
+@{$res{'is_admin'}} - список телефонов пользователя, выстроенный в порядке понижения приоритета
 
 =cut
 
@@ -199,6 +242,14 @@ sub get_user_by_id {
 	$res{'position_name'} = (defined $tmp[7])? $tmp[7] : "";
 	$res{'login'} = (defined $tmp[8])? $tmp[8] : "";
 	$res{'is_admin'} = (defined $tmp[9])? $tmp[9] : "0";
+	$q = "SELECT phone_number FROM phones WHERE user_id=? ORDER BY order_nmb";
+	my $sth = $dbh->prepare($q);
+	$sth->execute($res{'user_id'});
+	my @phs = ();
+	while(@tmp = $sth->fetchrow_array()) {
+		push @phs, $tmp[0];
+	}
+	$res{'phones'} = \@phs;
 	return %res;
 }
 
@@ -249,6 +300,56 @@ sub get_pos_list {
 	return @pos;
 }
 
+sub get_cnfr {
+	my $self = shift;
+	my $id = shift;
+	my %cnfr = ();
+
+	$self->_connect();
+	my $q = "SELECT cnfr_id, cnfr_name, shedule_date, shedule_time, ".
+					"auth_type, auth_string, lost_control, need_record, ".
+					"number_b, audio_lang FROM conferences WHERE cnfr_id=?";
+	my @tmp = $dbh->selectrow_array($q, undef, $id);
+	$cnfr{'id'} = $tmp[0];
+	$cnfr{'name'} = (defined $tmp[1])? $tmp[1] : " ";
+	$cnfr{'shedule_date'} = (defined $tmp[2])? $tmp[2] : " ";
+	$cnfr{'shedule_time'} = (defined $tmp[3])? $tmp[3] : " ";
+	$cnfr{'auth_type'} = (defined $tmp[4])? $tmp[4] : " ";
+	$cnfr{'auth_string'} = (defined $tmp[5])? $tmp[5] : " ";
+	$cnfr{'lost_control'} = (defined $tmp[6])? $tmp[6] : " ";
+	$cnfr{'need_record'} = (defined $tmp[7])? $tmp[7] : " ";
+	$cnfr{'number_b'} = (defined $tmp[8])? $tmp[8] : " ";
+	$cnfr{'audio_lang'} = (defined $tmp[9])? $tmp[9] : " ";
+
+	$q = "SELECT u.full_name, a.admin_id FROM operators_of_conferences ooc, admins a, ".
+			 "users u WHERE ooc.cnfr_id=? AND ooc.admin_id=a.admin_id AND ".
+			 "a.user_id=u.user_id";
+	my $sth = $dbh->prepare($q);
+	$sth->execute($id);
+	my %ops = ();
+	while(@tmp = $sth->fetchrow_array()) {
+		$ops{$tmp[1]} = $tmp[0];
+	}
+	$cnfr{'operators'} = \%ops;
+
+	$q = "SELECT u.full_name, ph.phone_number, ph.phone_id FROM users_on_conference uoc, ".
+			 "phones ph, users u WHERE uoc.cnfr_id=? AND uoc.phone_id=ph.phone_id AND ".
+			 "ph.user_id=u.user_id ORDER BY uoc.participant_order";
+	$sth = $dbh->prepare($q);
+	$sth->execute($id);
+	my @conf_users = ();
+	while(@tmp = $sth->fetchrow_array()) {
+		my %member = ();
+		$member{'name'} = $tmp[0];
+		$member{'phone'} = $tmp[1];
+		$member{'phone_id'} = $tmp[2];
+		push @conf_users, \%member;
+	}
+
+	$cnfr{'users'} = \@conf_users;
+	return %cnfr;
+}
+
 =item %orgs = update_orgs($id, $name, $user)
 
 Добавляет или обновляет название организации. Входные параметры:
@@ -287,6 +388,7 @@ sub update_orgs {
 	};
 
 	if($@) {
+		$error = "Внутренняя ошибка базы. Обратитесь к администратору";
 		$dbh->rollback();
 		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
 		warn $warn;
@@ -339,6 +441,7 @@ sub update_posns {
 	};
 
 	if($@) {
+		$error = "Внутренняя ошибка базы. Обратитесь к администратору";
 		$dbh->rollback();
 		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
 		warn $warn;
@@ -350,16 +453,44 @@ sub update_posns {
 	return $self->get_pos_list();
 }
 
+=item @users = update_user($login, \%user, \@phones, \%admin);
+
+Функция обновляет данные или создает пользователя. Возвращает обновленный список
+пользователей, аналогично функции get_user_list();
+Передаваемые параметры:
+$user{'id'} -- id пользователя для изменения параметров или строка "new" для
+создания нового пользователя
+$user{'name'} -- ФИО
+$user{'orgid'} -- org_id организации
+$user{'dept'} -- название отдела
+$user{'posid'} -- pos_id должности
+$user{'email'} -- email адрес
+
+@phones -- array номеров телефонов, выстроенных по порядку снижения приоритета
+($phone[0] наиболее приоритетный)
+
+$admin{'oper'} -- 1/0 является ли пользователь оператором
+$admin{'login'} -- логин пользователя
+$admin{'passwd'} -- пароль пользователя
+$admin{'admin'} -- 1/0 является ли пользователь администратором
+
+=cut
+
 sub update_user {
 	my $self = shift;
-	my $h = shift;
 	my $loggedin = shift;
+	my $h = shift;
+	my $p = shift;
+	my $a = shift;
 
   my $q = "";
   my @bind = ();
 	my %user = %{$h};
+	my @phones = (@{$p});
+	my %admin = %{$a};
   return undef unless(defined $loggedin);
 	$self->_connect();
+	my $sth;
 
 	if($user{'id'} eq "new") {
 		$q = "INSERT INTO users (full_name, position_id, org_id, department, email) VALUES ".
@@ -372,11 +503,16 @@ sub update_user {
 	}
 
 	eval {
-		my $sth = $dbh->prepare($q);
+		$sth = $dbh->prepare($q);
 		$sth->execute(@bind);
 	};
 
 	if($@) {
+		if($user{'id'} eq "new") {
+			$error = "Ошибка добавления пользователя. Обратитесь к администратору";
+		} else {
+			$error = "Ошибка обновления пользователя. Обратитесь к администратору";
+		}
 		$dbh->rollback();
 		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
 		warn $warn;
@@ -384,8 +520,251 @@ sub update_user {
 	}
 
 	$dbh->commit();
-	$self->write_to_log($loggedin, $q, @bind);
+	if($#phones < 0) {
+		$self->write_to_log($loggedin, $q, @bind);
+# Если пользователь уже существовал, то у него нужно удалить все номера
+# телефонов
+		if($user{'id'} =~ /^[\d]+$/) {
+			$q = "DELETE FROM phones WHERE user_id=?";
+			eval {
+				$dbh->do($q, undef, $user{'id'});
+			};
+			if($@) {
+				$error = "Один из удалямых телефонов используется в совещании. Сначала нужно проверить, что удаляемый телефон нигде не используется";
+				$dbh->rollback();
+				my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+				warn $warn;
+				return undef;
+			}
+			$dbh->commit;
+			$self->write_to_log($loggedin, $q, $user{'id'});
+		}
+		return $self->get_user_list();
+	}
+
+	my $new_id = undef;
+	if($user{'id'} eq "new") {
+		$new_id = $dbh->last_insert_id(undef, undef, "users", undef);
+# Мы вытянули id нововставленного юзера (или не вытянули), но мы можем уже
+# записать строку логгирования запросов
+		$self->write_to_log($loggedin, $q, @bind);
+		unless(defined $new_id) {
+			my $qq = "SELECT user_id FROM users WHERE full_name=?, position_id=?, ".
+							 "org_id=?, department=?, email=?";
+			my @tmp = $dbh->selectrow_array($qq, undef, $user{'name'}, $user{'posid'},
+																	$user{'orgid'}, $user{'dept'}, $user{'email'});
+			$new_id = $tmp[0];
+		}
+		if($new_id =~ /^[\d]+$/) {
+# Если пользователь новосозданный и у нас получилось определить его id, то нам
+# нужно просто по порядку записать его номера телефонов
+			$q = "INSERT INTO phones (user_id, phone_number, order_nmb) VALUES ".
+					 "(?, ?, ?)";
+			$sth = $dbh->prepare($q);
+			my $cnt = 0;
+			while(my $numb = shift @phones) {
+				eval {
+					$sth->execute($new_id, $numb, $cnt);
+				};
+				if($@) {
+					$error = "Такой номер уже существует в базе у другого пользователя. Повторение одного номера у разных пользователей невозможно";
+					$dbh->rollback();
+					my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+					warn $warn;
+					return undef;
+				}
+				$dbh->commit();
+				$self->write_to_log($loggedin, $q, $new_id, $numb, $cnt);
+				$cnt++;
+			}
+		} else {
+			$error = "Ошибка создания пользователя. Обратитесь к администратору.";
+			my $warn = "Can't find id of newly created user " . $user{'name'};
+			warn $warn;
+			return undef;
+		}
+	} else {
+		$self->write_to_log($loggedin, $q, @bind);
+# Пользователь уже существовал, нужно сверить телефоны и обновить список при
+# этом у существующих телефонов должны сохранится их id. Сначала удаляем
+# телефоны, которые есть в старом списке, но нету в новом. Потом проходим по
+# новому списку, выставляя их в правильном порядке
+		my %old_phones = $self->get_user_phones($user{'id'});
+		my @old_numbers = @{$old_phones{'number'}};
+		my @to_delete = ();
+		my @qst = ();
+		foreach my $n (@old_numbers) {
+			next if(grep(/^$n$/, @phones));
+			push @to_delete, $n;
+			push @qst, '?';
+		}
+		if($#to_delete >= 0) {
+			$q = "DELETE FROM phones WHERE user_id=? AND phone_number IN (".
+					 join(',',@qst) . ")";
+			eval {
+				$dbh->do($q,undef, $user{'id'}, @to_delete);
+			};
+			if($@) {
+				$error = "Один из удалямых телефонов используется в совещании. Сначала нужно проверить, что удаляемый телефон нигде не используется";
+				$dbh->rollback();
+				my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+				warn $warn;
+				return undef;
+			}
+			$dbh->commit();
+			$self->write_to_log($loggedin, $q, $user{'id'}, @to_delete);
+		}
+		my $cnt = 0;
+		my @qr = ();
+		my @st = ();
+		$qr[0] = "UPDATE phones SET order_nmb=? WHERE user_id=? AND phone_number=?";
+		$st[0] = $dbh->prepare($qr[0]);
+		$qr[1] = "INSERT INTO phones (order_nmb, user_id, phone_number) VALUES ".
+			 			 "(?, ?, ?)";
+		$st[1] = $dbh->prepare($qr[1]);
+		while(my $ph = shift @phones) {
+			my $sel_query;
+			if(grep(/^$ph$/,@old_numbers)) {
+				$sel_query = 0;
+			} else {
+				$sel_query = 1;
+			}
+			eval {
+				$st[$sel_query]->execute($cnt, $user{'id'}, $ph);
+			};
+
+			if($@) {
+				$error = "Ошибка обновления телефонов. Обратитесь к администратору.";
+				$dbh->rollback();
+				my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+				warn $warn;
+				return undef;
+			}
+			$dbh->commit();
+			$self->write_to_log($loggedin, $qr[$sel_query], $cnt, $user{'id'}, $ph);
+			$cnt++;
+		}
+	}
+
+	if($admin{'oper'}) {
+		my $hashed = undef;
+		if(defined $admin{'passwd'} and length $admin{'passwd'}) {
+			my $cmd = "$HTPASSWD -bn some " . $admin{'passwd'};
+			(undef, $hashed) = split(/:/,`$cmd`);
+		}
+		if($user{'id'} eq "new") {
+			$q = "INSERT INTO admins (user_id, login, passwd_hash, is_admin) ".
+					 "VALUES (?, ?, ?, ?)";
+			$sth = $dbh->prepare($q);
+			eval {
+				$sth->execute($new_id, $admin{'login'}, $hashed, $admin{'admin'});
+			};
+
+			if($@) {
+				$error = "Такое имя для входа уже используется. Выберите другое.";
+				$dbh->rollback();
+				my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+				warn $warn;
+				return undef;
+			}
+
+			$dbh->commit();
+			$self->write_to_log($loggedin, $q, $new_id, $admin{'login'}, $hashed, $admin{'admin'});
+		} else {
+			$q = "SELECT admin_id, user_id, login FROM admins WHERE login=? or user_id=?";
+			$sth = $dbh->prepare($q);
+			$sth->execute($admin{'login'}, $user{'id'});
+			my $upd = 0;
+			while(my @tmp = $sth->fetchrow_array()) {
+				if($user{'id'} eq $tmp[1]) {
+					$upd = $tmp[0];
+				} else {
+					$error = "Такое имя для входа уже используется. Выберите другое.";
+					return undef;
+				}
+			}
+			if($upd) {
+				if(defined $hashed) {
+					$q = "UPDATE admins SET login=?, passwd_hash=?, is_admin=? WHERE ".
+							 "admin_id=?";
+					@bind = ($admin{'login'}, $hashed, $admin{'admin'}, $upd);
+				} else {
+					$q = "UPDATE admins SET login=?, is_admin=? WHERE admin_id=?";
+					@bind = ($admin{'login'}, $admin{'admin'}, $upd);
+				}
+			} else {
+				if(defined $hashed) {
+					$q = "INSERT INTO admins (user_id, login, passwd_hash, is_admin) ".
+							 "VALUES (?, ?, ?, ?)";
+					@bind = ($user{'id'}, $admin{'login'}, $hashed, $admin{'admin'});
+				} else {
+					$error = "Нельзя создавать оператора без пароля. Задайте пароль.";
+					return undef;
+				}
+			}
+			$sth = $dbh->prepare($q);
+			eval {
+				$sth->execute(@bind);
+			};
+
+			if($@) {
+				$error = "Ошибка сохранения прав администратора. Обратитесь к администратору.";
+				$dbh->rollback();
+				my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+				warn $warn;
+				return undef;
+			}
+			$dbh->commit();
+			$self->write_to_log($loggedin, $q, @bind);
+		}
+	} elsif($user{'id'} ne "new" and $user{'id'} ne 1) {
+		eval {
+			$dbh->do("DELETE FROM admins WHERE user_id=?",undef,$user{'id'});
+		};
+
+		if($@) {
+			$error = "Ошибка снятия прав администратора. Обратитесь к администратору.";
+			$dbh->rollback();
+			my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+			warn $warn;
+			return undef;
+		}
+
+		$dbh->commit();
+	}
 	return $self->get_user_list();
+}
+
+=item @phones = get_user_phones($user_id)
+
+$user_id -- id пользователя, телефоны которого интересуют
+
+=cut
+
+sub get_user_phones {
+	my $self = shift;
+	my $uid = shift;
+	my %phones = {};
+
+	return %phones unless(defined $uid);
+
+	my $q = "SELECT phone_number, phone_id FROM phones WHERE user_id=? ORDER by order_nmb";
+	$self->_connect();
+
+	my $sth = $dbh->prepare($q);
+	$sth->execute($uid);
+	my @ph_ids = ();
+	my @phs = ();
+	while(my @tmp = $sth->fetchrow_array()) {
+		if(defined $tmp[1]) {
+			push @phs, $tmp[0];
+			push @ph_ids, $tmp[1];
+		}
+	}
+
+	$phones{'id'} = \@ph_ids;
+	$phones{'number'} = \@phs;
+	return %phones;
 }
 
 =item write_to_log ($user, $query, @bind)
@@ -423,6 +802,11 @@ sub write_to_log {
 
 	$dbh->commit();
 	return 1;
+}
+
+sub get_error {
+	my $self;
+	return $self->error;
 }
 
 1;
