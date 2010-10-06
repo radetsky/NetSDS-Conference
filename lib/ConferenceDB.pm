@@ -47,8 +47,8 @@ sub cnfr_list {
 	my @res = {};
 
 	my $query = "SELECT cnfr_id, cnfr_name, cnfr_state, last_start, last_end, next_start, ".
-							"next_duration, shedule_date, shedule_time, auth_type, auth_string, lost_control, ".
-							"need_record, number_b, audio_lang FROM conferences order by cnfr_id";
+							"next_duration, shedule_date, shedule_time, auth_type, auth_string, auto_assemble, ".
+							"lost_control, need_record, number_b, audio_lang FROM conferences order by cnfr_id";
 	$self->_connect();
 	my $sth = $dbh->prepare($query);
 	$sth->execute();
@@ -64,10 +64,11 @@ sub cnfr_list {
 		$res[$tmp[0]]{'shedule_time'} = (defined $tmp[8])? $tmp[8] : " ";
 		$res[$tmp[0]]{'auth_type'} = (defined $tmp[9])? $tmp[9] : " ";
 		$res[$tmp[0]]{'auth_string'} = (defined $tmp[10])? $tmp[10] : " ";
-		$res[$tmp[0]]{'lost_control'} = (defined $tmp[11])? $tmp[11] : " ";
-		$res[$tmp[0]]{'need_record'} = (defined $tmp[12])? $tmp[12] : " ";
-		$res[$tmp[0]]{'number_b'} = (defined $tmp[13])? $tmp[13] : " ";
-		$res[$tmp[0]]{'audio_lang'} = (defined $tmp[14])? $tmp[14] : " ";
+		$res[$tmp[0]]{'auto_assemble'} = (defined $tmp[11])? $tmp[11] : " ";
+		$res[$tmp[0]]{'lost_control'} = (defined $tmp[12])? $tmp[12] : " ";
+		$res[$tmp[0]]{'need_record'} = (defined $tmp[13])? $tmp[13] : " ";
+		$res[$tmp[0]]{'number_b'} = (defined $tmp[14])? $tmp[14] : " ";
+		$res[$tmp[0]]{'audio_lang'} = (defined $tmp[15])? $tmp[15] : " ";
 	}
 
 	return @res;
@@ -75,7 +76,7 @@ sub cnfr_list {
 
 =item @cnfr_list = get_cnfr_rights($login)
 
-Возвращает список номеров конференций, доступных пользователю с
+Возвращает список номеров конференций, доступных оператору с
 аутентификационным именем $login. Может вернуть пустой список.
 
 =cut
@@ -148,7 +149,7 @@ sub get_user_list {
 	my @users = ();
 
 	my $q = "select u.user_id, u.full_name, u.department, u.email, o.org_name, ".
-					"p.position_name, ph.phone_number, ph_phone_id FROM users as u left outer join ".
+					"p.position_name, ph.phone_number, ph.phone_id FROM users as u left outer join ".
 					"organizations as o on (u.org_id=o.org_id) left outer join positions ".
 					"as p on (u.position_id=p.position_id) left outer join phones as ph on ".
 					"(u.user_id=ph.user_id) ORDER BY p.position_order, u.user_id, ph.order_nmb";
@@ -306,20 +307,24 @@ sub get_cnfr {
 	my %cnfr = ();
 
 	$self->_connect();
-	my $q = "SELECT cnfr_id, cnfr_name, shedule_date, shedule_time, ".
-					"auth_type, auth_string, lost_control, need_record, ".
+	my $q = "SELECT cnfr_id, cnfr_name, cnfr_state, shedule_date, shedule_time, next_start, ".
+					"next_duration, auth_type, auth_string, auto_assemble, lost_control, need_record, ".
 					"number_b, audio_lang FROM conferences WHERE cnfr_id=?";
 	my @tmp = $dbh->selectrow_array($q, undef, $id);
 	$cnfr{'id'} = $tmp[0];
 	$cnfr{'name'} = (defined $tmp[1])? $tmp[1] : " ";
-	$cnfr{'shedule_date'} = (defined $tmp[2])? $tmp[2] : " ";
-	$cnfr{'shedule_time'} = (defined $tmp[3])? $tmp[3] : " ";
-	$cnfr{'auth_type'} = (defined $tmp[4])? $tmp[4] : " ";
-	$cnfr{'auth_string'} = (defined $tmp[5])? $tmp[5] : " ";
-	$cnfr{'lost_control'} = (defined $tmp[6])? $tmp[6] : " ";
-	$cnfr{'need_record'} = (defined $tmp[7])? $tmp[7] : " ";
-	$cnfr{'number_b'} = (defined $tmp[8])? $tmp[8] : " ";
-	$cnfr{'audio_lang'} = (defined $tmp[9])? $tmp[9] : " ";
+	$cnfr{'cnfr_state'} = (defined $tmp[2])? $tmp[2] : " ";
+	$cnfr{'shedule_date'} = (defined $tmp[3])? $tmp[3] : " ";
+	$cnfr{'shedule_time'} = (defined $tmp[4])? $tmp[4] : " ";
+	$cnfr{'next_start'} = (defined $tmp[5])? $tmp[5] : " ";
+	$cnfr{'next_duration'} = (defined $tmp[6])? $tmp[6] : " ";
+	$cnfr{'auth_type'} = (defined $tmp[7])? $tmp[7] : " ";
+	$cnfr{'auth_string'} = (defined $tmp[8])? $tmp[8] : " ";
+	$cnfr{'auto_assemble'} = (defined $tmp[9])? $tmp[9] : " ";
+	$cnfr{'lost_control'} = (defined $tmp[10])? $tmp[10] : " ";
+	$cnfr{'need_record'} = (defined $tmp[11])? $tmp[11] : " ";
+	$cnfr{'number_b'} = (defined $tmp[12])? $tmp[12] : " ";
+	$cnfr{'audio_lang'} = (defined $tmp[13])? $tmp[13] : " ";
 
 	$q = "SELECT u.full_name, a.admin_id FROM operators_of_conferences ooc, admins a, ".
 			 "users u WHERE ooc.cnfr_id=? AND ooc.admin_id=a.admin_id AND ".
