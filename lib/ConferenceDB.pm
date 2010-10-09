@@ -46,9 +46,12 @@ sub cnfr_list {
 
 	my @res = {};
 
-	my $query = "SELECT cnfr_id, cnfr_name, cnfr_state, last_start, last_end, next_start, ".
-							"next_duration, shedule_date, shedule_time, auth_type, auth_string, auto_assemble, ".
-							"lost_control, need_record, number_b, audio_lang FROM conferences order by cnfr_id";
+	my $query = "SELECT cnfr_id, cnfr_name, cnfr_state, to_char(last_start, ".
+							"'YYYY-MM-DD HH24:MI'), to_char(last_end, 'YYYY-MM-DD HH24:MI'), ".
+							"to_char(next_start, 'YYYY-MM-DD HH24:MI'), next_duration, ".
+							"shedule_date, to_char(shedule_time, 'HH24:MI'), auth_type, ".
+							"auth_string, auto_assemble, lost_control, need_record, number_b, ".
+							"audio_lang FROM conferences order by cnfr_id";
 	$self->_connect();
 	my $sth = $dbh->prepare($query);
 	$sth->execute();
@@ -169,8 +172,10 @@ sub get_user_list {
 			$row{'department'} = (defined $tmp[2])? $tmp[2] : " ";
 			$row{'position'} = (defined $tmp[5])? $tmp[5] : " ";
 			$row{'email'} = (defined $tmp[3])? $tmp[3] : " ";
-			push @phs, (defined $tmp[6])? $tmp[6] : " ";
-			push @phs_id, (defined $tmp[7])? $tmp[7] : " ";
+			if(defined $tmp[6]) {
+				push @phs, $tmp[6];
+				push @phs_id, $tmp[7];
+			}
 		} elsif( $uid ne $tmp[0] ) {
 			my @tphs = (@phs);
 			my @tphs_id = (@phs_id);
@@ -180,7 +185,7 @@ sub get_user_list {
 			push @users, \%trow;
 			%row = ();
 			@phs = ();
-			@tphs_id = ();
+			@phs_id = ();
 			$row{'id'} = $tmp[0];
 			$uid = $row{'id'};
 			$row{'name'} = (defined $tmp[1])? $tmp[1] : " ";
@@ -188,17 +193,56 @@ sub get_user_list {
 			$row{'department'} = (defined $tmp[2])? $tmp[2] : " ";
 			$row{'position'} = (defined $tmp[5])? $tmp[5] : " ";
 			$row{'email'} = (defined $tmp[3])? $tmp[3] : " ";
-			push @phs, (defined $tmp[6])? $tmp[6] : " ";
-			push @phs_id, (defined $tmp[7])? $tmp[7] : " ";
+			if(defined $tmp[6]) {
+				push @phs, $tmp[6];
+				push @phs_id, $tmp[7];
+			}
 		} else {
-			push @phs, (defined $tmp[6])? $tmp[6] : " ";
-			push @phs_id, (defined $tmp[7])? $tmp[7] : " ";
+			if(defined $tmp[6]) {
+				push @phs, $tmp[6];
+				push @phs_id, $tmp[7];
+			}
+#			push @phs, (defined $tmp[6])? $tmp[6] : " ";
+#			push @phs_id, (defined $tmp[7])? $tmp[7] : " ";
 		}
 	}
 	$row{'phones'} = \@phs;
 	$row{'phones_id'} = \@phs_id;
 	push @users, \%row;
 	return @users;
+}
+
+sub add_participant_to_conference{
+	my $self = shift;
+	my $cid = shift;
+	my $phid = shift;
+	my $login = shift;
+
+	return undef unless(defined $login);
+	$self->_connect();
+	my $q = "SELECT max(participant_order) FROM users_on_conference WHERE cnfr_id=?";
+	my @tmp = $dbh->selectrow_array($q, undef, $cid);
+	my $po = 0;
+	$po = $tmp[0]+1 if(defined $tmp[0]);
+
+	$q = "INSERT INTO users_on_conference (cnfr_id, phone_id, participant_order) ".
+			 "VALUES (?, ?, ?)";
+	my $sth = $dbh->prepare($q);
+	eval {
+		$sth->execute($cid, $phid, $po);
+	};
+
+	if($@) {
+		$error = "Ошибка добавления пользователя в совещание. Обратитесь к администратору";
+		$dbh->rollback();
+		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		warn $warn;
+		return undef;
+	}
+
+	$dbh->commit();
+	$self->write_to_log($login, $q, $cid, $phid, $po);
+	return 1;
 }
 
 =item %user = get_user_by_id($id)
@@ -307,9 +351,10 @@ sub get_cnfr {
 	my %cnfr = ();
 
 	$self->_connect();
-	my $q = "SELECT cnfr_id, cnfr_name, cnfr_state, shedule_date, shedule_time, next_start, ".
-					"next_duration, auth_type, auth_string, auto_assemble, lost_control, need_record, ".
-					"number_b, audio_lang FROM conferences WHERE cnfr_id=?";
+	my $q = "SELECT cnfr_id, cnfr_name, cnfr_state, shedule_date, to_char(shedule_time, ".
+					"'HH24:MI'), to_char(next_start, 'YYYY-MM-DD HH24:MI'), next_duration, auth_type, ".
+					"auth_string, auto_assemble, lost_control, need_record, number_b, audio_lang ".
+					"FROM conferences WHERE cnfr_id=?";
 	my @tmp = $dbh->selectrow_array($q, undef, $id);
 	$cnfr{'id'} = $tmp[0];
 	$cnfr{'name'} = (defined $tmp[1])? $tmp[1] : " ";
@@ -353,6 +398,95 @@ sub get_cnfr {
 
 	$cnfr{'users'} = \@conf_users;
 	return %cnfr;
+}
+
+sub get_cnfr_participants {
+	my $self = shift;
+	my $cid = shift;
+	my %u_to_ph = ();
+
+	$self->_connect();
+	my $q = "SELECT uoc.phone_id, ph.user_id FROM users_on_conference uoc, phones ph ".
+					"WHERE uoc.phone_id=ph.phone_id AND uoc.cnfr_id=?";
+	my $sth = $dbh->prepare($q);
+	$sth->execute($cid);
+	while(my @tmp = $sth->fetchrow_array()) {
+		$u_to_ph{$tmp[1]} = $tmp[0];
+	}
+	return %u_to_ph;
+}
+
+sub save_cnfr {
+	my $self = shift;
+	my $login = shift;
+	my $id = shift;
+	my $ce_name = shift;
+	my $next_start = shift;
+	my $next_duration = shift;
+	my $schedule_day = shift;
+	my $schedule_time = shift;
+	my $auth_type = shift;
+	my $auth_string = shift;
+	my $auto_assemble = shift;
+	my $lost_control = shift;
+	my $need_record = shift;
+	my $audio_lang = shift;
+	my $p = shift;
+
+	my @phs_id = (@{$p});
+
+	my $q = "UPDATE conferences SET cnfr_name=?, next_start=to_timestamp(?, 'YYYY-MM-DD HH24:MI'), ".
+					"next_duration=?, shedule_date=?, shedule_time=?, auth_type=?, ".
+					"auth_string=?, auto_assemble=?, lost_control=?, need_record=?, audio_lang=? WHERE ".
+					"cnfr_id=?";
+	my @bind = ($ce_name, $next_start, $next_duration, $schedule_day, $schedule_time,
+						  $auth_type, $auth_string, $auto_assemble, $lost_control, $need_record,
+							$audio_lang, $id);
+	eval {
+		$dbh->do($q, undef, @bind);
+	};
+
+	if($@) {
+		$error = "Ошибка обновления данных конференции. Обратитесь к администратору";
+		$dbh->rollback();
+		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		warn $warn;
+		return undef;
+	}
+
+	$dbh->commit();
+	$self->write_to_log($login, $q, @bind);
+
+	$q = "INSERT INTO users_on_conference (cnfr_id, phone_id, participant_order) ".
+			 "VALUES (?, ?, ?)";
+
+  my $q1 = "INSERT INTO change_log (auth_user, db_query, db_params) VALUES ".
+		       "(?, ?, ?)";
+	my $sth = $dbh->prepare($q);
+	my $sth1 = $dbh->prepare($q1);
+	my $bind_str;
+	eval {
+		$dbh->do("DELETE FROM users_on_conference WHERE cnfr_id=?", undef, $id);
+		$sth1->execute($login, "DELETE FROM users_on_conference WHERE cnfr_id=?", $id);
+		my $cnt = 0;
+		while(my $ph_id = shift @phs_id) {
+			$sth->execute($id, $ph_id, $cnt);
+			$bind_str = join(' ', map {$dbh->quote($_)} ($id, $ph_id, $cnt));
+			$sth1->execute($login, $q, $bind_str);
+			$cnt++;
+		}
+	};
+
+	if($@) {
+		$error = "Ошибка сохранения списка участников. Обратитесь к администратору";
+		$dbh->rollback();
+		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		warn $warn;
+		return undef;
+	}
+
+	$dbh->commit();
+	return 1;
 }
 
 =item %orgs = update_orgs($id, $name, $user)

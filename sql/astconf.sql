@@ -71,6 +71,7 @@ CREATE TABLE Phones(
  user_id integer NOT NULL REFERENCES Users(user_id) ON UPDATE RESTRICT ON DELETE CASCADE,
  phone_number varchar(30) NOT NULL UNIQUE,
  order_nmb integer NOT NULL,
+ line_state varchar(20),
  change_date timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -82,7 +83,6 @@ CREATE TABLE Users_on_Conference(
  cnfr_id integer NOT NULL REFERENCES Conferences(cnfr_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
  phone_id integer NOT NULL REFERENCES Phones(phone_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
  participant_order integer NOT NULL,
- line_state varchar(30) NOT NULL,
  priority_member boolean,
  change_date timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

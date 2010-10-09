@@ -3,7 +3,7 @@
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 		<title>Система управления совещаниями</title>
-		<link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico">
+		<link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.png">
 		<link type="text/css" href="css/jquery-ui-1.8.5.custom.css" rel="stylesheet" />
 		<script type="text/javascript" src="js/jquery-1.4.2.min.js"></script>
 		<script type="text/javascript" src="js/jquery-ui-1.8.5.custom.min.js"></script>
@@ -20,15 +20,129 @@
 				$('#add_org').dialog({ autoOpen: false });
 				$('#add_pos').dialog({ autoOpen: false });
 				$('#edit_user').dialog({ autoOpen: false });
-				$('#edit_cnfr').dialog({ autoOpen: false });
+				$('#new_participant').dialog({ autoOpen: false, minWidth: 550, modal: true });
+				$('#edit_cnfr').dialog({ autoOpen: false,  minWidth: 550 });
 			});
 
+
 			function edit_cnfr(confid) {
-				$("#edit_cnfr").load('/cnfr_form.pl', {id: confid}, function(data) {
+				$.getJSON('/get_json_cnfr.pl', {"id":confid}, function(data){
+					$("#part_of_conf").val(data.id);
+					$("#ce_id").val(data.id);
+					$("#ce_name").val(data.name);
+					$("#next_date").val(data.next_date);
+					$("#next_date").datepicker({ dateFormat: 'yy-mm-dd' });
+					$("#hours_begin").val(data.hours_begin);
+					$("#min_begin").val(data.min_begin);
+					$("#duration").val(data.next_duration);
+					$("#schedule_day").val(data.schedule_day);
+					$("#schedule_hours_begin").val(data.schedule_hours_begin);
+					$("#schedule_min_begin").val(data.schedule_min_begin);
+					$("#auth_type").val(data.auth_type);
+					$("#auth_string").val(data.auth_string);
+					if ( data.auto_assemble == 1 ) {
+						$("#auto_assemble").attr('checked', 'checked');
+					} else {
+						$("#auto_assemble").attr('checked', '');
+					}
+					if ( data.lost_control == 1 ) {
+						$("#lost_control").attr('checked', 'checked');
+					} else {
+						$("#lost_control").attr('checked', '');
+					}
+					if ( data.need_record == 1 ) {
+						$("#need_record").attr('checked', 'checked');
+					} else {
+						$("#need_record").attr('checked', '');
+					}
+					$("#audio_lang").val(data.audio_lang);
+
+					$("#participant_list").empty();
+					for(x=0; x<data.users.length; x++) {
+						y = '<tr><td>'+data.users[x].usr+'</td><td>';
+						y += data.users[x].phone+'</td><td style="display: none;" class="hidden_id">';
+						y += data.users[x].phone_id+'</td></tr>';
+						$("#participant_list").append(y);
+					}
+					$("#participant_list").sortable({ items: 'tr' });
+					$("#participant_list").disableSelection();
+
 					$("#edit_cnfr").dialog("open");
+
 				});
 			}
 
+			function add_participant() {
+				var confid = $("#part_of_conf").val();
+				$.getJSON('/get_json_user_list.pl', { "cid": confid }, function(data){
+					$("#participant").empty();
+					$("#participant").append('<option></option>');
+					user_list = data;
+					for(var x=0; x<data.length; x++) {
+						if(data[x].ph_list.length > 0) {
+							if(data[x].disable == true) {
+								$("#participant").append('<option value="'+data[x].uid+'" disabled="disabled">'+data[x].name+'</option>');
+							} else {
+								$("#participant").append('<option value="'+data[x].uid+'">'+data[x].name+'</option>');
+							}
+						} else {
+							$("#participant").append('<option value="'+data[x].uid+'" disabled="disabled">'+data[x].name+'</option>');
+						}
+					}
+					$("#part_phone").empty();
+					$("#new_participant").dialog("open");
+				});
+			}
+
+			function send_cnfr() {
+				var lst;
+				$("td.hidden_id").each(function(index) {
+					if(index == 0) {
+						lst = $(this).text();
+					} else {
+						lst += '+'+$(this).text();
+					}
+				});
+				var qry;
+				qry = 'save_cnfr.pl?'+$("#modify_cnfr").serialize();
+				qry += '&phs_ids='+lst;
+				$.getJSON(qry, function(data) {
+					$("#edit_cnfr").dialog("close");
+					$("#cnfrs").empty();
+					$("#cnfrs").load('/cnfrs.pl');
+				});
+			}
+
+			function send_part() {
+				var cid = $("#part_of_conf").val();
+				var phid = $("#part_phone").val();
+				$.get('/add_participant.pl', {"cnid": cid, "phid": phid}, function(data) {
+					$("#new_participant").dialog("close");
+					$("#edit_cnfr").dialog("close");
+					edit_cnfr(cid);
+				});
+			}
+
+			function select_phones() {
+				var sel_fio;
+				$("#part_phone").empty();
+				sel_fio = $("#participant").val();
+				for(var x=0; x<user_list.length; x++) {
+					if(user_list[x].uid == sel_fio) {
+						for(var y=0; y<user_list[x].ph_list.length; y++) {
+							$("#part_phone").append('<option value="'+user_list[x].ph_list[y].ph_id+'">'+user_list[x].ph_list[y].phone+'</option>');
+						}
+					}
+				}
+			}
+
+			function close_cnfr_dialog() {
+				$("#edit_cnfr").dialog("close");
+			}
+
+			function close_part_dialog() {
+				$('#new_participant').dialog("close");
+			}
 
 		</script>
 	</head>
@@ -49,7 +163,6 @@
 			<div id="orgs">
 			</div>
 		</div>
-		<!--<div id="add_org" style="display: none;" title="Добавить имя организации">-->
 		<div id="add_org" style="display: none;">
 			<form>
 				<fieldset>
@@ -76,6 +189,118 @@
 		<div id="edit_user" style="display: none;">
 		</div>
 		<div id="edit_cnfr" style="display: none;">
+<form id="modify_cnfr">
+<input type="hidden" name="ce_id" value="" id="ce_id" />
+<table id="conerence_table">
+<tr>
+	<td colspan="2">Название</td>
+	<td><input type="text" name="ce_name" id="ce_name" value=""/></td>
+</tr>
+<tr>
+	<td rowspan="3">Следующее</td>
+	<td>дата</td>
+	<td><input type="text" name="next_date" id="next_date" value=""/></td>
+</tr>
+<tr>
+	<td>время</td>
+	<td>
+		<select name="hours_begin" id="hours_begin">
+			<option></option> <option>00</option> <option>01</option> <option>02</option> <option>03</option> <option>04</option> <option>05</option> <option>06</option> <option>07</option> <option>08</option> <option>09</option> <option>10</option> <option>11</option> <option>12</option> <option>13</option> <option>14</option> <option>15</option> <option>16</option> <option>17</option> <option>18</option> <option>19</option> <option>20</option> <option>21</option> <option>22</option> <option>23</option>
+		</select>
+		<select name="min_begin" id="min_begin">
+			<option></option> <option>00</option> <option>01</option> <option>02</option> <option>03</option> <option>04</option> <option>05</option> <option>06</option> <option>07</option> <option>08</option> <option>09</option> <option>10</option> <option>11</option> <option>12</option> <option>13</option> <option>14</option> <option>15</option> <option>16</option> <option>17</option> <option>18</option> <option>19</option> <option>20</option> <option>21</option> <option>22</option> <option>23</option> <option>24</option> <option>25</option> <option>26</option> <option>27</option> <option>28</option> <option>29</option> <option>30</option> <option>31</option> <option>32</option> <option>33</option> <option>34</option> <option>35</option> <option>36</option> <option>37</option> <option>38</option> <option>39</option> <option>40</option> <option>41</option> <option>42</option> <option>43</option> <option>44</option> <option>45</option> <option>46</option> <option>47</option> <option>48</option> <option>49</option> <option>50</option> <option>51</option> <option>52</option> <option>53</option> <option>54</option> <option>55</option> <option>56</option> <option>57</option> <option>58</option> <option>59</option>
+		</select>
+	</td>
+</tr>
+<tr>
+	<td>продолжительность</td>
+	<td><input type="text" name="duration" id="duration" value=""/></td>
+</tr>
+<tr>
+	<td rowspan="2">Планировщик</td>
+	<td>День</td>
+	<td><input type="text" name="schedule_day" id="schedule_time" value="" /></td>
+</tr>
+<tr>
+	<td>время</td>
+	<td>
+		<select name="schedule_hours_begin" id="schedule_hours_begin">
+			<option> </option> <option>00</option> <option>01</option> <option>02</option> <option>03</option> <option>04</option> <option>05</option> <option>06</option> <option>07</option> <option>08</option> <option>09</option> <option>10</option> <option>11</option> <option>12</option> <option>13</option> <option>14</option> <option>15</option> <option>16</option> <option>17</option> <option>18</option> <option>19</option> <option>20</option> <option>21</option> <option>22</option> <option>23</option>
+		</select>
+		<select name="schedule_min_begin" id="schedule_min_begin">
+			<option></option> <option>00</option> <option>01</option> <option>02</option> <option>03</option> <option>04</option> <option>05</option> <option>06</option> <option>07</option> <option>08</option> <option>09</option> <option>10</option> <option>11</option> <option>12</option> <option>13</option> <option>14</option> <option>15</option> <option>16</option> <option>17</option> <option>18</option> <option>19</option> <option>20</option> <option>21</option> <option>22</option> <option>23</option> <option>24</option> <option>25</option> <option>26</option> <option>27</option> <option>28</option> <option>29</option> <option>30</option> <option>31</option> <option>32</option> <option>33</option> <option>34</option> <option>35</option> <option>36</option> <option>37</option> <option>38</option> <option>39</option> <option>40</option> <option>41</option> <option>42</option> <option>43</option> <option>44</option> <option>45</option> <option>46</option> <option>47</option> <option>48</option> <option>49</option> <option>50</option> <option>51</option> <option>52</option> <option>53</option> <option>54</option> <option>55</option> <option>56</option> <option>57</option> <option>58</option> <option>59</option>
+		</select>
+	</td>
+</tr>
+<tr>
+	<td rowspan="2">Аутентификация</td>
+	<td>тип</td>
+	<td>
+		<select name="auth_type" id="auth_type">
+			<option></option>
+			<option value="number">По номеру "А"</option>
+			<option value="pin">По PIN коду</option>
+		</select>
+	</td>
+</tr>
+<tr>
+	<td>строка</td>
+	<td><input type="text" name="auth_string" id="auth_string" value="" /></td>
+</tr>
+<tr>
+	<td colspan="2">Автосбор участников</td>
+	<td><input type="checkbox" name="auto_assemble" id="auto_assemble" /></td>
+</tr>
+<tr>
+	<td colspan="2">Контроль потери участников</td>
+	<td><input type="checkbox" name="lost_control" id="lost_control" /></td>
+</tr>
+<tr>
+	<td colspan="2">Запись совещания</td>
+	<td><input type="checkbox" name="need_record" id="need_record" /></td>
+</tr>
+<tr>
+	<td colspan="2">Автоязык</td>
+	<td>
+		<select name="audio_lang" id="audio_lang">
+			<option value=""></option>
+			<option value="ru">Русский</option>
+			<option value="ua">Украинский</option>
+		</select>
+	</td>
+</tr>
+</table>
+<table id="participant_list">
+</table>
+<div onclick="add_participant(); return  false;">
+Добавить участника &gt;&gt;&gt;
+</div>
+<input type="button" onclick="send_cnfr();return false;" value="Сохранить"/>
+<input type="button" onclick="close_cnfr_dialog();return false;" value="Отменить"/>
+</form>
 		</div>
+
+<div style="display: none;" id="new_participant">
+	<form>
+		<input type="hidden" name="confid" value="" id="part_of_conf"/>
+		Новый участник совещания
+		<table>
+		<tr><td>ФИО</td><td>Телефон</td></tr>
+		<tr><td>
+		<select name="participant" id="participant" onchange="select_phones();return false;">
+		</select>
+		</td>
+		<td>
+		<select name="part_phone" id="part_phone">
+		</select>
+		</td></tr>
+		<tr><td>
+		<input type="button" onclick="send_part();return false;" value="Сохранить"/>
+		</td><td>
+		<input type="button" onclick="close_part_dialog();return false;" value="Отменить"/>
+		</td></tr>
+		</table>
+	</form>
+</div>
 	</body>
 </html>
