@@ -32,21 +32,24 @@ if(!grep(/^$id$/, @rights)) {
 my %cn = $cnfr->get_cnfr($id);
 
 my ($schedule_hours_begin, $schedule_min_begin, $next_d, $next_t, 
-		$hours_begin, $min_begin, $dur_hours, $dur_min) = (" "," "," "," "," "," "," "," ");
+		$hours_begin, $min_begin, $dur_hours, $dur_min) = ("","","","","","","","");
 
 my $json = "{";
 $json .= '"id": '.$cn{'id'};
 $json .= ', "name": "'. $cn{'name'} . '"';
 $json .= ', "shedule_day": "' . $cn{'shedule_date'} . '"';
-($schedule_hours_begin, $schedule_min_begin) = split(/:/, $cn{'shedule_time'});
+($schedule_hours_begin, $schedule_min_begin) = split(/:/, $cn{'shedule_time'}) 
+			if(defined $cn{'shedule_time'} and length $cn{'shedule_time'});
 $json .= ', "schedule_hours_begin": "' . $schedule_hours_begin . '"';
 $json .= ', "schedule_min_begin": "' . $schedule_min_begin . '"';
-($next_d, $next_t) = split(/[\s]+/, $cn{'next_start'});
-($hours_begin, $min_begin) = split(/:/, $next_t);
+($next_d, $next_t) = split(/[\s]+/, $cn{'next_start'})
+			if(defined $cn{'next_start'} and length $cn{'next_start'});
+($hours_begin, $min_begin) = split(/:/, $next_t) if(length $next_t);
 $json .= ', "next_date": "' . $next_d . '"';
 $json .= ', "hours_begin": "' . $hours_begin . '"';
 $json .= ', "min_begin": "' . $min_begin . '"';
-($dur_hours, $dur_min, undef) = split(/:/, $cn{'next_duration'});
+($dur_hours, $dur_min, undef) = split(/:/, $cn{'next_duration'})
+			if(defined $cn{'next_duration'} and length $cn{'next_duration'});
 $json .= ', "dur_hours": "'. $dur_hours .'", "dur_min": "'. $dur_min .'"';
 #$json .= ', "next_duration": "' . $cn{'next_duration'} . '"';
 if($cn{'auth_type'} =~ /pin/) {
