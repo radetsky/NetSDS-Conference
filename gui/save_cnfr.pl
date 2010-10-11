@@ -37,7 +37,10 @@ my $next_start = "$n_d $n_h:$n_m";
 warn $next_start;
 $next_start = undef unless(defined $n_d and defined $n_h and defined $n_m);
 
-my $next_duration = $cgi->param('duration');
+my $n_d_h = $cgi->param('dur_hours');
+my $n_d_m = $cgi->param('dur_min');
+
+my $next_duration = "$n_d_h:$n_d_m:00";
 
 my $schedule_day = $cgi->param('schedule_day');
 my $s_h = $cgi->param('schedule_hours_begin');

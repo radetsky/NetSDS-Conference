@@ -14,7 +14,7 @@ my $cnfr = ConferenceDB->new;
 
 my $login = $cgi->remote_user();
 
-#$login = "root";
+$login = "root";
 
 my $admin = $cnfr->is_admin($login);
 
@@ -31,6 +31,9 @@ if(!grep(/^$id$/, @rights)) {
 
 my %cn = $cnfr->get_cnfr($id);
 
+my ($schedule_hours_begin, $schedule_min_begin, $next_d, $next_t, 
+		$hours_begin, $min_begin, $dur_hours, $dur_min) = (" "," "," "," "," "," "," "," ");
+
 my $json = "{";
 $json .= '"id": '.$cn{'id'};
 $json .= ', "name": "'. $cn{'name'} . '"';
@@ -43,8 +46,19 @@ my ($hours_begin, $min_begin) = split(/:/, $next_t);
 $json .= ', "next_date": "' . $next_d . '"';
 $json .= ', "hours_begin": "' . $hours_begin . '"';
 $json .= ', "min_begin": "' . $min_begin . '"';
-$json .= ', "next_duration": "' . $cn{'next_duration'} . '"';
-$json .= ', "auth_type": "' . $cn{'auth_type'} . '"';
+my ($dur_hours, $dur_min, undef) = split(/:/, $cn{'next_duration'});
+$json .= ', "dur_hours": "'. $dur_hours .'", "dur_min": "'. $dur_min .'"';
+#$json .= ', "next_duration": "' . $cn{'next_duration'} . '"';
+if($cn{'auth_type'} =~ /pin/) {
+	$json .= ', "pin_auth": true';
+} else {
+	$json .= ', "pin_auth": false';
+}
+if($cn{'auth_type'} =~ /number/) {
+	$json .= ', "number_auth": true';
+} else {
+	$json .= ', "number_auth": false';
+}
 $json .= ', "auth_string": "' . $cn{'auth_string'} . '"';
 $json .= ', "auto_assemble": "' . $cn{'auto_assemble'} . '"';
 $json .= ', "lost_control": "' . $cn{'lost_control'} . '"';
