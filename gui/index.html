@@ -9,8 +9,15 @@
 		<script type="text/javascript" src="js/jquery-ui-1.8.5.custom.min.js"></script>
 		<script type="text/javascript" src="js/almost_ready.js"></script>
 		<style type="text/css">
-			table {font-family:Arial,Helvetica,sans-serif; font-size:50%;}
+			table.tab-table {font-family:Arial,Helvetica,sans-serif; font-size:50%;}
 			thead { font:italic bold 10px Georgia,serif; }
+			#day-selectable .ui-selecting { background: #FECA40; }
+			#day-selectable .ui-selected { background: #F39814; color: white; }
+			#date-selectable .ui-selecting { background: #FECA40; }
+			#date-selectable .ui-selected { background: #F39814; color: white; }
+			#day-selectable { list-style-type: none; margin: 0; padding: 0; }
+			#date-selectable { list-style-type: none; margin: 0; padding: 0; }
+
 		</style>
 		<script type="text/javascript">
 			$(document).ready(function(){
@@ -26,25 +33,114 @@
 				$('#edit_user').dialog({ autoOpen: false });
 				$('#new_participant').dialog({ autoOpen: false, minWidth: 550, modal: true });
 				$('#edit_cnfr').dialog({ autoOpen: false,  minWidth: 550 });
+				$('#schedule_select').dialog({ autoOpen: false, modal: true });
+
+				$("#day-selectable").selectable({ filter: 'td' });
+				$("#date-selectable").selectable({ filter: 'td' });
+
 			});
 
+			function show_schedule_select() {
+				var sdays = $("#schedule_day").val();
+				if(sdays == '') {
+					$("#day-selectable .ui-selected").each(function(){
+						$(this).toggleClass("ui-selected", false);
+					});
+					$("#date-selectable .ui-selected").each(function(){
+						$(this).toggleClass("ui-selected", false);
+					});
+					$("#sched-day").attr('checked',true);
+					$("#day-selectable").selectable("enable");
+					$("#date-selectable").selectable("disable");
+				} else {
+					var dd = sdays.split(' ');
+					var i = 0;
+					$("#day-selectable").each(function(){
+						if(dd.indexOf($(this).text()) > -1) {
+			        $(this).toggleClass("ui-selected", true);
+							i++;
+						}
+		      });
+					if(i > 0) {
+						$("#sched-day").attr('checked',true);
+						$("#date-selectable").selectable("disable");
+					} else {
+						$("#sched-date").attr('checked',true);
+						$("#day-selectable").selectable("disable");
+						$("#date-selectable").each(function(){
+							if(dd.indexOf($(this).text()) > -1) {
+				        $(this).toggleClass("ui-selected", true);
+							}
+						});
+					}
+				}
+				$("#schedule_select").dialog('open');
+			}
 
 			function edit_cnfr(confid) {
 				$.getJSON('/get_json_cnfr.pl', {"id":confid}, function(data){
 					$("#part_of_conf").val(data.id);
+					$("#ce_id").val('');
 					$("#ce_id").val(data.id);
+					$("#ce_name").val('');
 					$("#ce_name").val(data.name);
+					$("#schedule_day").val('');
+					$("#schedule_day").val(data.schedule_day);
+					$("#schedule_hours_begin").val('');
+					$("#schedule_hours_begin").val(data.schedule_hours_begin);
+					$("#schedule_min_begin").val('');
+					$("#schedule_min_begin").val(data.schedule_min_begin);
+					$("#next_date").val('');
 					$("#next_date").val(data.next_date);
 					$("#next_date").datepicker({ dateFormat: 'yy-mm-dd' });
+					$("#hours_begin").val('');
 					$("#hours_begin").val(data.hours_begin);
+					$("#min_begin").val('');
 					$("#min_begin").val(data.min_begin);
+					$("#dur_hours").val('');
 					$("#dur_hours").val(data.dur_hours);
+					$("#dur_min").val('');
 					$("#dur_min").val(data.dur_min);
-					$("#schedule_day").val(data.schedule_day);
-					$("#schedule_hours_begin").val(data.schedule_hours_begin);
-					$("#schedule_min_begin").val(data.schedule_min_begin);
-					$("#auth_type").val(data.auth_type);
-					$("#auth_string").val(data.auth_string);
+					$("#sched_dur_hours").val('');
+					$("#sched_dur_min").val('');
+					if(typeof(data.schedule_day) == 'string') {
+						$("#next_date").attr('disabled','disabled');
+						$("#hours_begin").attr('disabled','disabled');
+						$("#min_begin").attr('disabled','disabled');
+						$("#dur_hours").attr('disabled','disabled');
+						$("#dur_min").attr('disabled','disabled');
+						$("#sched").attr('checked','checked');
+						$("#schedule_day").removeAttr("disabled");
+						$("#schedule_hours_begin").removeAttr("disabled");
+						$("#schedule_min_begin").removeAttr("disabled");
+						$("#sched_dur_min").removeAttr("disabled");
+						$("#sched_dur_hours").removeAttr("disabled");
+					} else {
+						$("#schedule_day").attr('disabled','disabled');
+						$("#schedule_hours_begin").attr('disabled','disabled');
+						$("#schedule_min_begin").attr('disabled','disabled');
+						$("#sched_dur_min").attr('disabled','disabled');
+						$("#sched_dur_hours").attr('disabled','disabled');
+						$("#next_date").removeAttr("disabled");
+						$("#hours_begin").removeAttr("disabled");
+						$("#min_begin").removeAttr("disabled");
+						$("#dur_hours").removeAttr("disabled");
+						$("#dur_min").removeAttr("disabled");
+						$("#next").attr('checked','checked');
+					}
+					if( data.pin_auth == true ) {
+						$("#pin_auth").attr('checked', 'checked');
+						$("#auth_string").removeAttr("disabled");
+						$("#auth_string").val(data.auth_string);
+					} else {
+						$("#pin_auth").attr('checked', '');
+						$("#auth_string").attr('disabled','disabled');
+					}
+					if( data.number_auth == true ) {
+						$("#number_auth").attr('checked', 'checked');
+					} else {
+						$("#number_auth").attr('checked', '');
+					}
 					if ( data.auto_assemble == 1 ) {
 						$("#auto_assemble").attr('checked', 'checked');
 					} else {
@@ -65,7 +161,10 @@
 					$("#participant_list").empty();
 					for(x=0; x<data.users.length; x++) {
 						y = '<tr><td>'+data.users[x].usr+'</td><td>';
-						y += data.users[x].phone+'</td><td style="display: none;" class="hidden_id">';
+						y += data.users[x].phone+'</td>';
+						y += '<td onclick="rem_me('+data.users[x].phone_id;
+						y += ');"><span class="ui-icon ui-icon-close"></span></td>';
+						y += '<td style="display: none;" class="hidden_id">';
 						y += data.users[x].phone_id+'</td></tr>';
 						$("#participant_list").append(y);
 					}
@@ -79,6 +178,10 @@
 
 			function add_participant() {
 				var confid = $("#part_of_conf").val();
+				var added = new Array();
+				$("td.hidden_id").each(function(index) {
+					added[index] = $(this).text();
+				});
 				$.getJSON('/get_json_user_list.pl', { "cid": confid }, function(data){
 					$("#participant").empty();
 					$("#participant").append('<option></option>');
@@ -88,7 +191,17 @@
 							if(data[x].disable == true) {
 								$("#participant").append('<option value="'+data[x].uid+'" disabled="disabled">'+data[x].name+'</option>');
 							} else {
-								$("#participant").append('<option value="'+data[x].uid+'">'+data[x].name+'</option>');
+								var already = false;
+								for(var y=0; y<data[x].ph_list.length; y++) {
+									if(added.indexOf(data[x].ph_list[y].ph_id) > -1) {
+										already = true;
+									}
+								}
+								if(already) {
+									$("#participant").append('<option value="'+data[x].uid+'" disabled="disabled">'+data[x].name+'</option>');
+								} else {
+									$("#participant").append('<option value="'+data[x].uid+'">'+data[x].name+'</option>');
+								}
 							}
 						} else {
 							$("#participant").append('<option value="'+data[x].uid+'" disabled="disabled">'+data[x].name+'</option>');
@@ -119,12 +232,33 @@
 			}
 
 			function send_part() {
-				var cid = $("#part_of_conf").val();
-				var phid = $("#part_phone").val();
-				$.get('/add_participant.pl', {"cnid": cid, "phid": phid}, function(data) {
-					$("#new_participant").dialog("close");
-					$("#edit_cnfr").dialog("close");
-					edit_cnfr(cid);
+				var sel_fio;
+				var sel_phid;
+				sel_fio = $("#participant").val();
+				sel_phid = $("#part_phone").val();
+				for(var x=0; x<user_list.length; x++) {
+					if(user_list[x].uid == sel_fio) {
+						for(var y=0; y<user_list[x].ph_list.length; y++) {
+							if(user_list[x].ph_list[y].ph_id == sel_phid) {
+								$("#participant_list").append('<tr><td>'+user_list[x].name+
+								'</td><td>'+user_list[x].ph_list[y].phone+
+								'</td><td onclick="rem_me('+user_list[x].ph_list[y].ph_id+');">'+
+								'<span class="ui-icon ui-icon-close"></span></td>'+
+								'<td class="hidden_id" style="display: none;">'+
+								user_list[x].ph_list[y].ph_id+'</td></tr>'
+								);
+							}
+						}
+					}
+				}
+				$("#new_participant").dialog("close");
+			}
+
+			function rem_me(ph_id) {
+				$("#participant_list tr").each(function() {
+					if($(this).children(":last").text() == ph_id) {
+						$(this).remove();
+					}
 				});
 			}
 
@@ -141,12 +275,32 @@
 				}
 			}
 
+			function fill_sched() {
+				var ddd = '';
+				if($("#sched-date").attr('checked') == true) {
+					$("#date-selectable .ui-selected").each(function(){
+						ddd += $(this).text()+' ';
+					});
+				}
+				if($("#sched-day").attr('checked') == true) {
+					$("#day-selectable .ui-selected").each(function(){
+						ddd += $(this).text()+' ';
+					});
+				}
+				$("#schedule_day").val(ddd);
+				$('#schedule_select').dialog("close");
+			}
+
 			function close_cnfr_dialog() {
 				$("#edit_cnfr").dialog("close");
 			}
 
 			function close_part_dialog() {
 				$('#new_participant').dialog("close");
+			}
+
+			function close_sched_dialog() {
+				$('#schedule_select').dialog("close");
 			}
 
 		</script>
@@ -196,12 +350,13 @@
 		<div id="edit_cnfr" style="display: none;">
 <form id="modify_cnfr">
 <input type="hidden" name="ce_id" value="" id="ce_id" />
-<table id="conerence_table">
+<table class="tab-tale" id="conference_table">
 <tr>
-	<td colspan="2">Название</td>
+	<td colspan="3">Название</td>
 	<td><input type="text" name="ce_name" id="ce_name" value=""/></td>
 </tr>
 <tr>
+	<td rowspan="3"><input type="radio" name="next_sched" id="next" value="next"/></td>
 	<td rowspan="3">Следующее</td>
 	<td>дата</td>
 	<td><input type="text" name="next_date" id="next_date" value=""/></td>
@@ -229,9 +384,10 @@
 	</td>
 </tr>
 <tr>
-	<td rowspan="2">Планировщик</td>
+	<td rowspan="3"><input type="radio" name="next_sched" id="sched" value="sched"/></td>
+	<td rowspan="3">Планировщик</td>
 	<td>День</td>
-	<td><input type="text" name="schedule_day" id="schedule_time" value="" /></td>
+	<td><input type="text" name="schedule_day" id="schedule_day" value="" /></td>
 </tr>
 <tr>
 	<td>время</td>
@@ -245,34 +401,46 @@
 	</td>
 </tr>
 <tr>
-	<td rowspan="2">Аутентификация</td>
-	<td>тип</td>
+	<td>продолжительность</td>
 	<td>
-		<select name="auth_type" id="auth_type">
-			<option></option>
-			<option value="number">По номеру "А"</option>
-			<option value="pin">По PIN коду</option>
+		<select name="sched_dur_hours" id="sched_dur_hours">
+			<option></option> <option value="00">0</option> <option value="01">1</option> <option value="02">2</option> <option value="03">3</option> <option value="04">4</option> <option value="05">5</option> <option value="06">6</option> <option value="07">7</option>
+		</select>
+		<select name="sched_dur_min" id="sched_dur_min">
+			<option></option> <option>00</option> <option>01</option> <option>02</option> <option>03</option> <option>04</option> <option>05</option> <option>06</option> <option>07</option> <option>08</option> <option>09</option> <option>10</option> <option>11</option> <option>12</option> <option>13</option> <option>14</option> <option>15</option> <option>16</option> <option>17</option> <option>18</option> <option>19</option> <option>20</option> <option>21</option> <option>22</option> <option>23</option> <option>24</option> <option>25</option> <option>26</option> <option>27</option> <option>28</option> <option>29</option> <option>30</option> <option>31</option> <option>32</option> <option>33</option> <option>34</option> <option>35</option> <option>36</option> <option>37</option> <option>38</option> <option>39</option> <option>40</option> <option>41</option> <option>42</option> <option>43</option> <option>44</option> <option>45</option> <option>46</option> <option>47</option> <option>48</option> <option>49</option> <option>50</option> <option>51</option> <option>52</option> <option>53</option> <option>54</option> <option>55</option> <option>56</option> <option>57</option> <option>58</option> <option>59</option>
 		</select>
 	</td>
 </tr>
 <tr>
-	<td>строка</td>
+	<td rowspan="3" colspan="2">Аутентификация</td>
+	<td rowspan="2">тип</td>
+	<td>
+		<input type="checkbox" name="number_auth" id="number_auth"/>По номеру "А"
+	</td>
+</tr>
+<tr>
+	<td>
+		<input type="checkbox" name="pin_auth" id="pin_auth"/>По PIN коду
+	</td>
+</tr>
+<tr>
+	<td>PIN код</td>
 	<td><input type="text" name="auth_string" id="auth_string" value="" /></td>
 </tr>
 <tr>
-	<td colspan="2">Автосбор участников</td>
+	<td colspan="3">Автосбор участников</td>
 	<td><input type="checkbox" name="auto_assemble" id="auto_assemble" /></td>
 </tr>
 <tr>
-	<td colspan="2">Контроль потери участников</td>
+	<td colspan="3">Контроль потери участников</td>
 	<td><input type="checkbox" name="lost_control" id="lost_control" /></td>
 </tr>
 <tr>
-	<td colspan="2">Запись совещания</td>
+	<td colspan="3">Запись совещания</td>
 	<td><input type="checkbox" name="need_record" id="need_record" /></td>
 </tr>
 <tr>
-	<td colspan="2">Автоязык</td>
+	<td colspan="3">Автоязык</td>
 	<td>
 		<select name="audio_lang" id="audio_lang">
 			<option value=""></option>
@@ -314,5 +482,125 @@
 		</table>
 	</form>
 </div>
+<div style="display: none;" id="schedule_select">
+	<table>
+		<tr>
+			<td colspan="2">Дни недели</td>
+		</tr>
+		<tr>
+			<td><input type="radio" id="sched-day" name="sched_day" value="week"/></td>
+			<td>
+				<table id="day-selectable">
+					<tr>
+						<td>Пн</td>
+						<td>Вт</td>
+						<td>Ср</td>
+						<td>Чт</td>
+						<td>Пт</td>
+						<td>Сб</td>
+						<td>Вс</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2">Дни месяца</td>
+		</tr>
+		<tr>
+			<td><input type="radio" id="sched-date" name="sched_day" value="month"/></td>
+			<td>
+				<table id="date-selectable">
+					<tr>
+						<td>01</td><td>02</td><td>03</td><td>04</td><td>05</td><td>06</td><td>07</td>
+					</tr><tr>
+						<td>08</td><td>09</td><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td>
+					</tr><tr>
+						<td>15</td><td>16</td><td>17</td><td>18</td><td>19</td><td>20</td><td>21</td>
+					</tr><tr>
+						<td>22</td><td>23</td><td>24</td><td>25</td><td>26</td><td>27</td><td>28</td>
+					</tr><tr>
+						<td>29</td><td>30</td><td>31</td><td></td><td></td><td></td><td></td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<input type="button" onclick="fill_sched();return false;" value="Сохранить"/>
+			</td>
+			<td>
+				<input type="button" onclick="close_sched_dialog();return false;" value="Отменить"/>
+			</td>
+		</tr>
+	</table>
+</div>
+<script>
+	$("#pin_auth").change(function() {
+		if($(this).attr("checked") == true) {
+			$("#auth_string").removeAttr("disabled");
+		} else {
+			$("#auth_string").val('');
+			$("#auth_string").attr('disabled','disabled');
+		}
+	});
+
+	$("input[name='next_sched']").change(function() {
+		if($(this).val() == 'sched') {
+			$("#next_date").attr('disabled','disabled');
+			$("#next_date").val('');
+			$("#hours_begin").attr('disabled','disabled');
+			$("#hours_begin").val('');
+			$("#min_begin").attr('disabled','disabled');
+			$("#min_begin").val('');
+			$("#dur_hours").attr('disabled','disabled');
+			$("#dur_hours").val('');
+			$("#dur_min").attr('disabled','disabled');
+			$("#dur_min").val('');
+			$("#schedule_day").removeAttr("disabled");
+			$("#schedule_hours_begin").removeAttr("disabled");
+			$("#schedule_min_begin").removeAttr("disabled");
+			$("#sched_dur_hours").removeAttr("disabled");
+			$("#sched_dur_min").removeAttr("disabled");
+		}
+		if($(this).val() == 'next') {
+			$("#schedule_day").attr('disabled','disabled');
+			$("#schedule_day").val('');
+			$("#schedule_hours_begin").attr('disabled','disabled');
+			$("#schedule_hours_begin").val('');
+			$("#schedule_min_begin").attr('disabled','disabled');
+			$("#schedule_min_begin").val('');
+			$("#sched_dur_hours").val('');
+			$("#sched_dur_hours").attr('disabled','disabled');
+			$("#sched_dur_min").val('');
+			$("#sched_dur_min").attr('disabled','disabled');
+			$("#next_date").removeAttr("disabled");
+			$("#hours_begin").removeAttr("disabled");
+			$("#min_begin").removeAttr("disabled");
+			$("#dur_hours").removeAttr("disabled");
+			$("#dur_min").removeAttr("disabled");
+		}
+	});
+
+	$('#schedule_day').focus(function() {
+		show_schedule_select();
+	});
+
+	$("input[name='sched_day']").change(function() {
+		if($(this).val() == 'week') {
+			$("#date-selectable .ui-selected").each(function(){
+				$(this).toggleClass("ui-selected", false);
+			});
+			$("#date-selectable").selectable("disable");
+			$("#day-selectable").selectable("enable");
+		}
+		if($(this).val() == 'month') {
+			$("#day-selectable .ui-selected").each(function(){
+				$(this).toggleClass("ui-selected", false);
+			});
+			$("#day-selectable").selectable("disable");
+			$("#date-selectable").selectable("enable");
+		}
+	});
+</script>
 	</body>
 </html>

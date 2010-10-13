@@ -49,7 +49,7 @@ sub cnfr_list {
 	my $query = "SELECT cnfr_id, cnfr_name, cnfr_state, to_char(last_start, ".
 							"'YYYY-MM-DD HH24:MI'), to_char(last_end, 'YYYY-MM-DD HH24:MI'), ".
 							"to_char(next_start, 'YYYY-MM-DD HH24:MI'), next_duration, ".
-							"shedule_date, to_char(shedule_time, 'HH24:MI'), auth_type, ".
+							"schedule_date, to_char(schedule_time, 'HH24:MI'), auth_type, ".
 							"auth_string, auto_assemble, lost_control, need_record, number_b, ".
 							"audio_lang FROM conferences order by cnfr_id";
 	$self->_connect();
@@ -57,21 +57,21 @@ sub cnfr_list {
 	$sth->execute();
 
 	while(my @tmp = $sth->fetchrow_array()) {
-		$res[$tmp[0]]{'cnfr_name'} = (defined $tmp[1])? $tmp[1] : " ";
-		$res[$tmp[0]]{'cnfr_state'} = (defined $tmp[2])? $tmp[2] : " ";
-		$res[$tmp[0]]{'last_start'} = (defined $tmp[3])? $tmp[3] : " ";
-		$res[$tmp[0]]{'last_end'} = (defined $tmp[4])? $tmp[4] : " ";
-		$res[$tmp[0]]{'next_start'} = (defined $tmp[5])? $tmp[5] : " ";
-		$res[$tmp[0]]{'next_duration'} = (defined $tmp[6])? $tmp[6] : " ";
-		$res[$tmp[0]]{'shedule_date'} = (defined $tmp[7])? $tmp[7] : " ";
-		$res[$tmp[0]]{'shedule_time'} = (defined $tmp[8])? $tmp[8] : " ";
-		$res[$tmp[0]]{'auth_type'} = (defined $tmp[9])? $tmp[9] : " ";
-		$res[$tmp[0]]{'auth_string'} = (defined $tmp[10])? $tmp[10] : " ";
-		$res[$tmp[0]]{'auto_assemble'} = (defined $tmp[11])? $tmp[11] : " ";
-		$res[$tmp[0]]{'lost_control'} = (defined $tmp[12])? $tmp[12] : " ";
-		$res[$tmp[0]]{'need_record'} = (defined $tmp[13])? $tmp[13] : " ";
-		$res[$tmp[0]]{'number_b'} = (defined $tmp[14])? $tmp[14] : " ";
-		$res[$tmp[0]]{'audio_lang'} = (defined $tmp[15])? $tmp[15] : " ";
+		$res[$tmp[0]]{'cnfr_name'} = (defined $tmp[1])? $tmp[1] : "";
+		$res[$tmp[0]]{'cnfr_state'} = (defined $tmp[2])? $tmp[2] : "";
+		$res[$tmp[0]]{'last_start'} = (defined $tmp[3])? $tmp[3] : "";
+		$res[$tmp[0]]{'last_end'} = (defined $tmp[4])? $tmp[4] : "";
+		$res[$tmp[0]]{'next_start'} = (defined $tmp[5])? $tmp[5] : "";
+		$res[$tmp[0]]{'next_duration'} = (defined $tmp[6])? $tmp[6] : "";
+		$res[$tmp[0]]{'schedule_date'} = (defined $tmp[7])? $tmp[7] : "";
+		$res[$tmp[0]]{'schedule_time'} = (defined $tmp[8])? $tmp[8] : "";
+		$res[$tmp[0]]{'auth_type'} = (defined $tmp[9])? $tmp[9] : "";
+		$res[$tmp[0]]{'auth_string'} = (defined $tmp[10])? $tmp[10] : "";
+		$res[$tmp[0]]{'auto_assemble'} = (defined $tmp[11])? $tmp[11] : "";
+		$res[$tmp[0]]{'lost_control'} = (defined $tmp[12])? $tmp[12] : "";
+		$res[$tmp[0]]{'need_record'} = (defined $tmp[13])? $tmp[13] : "";
+		$res[$tmp[0]]{'number_b'} = (defined $tmp[14])? $tmp[14] : "";
+		$res[$tmp[0]]{'audio_lang'} = (defined $tmp[15])? $tmp[15] : "";
 	}
 
 	return @res;
@@ -167,11 +167,11 @@ sub get_user_list {
 		if($#users < 0 and $#phs < 0) {
 			$uid = $tmp[0];
 			$row{'id'} = $tmp[0];
-			$row{'name'} = (defined $tmp[1])? $tmp[1] : " ";
-			$row{'organization'} = (defined $tmp[4])? $tmp[4] : " ";
-			$row{'department'} = (defined $tmp[2])? $tmp[2] : " ";
-			$row{'position'} = (defined $tmp[5])? $tmp[5] : " ";
-			$row{'email'} = (defined $tmp[3])? $tmp[3] : " ";
+			$row{'name'} = (defined $tmp[1])? $tmp[1] : "";
+			$row{'organization'} = (defined $tmp[4])? $tmp[4] : "";
+			$row{'department'} = (defined $tmp[2])? $tmp[2] : "";
+			$row{'position'} = (defined $tmp[5])? $tmp[5] : "";
+			$row{'email'} = (defined $tmp[3])? $tmp[3] : "";
 			if(defined $tmp[6]) {
 				push @phs, $tmp[6];
 				push @phs_id, $tmp[7];
@@ -188,11 +188,11 @@ sub get_user_list {
 			@phs_id = ();
 			$row{'id'} = $tmp[0];
 			$uid = $row{'id'};
-			$row{'name'} = (defined $tmp[1])? $tmp[1] : " ";
-			$row{'organization'} = (defined $tmp[4])? $tmp[4] : " ";
-			$row{'department'} = (defined $tmp[2])? $tmp[2] : " ";
-			$row{'position'} = (defined $tmp[5])? $tmp[5] : " ";
-			$row{'email'} = (defined $tmp[3])? $tmp[3] : " ";
+			$row{'name'} = (defined $tmp[1])? $tmp[1] : "";
+			$row{'organization'} = (defined $tmp[4])? $tmp[4] : "";
+			$row{'department'} = (defined $tmp[2])? $tmp[2] : "";
+			$row{'position'} = (defined $tmp[5])? $tmp[5] : "";
+			$row{'email'} = (defined $tmp[3])? $tmp[3] : "";
 			if(defined $tmp[6]) {
 				push @phs, $tmp[6];
 				push @phs_id, $tmp[7];
@@ -351,25 +351,25 @@ sub get_cnfr {
 	my %cnfr = ();
 
 	$self->_connect();
-	my $q = "SELECT cnfr_id, cnfr_name, cnfr_state, shedule_date, to_char(shedule_time, ".
+	my $q = "SELECT cnfr_id, cnfr_name, cnfr_state, schedule_date, to_char(schedule_time, ".
 					"'HH24:MI'), to_char(next_start, 'YYYY-MM-DD HH24:MI'), next_duration, auth_type, ".
 					"auth_string, auto_assemble, lost_control, need_record, number_b, audio_lang ".
 					"FROM conferences WHERE cnfr_id=?";
 	my @tmp = $dbh->selectrow_array($q, undef, $id);
 	$cnfr{'id'} = $tmp[0];
-	$cnfr{'name'} = (defined $tmp[1])? $tmp[1] : " ";
-	$cnfr{'cnfr_state'} = (defined $tmp[2])? $tmp[2] : " ";
-	$cnfr{'shedule_date'} = (defined $tmp[3])? $tmp[3] : " ";
-	$cnfr{'shedule_time'} = (defined $tmp[4])? $tmp[4] : " ";
-	$cnfr{'next_start'} = (defined $tmp[5])? $tmp[5] : " ";
-	$cnfr{'next_duration'} = (defined $tmp[6])? $tmp[6] : " ";
-	$cnfr{'auth_type'} = (defined $tmp[7])? $tmp[7] : " ";
-	$cnfr{'auth_string'} = (defined $tmp[8])? $tmp[8] : " ";
-	$cnfr{'auto_assemble'} = (defined $tmp[9])? $tmp[9] : " ";
-	$cnfr{'lost_control'} = (defined $tmp[10])? $tmp[10] : " ";
-	$cnfr{'need_record'} = (defined $tmp[11])? $tmp[11] : " ";
-	$cnfr{'number_b'} = (defined $tmp[12])? $tmp[12] : " ";
-	$cnfr{'audio_lang'} = (defined $tmp[13])? $tmp[13] : " ";
+	$cnfr{'name'} = (defined $tmp[1])? $tmp[1] : "";
+	$cnfr{'cnfr_state'} = (defined $tmp[2])? $tmp[2] : "";
+	$cnfr{'schedule_date'} = (defined $tmp[3])? $tmp[3] : "";
+	$cnfr{'schedule_time'} = (defined $tmp[4])? $tmp[4] : "";
+	$cnfr{'next_start'} = (defined $tmp[5])? $tmp[5] : "";
+	$cnfr{'next_duration'} = (defined $tmp[6])? $tmp[6] : "";
+	$cnfr{'auth_type'} = (defined $tmp[7])? $tmp[7] : "";
+	$cnfr{'auth_string'} = (defined $tmp[8])? $tmp[8] : "";
+	$cnfr{'auto_assemble'} = (defined $tmp[9])? $tmp[9] : "";
+	$cnfr{'lost_control'} = (defined $tmp[10])? $tmp[10] : "";
+	$cnfr{'need_record'} = (defined $tmp[11])? $tmp[11] : "";
+	$cnfr{'number_b'} = (defined $tmp[12])? $tmp[12] : "";
+	$cnfr{'audio_lang'} = (defined $tmp[13])? $tmp[13] : "";
 
 	$q = "SELECT u.full_name, a.admin_id FROM operators_of_conferences ooc, admins a, ".
 			 "users u WHERE ooc.cnfr_id=? AND ooc.admin_id=a.admin_id AND ".
@@ -422,24 +422,33 @@ sub save_cnfr {
 	my $id = shift;
 	my $ce_name = shift;
 	my $next_start = shift;
+	$next_start = undef unless(length $next_start);
 	my $next_duration = shift;
+	$next_duration = undef unless(length $next_duration);
 	my $schedule_day = shift;
+	$schedule_day = undef unless(length $schedule_day);
 	my $schedule_time = shift;
+	$schedule_time = undef unless(length $schedule_time);
+	my $schedule_duration = shift;
+	$schedule_duration = undef unless(length $schedule_duration);
 	my $auth_type = shift;
+	$auth_type = undef unless(length $auth_type);
 	my $auth_string = shift;
+	$auth_string = undef unless(length $auth_string);
 	my $auto_assemble = shift;
 	my $lost_control = shift;
 	my $need_record = shift;
 	my $audio_lang = shift;
+	$audio_lang = undef unless(length $audio_lang);
 	my $p = shift;
 
 	my @phs_id = (@{$p});
 
 	my $q = "UPDATE conferences SET cnfr_name=?, next_start=to_timestamp(?, 'YYYY-MM-DD HH24:MI'), ".
-					"next_duration=?, shedule_date=?, shedule_time=?, auth_type=?, ".
+					"next_duration=?, schedule_date=?, schedule_time=?, schedule_duration=?, auth_type=?, ".
 					"auth_string=?, auto_assemble=?, lost_control=?, need_record=?, audio_lang=? WHERE ".
 					"cnfr_id=?";
-	my @bind = ($ce_name, $next_start, $next_duration, $schedule_day, $schedule_time,
+	my @bind = ($ce_name, $next_start, $next_duration, $schedule_day, $schedule_time, $schedule_duration,
 						  $auth_type, $auth_string, $auto_assemble, $lost_control, $need_record,
 							$audio_lang, $id);
 	eval {
@@ -451,6 +460,7 @@ sub save_cnfr {
 		$dbh->rollback();
 		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
 		warn $warn;
+		warn join('" "', @bind);
 		return undef;
 	}
 

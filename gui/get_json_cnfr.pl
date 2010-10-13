@@ -37,9 +37,9 @@ my ($schedule_hours_begin, $schedule_min_begin, $next_d, $next_t,
 my $json = "{";
 $json .= '"id": '.$cn{'id'};
 $json .= ', "name": "'. $cn{'name'} . '"';
-$json .= ', "shedule_day": "' . $cn{'shedule_date'} . '"';
-($schedule_hours_begin, $schedule_min_begin) = split(/:/, $cn{'shedule_time'}) 
-			if(defined $cn{'shedule_time'} and length $cn{'shedule_time'});
+$json .= ', "schedule_day": "' . $cn{'schedule_date'} . '"';
+($schedule_hours_begin, $schedule_min_begin) = split(/:/, $cn{'schedule_time'}) 
+			if(defined $cn{'schedule_time'} and length $cn{'schedule_time'});
 $json .= ', "schedule_hours_begin": "' . $schedule_hours_begin . '"';
 $json .= ', "schedule_min_begin": "' . $schedule_min_begin . '"';
 ($next_d, $next_t) = split(/[\s]+/, $cn{'next_start'})

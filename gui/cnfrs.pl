@@ -51,12 +51,12 @@ my $row =<<EOR;
 </tr>
 EOR
 
-my $out = "<table id=\"cnfr-list\">" . $thead;
+my $out = "<table id=\"cnfr-list\" class=\"tab-table\">" . $thead;
 
 while(my $i = shift @rights) {
 	$out .= sprintf $row, $i, $i, $cnfrs[$i]{'cnfr_name'}, $cnfrs[$i]{'cnfr_state'},
 					$cnfrs[$i]{'last_start'}, $cnfrs[$i]{'last_end'}, $cnfrs[$i]{'next_start'},
-					$cnfrs[$i]{'next_duration'}, $cnfrs[$i]{'shedule_date'}, $cnfrs[$i]{'shedule_time'},
+					$cnfrs[$i]{'next_duration'}, $cnfrs[$i]{'schedule_date'}, $cnfrs[$i]{'schedule_time'},
 					$cnfrs[$i]{'auth_type'}, $cnfrs[$i]{'auth_string'}, $cnfrs[$i]{'auto_assemble'},
 					$cnfrs[$i]{'lost_control'}, $cnfrs[$i]{'need_record'}, 
 					$cnfrs[$i]{'number_b'}, $cnfrs[$i]{'audio_lang'};
