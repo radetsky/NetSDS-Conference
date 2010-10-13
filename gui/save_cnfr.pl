@@ -63,10 +63,12 @@ if($next_type eq "next") {
 	my $s_h = $cgi->param('schedule_hours_begin');
 	my $s_m = $cgi->param('schedule_min_begin');
 	$schedule_time = "$s_h:$s_m" if(defined $s_h and defined $s_m );
-	my $s_h_d = $cgi->param("schedule_hours_begin");
-	my $s_m_d = $cgi->param("schedule_min_begin");
+	my $s_h_d = $cgi->param("sched_dur_hours");
+	my $s_m_d = $cgi->param("sched_dur_min");
 	$schedule_duration = "$s_h_d:$s_m_d:00" if(defined $s_h_d and defined $s_m_d);
 }
+
+warn "$schedule_day $schedule_time $schedule_duration";
 
 my $auth_type = "";
 my $auth_string = $cgi->param('auth_string');

@@ -10,6 +10,11 @@
 		<script type="text/javascript" src="js/almost_ready.js"></script>
 		<style type="text/css">
 			table.tab-table {font-family:Arial,Helvetica,sans-serif; font-size:50%;}
+			.tab-table td {vertical-align:top; 
+										 text-align:center; 
+										 white-space:nowrap; 
+										 }
+			.tab-table .center-icon {margin-left: 50%; margin-right: 50%;}
 			thead { font:italic bold 10px Georgia,serif; }
 			#day-selectable .ui-selecting { background: #FECA40; }
 			#day-selectable .ui-selected { background: #F39814; color: white; }
@@ -23,10 +28,10 @@
 			$(document).ready(function(){
 				$("#tabs").tabs();
 
-				$("#orgs").load('/orgs.pl');
-				$("#posns").load('/posns.pl');
-				$("#users").load('/user_list.pl');
 				$("#cnfrs").load('/cnfrs.pl');
+				$("#users").load('/user_list.pl');
+				$("#posns").load('/posns.pl');
+				$("#orgs").load('/orgs.pl');
 
 				$('#add_org').dialog({ autoOpen: false });
 				$('#add_pos').dialog({ autoOpen: false });
@@ -55,7 +60,7 @@
 				} else {
 					var dd = sdays.split(' ');
 					var i = 0;
-					$("#day-selectable").each(function(){
+					$("#day-selectable td").each(function(){
 						if(dd.indexOf($(this).text()) > -1) {
 			        $(this).toggleClass("ui-selected", true);
 							i++;
@@ -67,7 +72,7 @@
 					} else {
 						$("#sched-date").attr('checked',true);
 						$("#day-selectable").selectable("disable");
-						$("#date-selectable").each(function(){
+						$("#date-selectable td").each(function(){
 							if(dd.indexOf($(this).text()) > -1) {
 				        $(this).toggleClass("ui-selected", true);
 							}
@@ -102,8 +107,11 @@
 					$("#dur_min").val('');
 					$("#dur_min").val(data.dur_min);
 					$("#sched_dur_hours").val('');
+					$("#sched_dur_hours").val(data.sched_dur_hours);
 					$("#sched_dur_min").val('');
-					if(typeof(data.schedule_day) == 'string') {
+					$("#sched_dur_min").val(data.sched_dur_min);
+					if(typeof(data.schedule_day) == 'string' &&
+						 data.schedule_day.length > 0) {
 						$("#next_date").attr('disabled','disabled');
 						$("#hours_begin").attr('disabled','disabled');
 						$("#min_begin").attr('disabled','disabled');
@@ -224,6 +232,7 @@
 				var qry;
 				qry = 'save_cnfr.pl?'+$("#modify_cnfr").serialize();
 				qry += '&phs_ids='+lst;
+				alert(qry);
 				$.getJSON(qry, function(data) {
 					$("#edit_cnfr").dialog("close");
 					$("#cnfrs").empty();
@@ -308,10 +317,10 @@
 	<body>
 		<div id="tabs">
 			<ul>
-				<li><a href="#cnfrs"><span>Совещания</span></a></li>
-				<li><a href="#users"><span>Пользователи</span></a></li>
-				<li><a href="#posns"><span>Должности</span></a></li>
-				<li><a href="#orgs"><span>Организации</span></a></li>
+				<li><a href="#cnfrs"><span></span>Совещания</a></li>
+				<li><a href="#users"><span></span>Пользователи</a></li>
+				<li><a href="#posns"><span></span>Должности</a></li>
+				<li><a href="#orgs"><span></span>Организации</a></li>
 			</ul>
 			<div id="cnfrs">
 			</div>
@@ -533,6 +542,9 @@
 			</td>
 		</tr>
 	</table>
+</div>
+<div id="loading" style="display: none;">
+	<em>Loading&#8230;</em>
 </div>
 <script>
 	$("#pin_auth").change(function() {

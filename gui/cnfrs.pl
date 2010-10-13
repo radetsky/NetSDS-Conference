@@ -6,6 +6,12 @@ use CGI;
 use lib './lib';
 use ConferenceDB;
 
+my %c_states = ("inactive"=>"Выкл");
+
+my %s_days = ("mo"=>"Пн", "tu"=>"Вт", "we"=>"Ср", "th"=>"Чт", "fr"=>"Пт", "sa"=>"Сб", "su"=>"Вс");
+
+my %langs = ("ru"=>"Русский", "ua"=>"Украинский");
+
 my $thead=<<EOH;
 <thead>
 <tr>
@@ -14,7 +20,7 @@ my $thead=<<EOH;
 <th rowspan="2">Состояние</th>
 <th colspan="2">Последнее совещание</th>
 <th colspan="2">Следующее совещание</th>
-<th colspan="2">Планирование совещаний</th>
+<th colspan="3">Планирование совещаний</th>
 <th rowspan="2">Тип опознания</th>
 <th rowspan="2">Пароль</th>
 <th rowspan="2">Автосбор</th>
@@ -29,6 +35,7 @@ my $thead=<<EOH;
 <th>Продолжительность</th>
 <th>Дни</th>
 <th>Время</th>
+<th>Продолжительность</th>
 <tr>
 </tr>
 </thead>
@@ -45,21 +52,79 @@ my @rights = $cnfr->get_cnfr_rights($login);
 
 my $row =<<EOR;
 <tr onclick="edit_cnfr(%s); return false;">
-<td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td>
-<td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td>
-<td>%s</td> <td>%s</td>
+<td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td>
+<td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td>
+<td>%s</td>
 </tr>
 EOR
 
 my $out = "<table id=\"cnfr-list\" class=\"tab-table\">" . $thead;
 
+my $check = '<span class="ui-icon ui-icon-check center-icon"></span>';
+my $minus = '<span class="ui-icon ui-icon-minus center-icon"></span>';
+
 while(my $i = shift @rights) {
-	$out .= sprintf $row, $i, $i, $cnfrs[$i]{'cnfr_name'}, $cnfrs[$i]{'cnfr_state'},
-					$cnfrs[$i]{'last_start'}, $cnfrs[$i]{'last_end'}, $cnfrs[$i]{'next_start'},
-					$cnfrs[$i]{'next_duration'}, $cnfrs[$i]{'schedule_date'}, $cnfrs[$i]{'schedule_time'},
-					$cnfrs[$i]{'auth_type'}, $cnfrs[$i]{'auth_string'}, $cnfrs[$i]{'auto_assemble'},
-					$cnfrs[$i]{'lost_control'}, $cnfrs[$i]{'need_record'}, 
-					$cnfrs[$i]{'number_b'}, $cnfrs[$i]{'audio_lang'};
+	my @args = ();
+	push @args, $i;
+	push @args, $i;
+	push @args, $cnfrs[$i]{'cnfr_name'};
+	push @args, $c_states{$cnfrs[$i]{'cnfr_state'}};
+	push @args, $cnfrs[$i]{'last_start'};
+	push @args, $cnfrs[$i]{'last_end'};
+	push @args, $cnfrs[$i]{'next_start'};
+	if(length $cnfrs[$i]{'next_duration'} and $cnfrs[$i]{'next_duration'} =~ /^(.*):[\d]{2}$/) {
+		push @args, $1;
+	} else {
+		push @args, $cnfrs[$i]{'next_duration'};
+	}
+	if(length $cnfrs[$i]{'schedule_date'}) {
+		if($cnfrs[$i]{'schedule_date'} =~ /^[0-9\s]+$/) {
+			push @args, join(',',split(/[\s]+/, $cnfrs[$i]{'schedule_date'}));
+		} else {
+			push @args, join(',', (map {$s_days{$_}} split(/[\s]+/, $cnfrs[$i]{'schedule_date'})));
+		}
+	} else {
+		push @args, $cnfrs[$i]{'schedule_date'};
+	}
+	push @args, $cnfrs[$i]{'schedule_time'};
+	if(length $cnfrs[$i]{'schedule_duration'} and $cnfrs[$i]{'schedule_duration'} =~ /^(.*):[\d]{2}$/) {
+		push @args, $1;
+	} else {
+		push @args, $cnfrs[$i]{'schedule_duration'};
+	}
+	my $at = "";
+	if($cnfrs[$i]{'auth_type'} =~ /number/) {
+		$at .= "По номеру";
+	}
+	if($cnfrs[$i]{'auth_type'} =~ /pin/) {
+		$at .= ", " if(length $at);
+		$at .= "По PIN'у";
+	}
+	push @args, $at;
+	push @args, $cnfrs[$i]{'auth_string'};
+	if($cnfrs[$i]{'auto_assemble'}) {
+		push @args, $check;
+	} else {
+		push @args, $minus;
+	}
+	if($cnfrs[$i]{'lost_control'}) {
+		push @args, $check;
+	} else {
+		push @args, $minus;
+	}
+	if($cnfrs[$i]{'need_record'}) {
+		push @args, $check;
+	} else {
+		push @args, $minus;
+	}
+	push @args, $cnfrs[$i]{'number_b'};
+	if(length $cnfrs[$i]{'audio_lang'}) {
+		push @args, $langs{$cnfrs[$i]{'audio_lang'}};
+	} else {
+		push @args, "";
+	}
+
+	$out .= sprintf $row, @args;
 }
 $out .= "</table>";
 
