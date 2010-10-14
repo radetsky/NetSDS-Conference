@@ -1,0 +1,58 @@
+#!/bin/sh
+#set -x
+# read lib
+agish="sh-agi.inc ./lib/sh-agi.inc ../lib/sh-agi.inc /usr/lib/astconf/sh-agi.inc"
+agish_loaded=0
+
+for a in $agish; do
+	if [ -r $a ]; then
+		. $a
+		agish_loaded=1
+	fi
+done
+
+if [ $agish_loaded -eq 0 ]; then
+	echo "VERBOSE Can't load librari sh-agi.inc"
+	exit 1
+fi
+
+dbname=astconf
+dbuser=astconf
+dbhost=localhost
+dbpass=Rjyathtywbz
+
+if [ -r /etc/netstyle/astconf ]; then
+	. /etc/netstyle/astconf
+fi
+
+sh_agi_log $0 "start" 
+
+exten=$1
+
+if [ -z "$exten" ]; then
+	sh_agi_log "INCOMING_EXTEN is empty"
+	exit 1
+fi
+
+# 1 query
+psql_select() {
+
+	if [ -z "$1" ]; then
+		sh_agi_log "query string empty"
+		return 1
+	fi
+
+	psql_opt="dbname=$dbname user=$dbuser host=$dbhost password=$dbpass"
+	psql "$psql_opt" -At -c "$1" 
+}
+
+confnum=$(psql_select "select cnfr_id from conferences where number_b = '$exten' limit 1")
+
+if [ -z "$confnum" ]; then
+	confnum=-1
+fi 
+
+sh_agi_setvariable NETSDS_CONFNUM $confnum
+
+exit 0
+
