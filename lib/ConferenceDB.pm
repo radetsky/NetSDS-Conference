@@ -58,7 +58,7 @@ sub cnfr_list {
 	$sth->execute();
 
 	while(my @tmp = $sth->fetchrow_array()) {
-		$res[$tmp[0]]{'cnfr_id'} = $tmp[0]; 
+		$res[$tmp[0]]{'cnfr_id'} = $tmp[0];
 		$res[$tmp[0]]{'cnfr_name'} = (defined $tmp[1])? $tmp[1] : "";
 		$res[$tmp[0]]{'cnfr_state'} = (defined $tmp[2])? $tmp[2] : "";
 		$res[$tmp[0]]{'last_start'} = (defined $tmp[3])? $tmp[3] : "";
@@ -799,91 +799,79 @@ sub update_user {
 		}
 	}
 
-	if($admin{'oper'}) {
-		my $hashed = undef;
-		if(defined $admin{'passwd'} and length $admin{'passwd'}) {
-			my $cmd = "$HTPASSWD -bn some " . $admin{'passwd'};
-			(undef, $hashed) = split(/:/,`$cmd`);
-		}
-		if($user{'id'} eq "new") {
-			$q = "INSERT INTO admins (user_id, login, passwd_hash, is_admin) ".
-					 "VALUES (?, ?, ?, ?)";
-			$sth = $dbh->prepare($q);
-			eval {
-				$sth->execute($new_id, $admin{'login'}, $hashed, $admin{'admin'});
-			};
-
-			if($@) {
-				$error = "Такое имя для входа уже используется. Выберите другое.";
-				$dbh->rollback();
-				my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
-				warn $warn;
-				return undef;
+	if($self->is_admin($loggedin)) {
+		if($admin{'oper'}) {
+			my $hashed = undef;
+			if(defined $admin{'passwd'} and length $admin{'passwd'}) {
+				my $cmd = "$HTPASSWD -bn some " . $admin{'passwd'};
+				(undef, $hashed) = split(/:/,`$cmd`);
 			}
-
-			$dbh->commit();
-			$self->write_to_log($loggedin, $q, $new_id, $admin{'login'}, $hashed, $admin{'admin'});
-		} else {
-			$q = "SELECT admin_id, user_id, login FROM admins WHERE login=? or user_id=?";
-			$sth = $dbh->prepare($q);
-			$sth->execute($admin{'login'}, $user{'id'});
-			my $upd = 0;
-			while(my @tmp = $sth->fetchrow_array()) {
-				if($user{'id'} eq $tmp[1]) {
-					$upd = $tmp[0];
-				} else {
+			if($user{'id'} eq "new") {
+				$q = "INSERT INTO admins (user_id, login, passwd_hash, is_admin) ".
+						 "VALUES (?, ?, ?, ?)";
+				$sth = $dbh->prepare($q);
+				eval {
+					$sth->execute($new_id, $admin{'login'}, $hashed, $admin{'admin'});
+				};
+  
+				if($@) {
 					$error = "Такое имя для входа уже используется. Выберите другое.";
+					$dbh->rollback();
+					my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+					warn $warn;
 					return undef;
 				}
-			}
-			if($upd) {
-				if(defined $hashed) {
-					$q = "UPDATE admins SET login=?, passwd_hash=?, is_admin=? WHERE ".
-							 "admin_id=?";
-					@bind = ($admin{'login'}, $hashed, $admin{'admin'}, $upd);
-				} else {
-					$q = "UPDATE admins SET login=?, is_admin=? WHERE admin_id=?";
-					@bind = ($admin{'login'}, $admin{'admin'}, $upd);
-				}
+  
+				$dbh->commit();
+				$self->write_to_log($loggedin, $q, $new_id, $admin{'login'}, $hashed, $admin{'admin'});
 			} else {
-				if(defined $hashed) {
-					$q = "INSERT INTO admins (user_id, login, passwd_hash, is_admin) ".
-							 "VALUES (?, ?, ?, ?)";
-					@bind = ($user{'id'}, $admin{'login'}, $hashed, $admin{'admin'});
+				$q = "SELECT admin_id, user_id, login FROM admins WHERE login=? or user_id=?";
+				$sth = $dbh->prepare($q);
+				$sth->execute($admin{'login'}, $user{'id'});
+				my $upd = 0;
+				while(my @tmp = $sth->fetchrow_array()) {
+					if($user{'id'} eq $tmp[1]) {
+						$upd = $tmp[0];
+					} else {
+						$error = "Такое имя для входа уже используется. Выберите другое.";
+						return undef;
+					}
+				}
+				if($upd) {
+					if(defined $hashed) {
+						$q = "UPDATE admins SET login=?, passwd_hash=?, is_admin=? WHERE ".
+								 "admin_id=?";
+						@bind = ($admin{'login'}, $hashed, $admin{'admin'}, $upd);
+					} else {
+						$q = "UPDATE admins SET login=?, is_admin=? WHERE admin_id=?";
+						@bind = ($admin{'login'}, $admin{'admin'}, $upd);
+					}
 				} else {
-					$error = "Нельзя создавать оператора без пароля. Задайте пароль.";
+					if(defined $hashed) {
+						$q = "INSERT INTO admins (user_id, login, passwd_hash, is_admin) ".
+								 "VALUES (?, ?, ?, ?)";
+						@bind = ($user{'id'}, $admin{'login'}, $hashed, $admin{'admin'});
+					} else {
+						$error = "Нельзя создавать оператора без пароля. Задайте пароль.";
+						return undef;
+					}
+				}
+				$sth = $dbh->prepare($q);
+				eval {
+					$sth->execute(@bind);
+				};
+  
+				if($@) {
+					$error = "Ошибка сохранения прав администратора. Обратитесь к администратору.";
+					$dbh->rollback();
+					my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+					warn $warn;
 					return undef;
 				}
+				$dbh->commit();
+				$self->write_to_log($loggedin, $q, @bind);
 			}
-			$sth = $dbh->prepare($q);
-			eval {
-				$sth->execute(@bind);
-			};
-
-			if($@) {
-				$error = "Ошибка сохранения прав администратора. Обратитесь к администратору.";
-				$dbh->rollback();
-				my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
-				warn $warn;
-				return undef;
-			}
-			$dbh->commit();
-			$self->write_to_log($loggedin, $q, @bind);
 		}
-	} elsif($user{'id'} ne "new" and $user{'id'} ne 1) {
-		eval {
-			$dbh->do("DELETE FROM admins WHERE user_id=?",undef,$user{'id'});
-		};
-
-		if($@) {
-			$error = "Ошибка снятия прав администратора. Обратитесь к администратору.";
-			$dbh->rollback();
-			my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
-			warn $warn;
-			return undef;
-		}
-
-		$dbh->commit();
 	}
 	return $self->get_user_list();
 }
