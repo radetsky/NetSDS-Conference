@@ -29,7 +29,7 @@ my $json = "[";
 for(my $i=0; $i<=$#users; $i++) {
 	my $obj = "\n" . '{ "name": "' . $users[$i]{'name'} . '",';
 	$obj .= '"uid": "' . $users[$i]{'id'} . '",';
-	if(exists $u_to_ph{$users[$i]{'id'}}) {
+	if(exists $u_to_ph{$users[$i]{'id'}}{'id'}) {
 		$obj .= ' "disable": true, ';
 	} else {
 		$obj .= ' "disable": false, ';

@@ -155,10 +155,11 @@ sub get_user_list {
 	my @users = ();
 
 	my $q = "select u.user_id, u.full_name, u.department, u.email, o.org_name, ".
-					"p.position_name, ph.phone_number, ph.phone_id FROM users as u left outer join ".
-					"organizations as o on (u.org_id=o.org_id) left outer join positions ".
-					"as p on (u.position_id=p.position_id) left outer join phones as ph on ".
-					"(u.user_id=ph.user_id) ORDER BY p.position_order, u.user_id, ph.order_nmb";
+					"p.position_name, ph.phone_number, ph.phone_id, adm.login, adm.is_admin, ".
+					"adm.passwd_hash FROM users as u left outer join organizations as o on ".
+					"(u.org_id=o.org_id) left outer join positions as p on (u.position_id=p.position_id) ".
+					"left outer join phones as ph on (u.user_id=ph.user_id) left outer join admins as adm ".
+					"on(u.user_id=adm.user_id) ORDER BY p.position_order, u.user_id, ph.order_nmb";
 	$self->_connect();
 	my $sth = $dbh->prepare($q);
 	$sth->execute();
@@ -175,6 +176,9 @@ sub get_user_list {
 			$row{'department'} = (defined $tmp[2])? $tmp[2] : "";
 			$row{'position'} = (defined $tmp[5])? $tmp[5] : "";
 			$row{'email'} = (defined $tmp[3])? $tmp[3] : "";
+			$row{'login'} = (defined $tmp[8])? $tmp[8] : "";
+			$row{'admin'} = (defined $tmp[9])? $tmp[9] : 0;
+			$row{'passwd'} = (defined $tmp[10])? $tmp[10] : "";
 			if(defined $tmp[6]) {
 				push @phs, $tmp[6];
 				push @phs_id, $tmp[7];
@@ -196,6 +200,9 @@ sub get_user_list {
 			$row{'department'} = (defined $tmp[2])? $tmp[2] : "";
 			$row{'position'} = (defined $tmp[5])? $tmp[5] : "";
 			$row{'email'} = (defined $tmp[3])? $tmp[3] : "";
+			$row{'login'} = (defined $tmp[8])? $tmp[8] : "";
+			$row{'admin'} = (defined $tmp[9])? $tmp[9] : 0;
+			$row{'passwd'} = (defined $tmp[10])? $tmp[10] : "";
 			if(defined $tmp[6]) {
 				push @phs, $tmp[6];
 				push @phs_id, $tmp[7];
@@ -205,8 +212,6 @@ sub get_user_list {
 				push @phs, $tmp[6];
 				push @phs_id, $tmp[7];
 			}
-#			push @phs, (defined $tmp[6])? $tmp[6] : " ";
-#			push @phs_id, (defined $tmp[7])? $tmp[7] : " ";
 		}
 	}
 	$row{'phones'} = \@phs;
@@ -410,12 +415,13 @@ sub get_cnfr_participants {
 	my %u_to_ph = ();
 
 	$self->_connect();
-	my $q = "SELECT uoc.phone_id, ph.user_id FROM users_on_conference uoc, phones ph ".
+	my $q = "SELECT uoc.phone_id, ph.user_id, ph.phone_number FROM users_on_conference uoc, phones ph ".
 					"WHERE uoc.phone_id=ph.phone_id AND uoc.cnfr_id=?";
 	my $sth = $dbh->prepare($q);
 	$sth->execute($cid);
 	while(my @tmp = $sth->fetchrow_array()) {
-		$u_to_ph{$tmp[1]} = $tmp[0];
+		$u_to_ph{$tmp[1]}{'id'} = $tmp[0];
+		$u_to_ph{$tmp[1]}{'number'} = $tmp[2];
 	}
 	return %u_to_ph;
 }
