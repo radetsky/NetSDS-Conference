@@ -58,6 +58,7 @@ sub cnfr_list {
 	$sth->execute();
 
 	while(my @tmp = $sth->fetchrow_array()) {
+		$res[$tmp[0]]{'cnfr_id'} = $tmp[0]; 
 		$res[$tmp[0]]{'cnfr_name'} = (defined $tmp[1])? $tmp[1] : "";
 		$res[$tmp[0]]{'cnfr_state'} = (defined $tmp[2])? $tmp[2] : "";
 		$res[$tmp[0]]{'last_start'} = (defined $tmp[3])? $tmp[3] : "";
