@@ -42,6 +42,9 @@
 
 				$("#day-selectable").selectable({ filter: 'td' });
 				$("#date-selectable").selectable({ filter: 'td' });
+				$('#error').dialog({ buttons: { "Ok": function() { $(this).dialog("close"); } },
+														 autoOpen: false,
+														 modal: true});
 
 			});
 
@@ -142,6 +145,7 @@
 						$("#auth_string").val(data.auth_string);
 					} else {
 						$("#pin_auth").attr('checked', '');
+						$("#auth_string").val('');
 						$("#auth_string").attr('disabled','disabled');
 					}
 					if( data.number_auth == true ) {
@@ -232,7 +236,6 @@
 				var qry;
 				qry = 'save_cnfr.pl?'+$("#modify_cnfr").serialize();
 				qry += '&phs_ids='+lst;
-				alert(qry);
 				$.getJSON(qry, function(data) {
 					$("#edit_cnfr").dialog("close");
 					$("#cnfrs").empty();
@@ -545,6 +548,10 @@
 </div>
 <div id="loading" style="display: none;">
 	<em>Loading&#8230;</em>
+</div>
+<div id="error" style="display: none;">
+	<p id="error_text" style="color:red;">
+	<p>
 </div>
 <script>
 	$("#pin_auth").change(function() {

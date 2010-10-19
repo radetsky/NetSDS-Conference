@@ -7,12 +7,12 @@ use lib './lib';
 use ConferenceDB;
 
 my $form=<<EOH;
-<form>
+<form id="modify_user">
 <fieldset>
 	<legend id="userlegend">%s</legend>
 	<input type="hidden" name="uid" id="uid" value="%s"/>
-	<label for="fio">ФИО</label>
-	<input type="text" id="fio" name="fio" value="%s"/><br/>
+	<label for="uname">ФИО</label>
+	<input type="text" id="uname" name="fio" value="%s"/><br/>
 	<label for="phone0">Номер телефона</label>
 	<input type="text" id="phone0" name="phone0" value="%s"/>
 	<div id="more_phones">

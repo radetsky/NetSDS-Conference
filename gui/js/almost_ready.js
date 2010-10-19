@@ -67,37 +67,27 @@
 			}
 
 			function send_user() {
-				var uid = $("#uid").val();
-				var uname = $("#fio").val();
-				var oid = $("#user_org").val();
-				var dept = $("#user_dept").val();
-				var pid = $("#user_pos").val();
-				var uemail = $("#user_email").val();
-				var uop = $("input[name='op_rights']:checked").length;
-				var ulogin = $("#op_login").val();
 				var upass = $("#op_pass").val();
 				var urepass = $("#op_repass").val();
-
 				if(upass.length > 0 && upass != urepass) {
-					alert('Пароли не совпадают');
+					$("#error_text").empty();
+					$("#error_text").append('Пароль и подтверждение пароля должны совпадать!');
+					$("#error").dialog('open');
 					return;
 				}
 
-				var uadmin = $("input[name='is_admin']:checked").length;
-				
-				var phones = $("#phone0").val();
-				var phone_cnt = $("#more_phones input").length;
-				for (i=1;i<=phone_cnt;i++) {
-					var field = '#phone'+i;
-					var nextp = $(field).val();
-					if(nextp.length > 0) {
-						phones += '+'+nextp;
+				var u_qry = 'save_user.pl?'+$("#modify_user").serialize();
+				$.getJSON(u_qry, function (data) {
+					if(data.status == 'error') {
+						$("#error_text").empty();
+						$("#error_text").append(data.message);
+						$("#error").dialog('open');
+						return;
 					}
-				}
-				$('#edit_user').dialog("close");
+					$("#edit_user").dialog("close");
+					$("#users").load('/user_list.pl');
 
-				
-				$("#users").load('/user_list.pl',{ id: uid, phones: phones, name: uname, orgid: oid, dept: dept, posid: pid, email: uemail, oper: uop, login: ulogin, passwd: upass, admin: uadmin});
+				});
 			}
 
 			function close_user_dialog() {
