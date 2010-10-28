@@ -956,4 +956,40 @@ sub get_error {
 	return $self->error;
 }
 
+sub cnfr_update {
+	my ($self, $cnfr_id, $params) = @_; 
+
+	$self->_connect();
+	
+	my @update_array; 
+	foreach my $param ( keys %$params) { 
+		my $pair = sprintf("%s=%s", $param, $params->{$param}); 
+		push @update_array,$pair; 
+	}
+	
+	my $update_string = join (',',@update_array); 
+	warn $update_string;
+
+	my $query = sprintf("update conferences set %s where cnfr_id=%d", 
+		$update_string, $cnfr_id);
+	my $sth = $dbh->prepare($query);
+	eval {
+		$sth->execute();
+	};
+	if($@) {
+		$dbh->rollback();
+		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		warn $warn;
+		return undef;
+	}
+	$dbh->commit();
+	return 1; 
+
+}
+
+sub _disconnect { 
+	my $self = shift; 
+
+	$dbh->disconnect; 
+}
 1;
