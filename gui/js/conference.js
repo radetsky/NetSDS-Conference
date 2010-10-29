@@ -216,6 +216,35 @@
 				});
 			}
 
+			function start_now() {
+				var lst;
+				$("td.hidden_id").each(function(index) {
+					if(index == 0) {
+						lst = $(this).text();
+					} else {
+						lst += '+'+$(this).text();
+					}
+				});
+				var oprs;
+				$("td.hidden_op_id").each(function(index) {
+					if(index == 0) {
+						oprs = $(this).text();
+					} else {
+						oprs += '+'+$(this).text();
+					}
+				});
+				var qry;
+				qry = 'start_cnfr.pl?'+$("#modify_cnfr").serialize();
+				qry += '&phs_ids='+lst;
+				qry += '&ops_ids='+oprs;
+				$.getJSON(qry, function(data) {
+					$("#edit_cnfr").dialog("close");
+					$("#cnfrs").empty();
+					$("#cnfrs").load('/cnfrs.pl');
+				});
+
+			}
+
 			function send_part() {
 				var sel_fio;
 				var sel_phid;

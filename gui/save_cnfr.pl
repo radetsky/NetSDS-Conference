@@ -68,7 +68,7 @@ if($next_type eq "next") {
 	$schedule_duration = "$s_h_d:$s_m_d:00" if(defined $s_h_d and defined $s_m_d);
 }
 
-warn "$schedule_day $schedule_time $schedule_duration";
+#warn "$schedule_day $schedule_time $schedule_duration";
 
 my $auth_type = "";
 my $auth_string = $cgi->param('auth_string');
@@ -88,11 +88,23 @@ my $lost_control = (defined $cgi->param('lost_control'))? 1 : 0;
 my $need_record = (defined $cgi->param('need_record'))? 1 : 0;
 my $audio_lang = $cgi->param('audio_lang');
 
-my @partic = split(/[\s]+/, $cgi->param('phs_ids'));
+my @partic = ();
+my $pp = $cgi->param('phs_ids');
+if(defined $pp and length $pp) {
+	@partic = split(/[\s]+/, $pp);
+}
 
 $cnfr->save_cnfr($login, $id, $ce_name, $next_start, $next_duration, $schedule_day, $schedule_time, $schedule_duration,
 								 $auth_type, $auth_string, $auto_assemble, $lost_control, $need_record, $audio_lang,
 								 \@partic);
+
+if($admin) {
+	my @ops =  split(/[\s]+/, $cgi->param('ops_ids'));
+	$cnfr->set_cnfr_operators($login, $id, @ops);
+	my $number_b = $cgi->param('number_b');
+	$number_b = "" unless(defined $number_b and length $number_b);
+	my $res = $cnfr->set_number_b($login, $id, $number_b);
+}
 
 my $out = sprintf $error, "false";
 print $cgi->header(-type=>'application/json',-charset=>'utf-8');

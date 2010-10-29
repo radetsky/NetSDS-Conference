@@ -15,8 +15,6 @@ my $cnfr = ConferenceDB->new;
 
 my $login = $cgi->remote_user();
 
-$login = "root";
-
 my @oper = $cnfr->get_oper_list();
 
 my $cid = $cgi->param('cid');
