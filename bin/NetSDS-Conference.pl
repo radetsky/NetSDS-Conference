@@ -68,27 +68,27 @@ sub start {
 sub _add_signal_handlers {
     my $this = @_;
 
+	# FIXME: в детях проверить обработку сигналов! 
+
     $SIG{INT} = sub {
-        $this->speak("SIGINT caught");
-        $this->log( "warn", "SIGINT caught" );
+        warn "[$$] SIGINT caught";
         my $perm = kill "TERM" => @CHILDREN;
-        $this->speak("Sent TERM to $perm processes");
-        $this->{to_finalize} = 1;
+        warn "Sent TERM to $perm processes";
+		exit(1);
     };
 
     $SIG{TERM} = sub {
-        $this->speak("[$$] SIGTERM caught");
-        $this->log( "warn", "[$$] SIGTERM caught" );
+        warn "[$$] SIGTERM caught";
         my $perm = kill "TERM" => @CHILDREN;
-        $this->speak("Sent TERM to $perm processes");
-        $this->{to_finalize} = 1;
+        warn "Sent TERM to $perm processes";
+		exit(1);
     };
 }
 
 sub process {
     my ($this) = @_;
     while (1) {
-        $this->speak("[$$] Processing .");
+		#$this->speak("[$$] Processing .");
 
         # Get list of the conference
         my @conf_list = $this->mydb->cnfr_list();
@@ -120,7 +120,7 @@ sub process {
 
             if ( defined( $conf->{'cnfr_state'} ) ) {
                 if ( $conf->{'cnfr_state'} =~ /^active/i ) {
-                    unless ( defined( $ACTIVE{ $conf->{'cnfr_state'} } ) ) {
+                    unless ( exists ( $ACTIVE{ $conf->{'cnfr_id'} } ) ) {
                         $this->speak(
                             "[$$] Restoring active ConferenceMan with ID "
                               . $conf->{'cnfr_id'} );
@@ -128,6 +128,7 @@ sub process {
                             "Restoring active ConferenceMan with ID "
                               . $conf->{'cnfr_id'} );
                         $this->_conference_restore($conf);
+						next;
                     }
                 }
             }

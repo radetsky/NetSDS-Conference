@@ -968,7 +968,7 @@ sub cnfr_update {
 	}
 	
 	my $update_string = join (',',@update_array); 
-	warn $update_string;
+	#warn $update_string;
 
 	my $query = sprintf("update conferences set %s where cnfr_id=%d", 
 		$update_string, $cnfr_id);
@@ -992,4 +992,36 @@ sub _disconnect {
 
 	$dbh->disconnect; 
 }
+
+=item 
+
+Возвращает текущие свойства указанной по ИД конференции
+
+=cut
+
+sub cnfr_get {
+	my $self = shift;
+	my $conf = shift; 
+
+	unless ( defined ( $conf ) ) { 
+		return undef; 
+	} 
+
+	my $query = "SELECT cnfr_id, cnfr_name, cnfr_state, to_char(last_start, ".
+							"'YYYY-MM-DD HH24:MI'), to_char(last_end, 'YYYY-MM-DD HH24:MI'), ".
+							"to_char(next_start, 'YYYY-MM-DD HH24:MI'), next_duration, ".
+							"schedule_date, to_char(schedule_time, 'HH24:MI'), ".
+							"schedule_duration, auth_type, auth_string, auto_assemble, ".
+							"lost_control, need_record, number_b, audio_lang FROM ".
+							"conferences where cnfr_id=$conf";
+	$self->_connect();
+	my $sth = $dbh->prepare($query);
+	$sth->execute();
+
+	my $res = $sth->fetchrow_hashref(); 
+	return $res;
+}
+
+
+
 1;
