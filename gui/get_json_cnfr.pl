@@ -37,6 +37,11 @@ my ($schedule_hours_begin, $schedule_min_begin, $next_d, $next_t, $sched_d_h, $s
 my $json = "{";
 $json .= '"id": '.$cn{'id'};
 $json .= ', "name": "'. $cn{'name'} . '"';
+if($admin) {
+	$json .= ', "admin": true';
+} else {
+	$json .= ', "admin": false';
+}
 $json .= ', "schedule_day": "';
 if(length $cn{'schedule_date'}) {
 	if($cn{'schedule_date'} =~ /^[0-9\s]+$/) {
@@ -89,6 +94,19 @@ for(my $k=0; $k<=$#users; $k++) {
 	$json .= ' {"usr": "' . $users[$k]{'name'} .'",';
 	$json .= ' "phone": "' . $users[$k]{'phone'} .'",';
 	$json .= ' "phone_id": "' . $users[$k]{'phone_id'} .'"},';
+}
+
+chop $json;
+$json .= "]";
+
+my %ops = $cnfr->get_conference_operators($id);
+
+$json .= ', "opers": [ ';
+
+foreach my $j (keys %ops) {
+	$json .= ' {"oper_id": "' . $j . '",';
+	$json .= ' "fname": "' . $ops{$j}{'name'} . '",';
+	$json .= ' "login": "' . $ops{$j}{'login'} . '"},';
 }
 
 chop $json;

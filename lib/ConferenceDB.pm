@@ -132,6 +132,56 @@ sub is_admin {
 	return 0;
 }
 
+sub get_oper_list {
+	my $self = shift;
+	my @oper = ();
+
+	$self->_connect();
+	my $q = "SELECT a.admin_id, a.user_id, a.login, a.is_admin, ooc.cnfr_id, u.full_name, c.cnfr_name ".
+					"FROM admins as a left outer join operators_of_conferences as ooc on ".
+					"(a.admin_id=ooc.admin_id) left outer join users as u on (a.user_id=u.user_id) ".
+					"left outer join conferences as c on (ooc.cnfr_id=c.cnfr_id) ORDER BY a.admin_id";
+	my $sth = $dbh->prepare($q);
+	$sth->execute();
+	my %ooc = ();
+	my %row = ();
+	my $aid = 0;
+	while(my @tmp = $sth->fetchrow_array()) {
+		if(!(%row) and !(%ooc)) {
+			$aid = $tmp[0];
+			$row{'aid'} = $tmp[0];
+			$row{'uid'} = $tmp[1];
+			$row{'login'} = $tmp[2];
+			$row{'admin'} = $tmp[3];
+			$row{'name'} = $tmp[5];
+			if(!($tmp[3]) and defined $tmp[4]) {
+				$ooc{$tmp[4]} = $tmp[6];
+			}
+		} elsif($aid ne $tmp[0]) {
+			my %tooc = %ooc;
+			$row{'cnfrs'} = \%tooc;
+			my %trow = %row;
+			push @oper, \%trow;
+			%row = ();
+			%ooc = ();
+			$aid = $tmp[0];
+			$row{'aid'} = $tmp[0];
+			$row{'uid'} = $tmp[1];
+			$row{'login'} = $tmp[2];
+			$row{'admin'} = $tmp[3];
+			$row{'name'} = $tmp[5];
+			if(!($tmp[3]) and defined $tmp[4]) {
+				$ooc{$tmp[4]} = $tmp[6];
+			}
+		} elsif(!($tmp[3]) and defined $tmp[4]) {
+			$ooc{$tmp[4]} = $tmp[6];
+		}
+	}
+	$row{'cnfrs'} = \%ooc;
+	push @oper, \%row;
+	return @oper;
+}
+
 =item @users = get_user_list();
 
 Возвращает список пользователей. Данные первого пользователя в списке будут:
@@ -220,7 +270,7 @@ sub get_user_list {
 	return @users;
 }
 
-sub add_participant_to_conference{
+sub add_participant_to_conference {
 	my $self = shift;
 	my $cid = shift;
 	my $phid = shift;
@@ -284,7 +334,7 @@ sub get_user_by_id {
 					"WHERE u.user_id=?";
 	$self->_connect();
 	my @tmp = $dbh->selectrow_array($q, undef, $id);
-	return undef unless(defined $tmp[0]);
+	return () unless(defined $tmp[0]);
 	$res{'user_id'} = $tmp[0];
 	$res{'full_name'} = (defined $tmp[1])? $tmp[1] : "" ;
 	$res{'department'} = (defined $tmp[2])? $tmp[2] : "";
@@ -304,6 +354,36 @@ sub get_user_by_id {
 	}
 	$res{'phones'} = \@phs;
 	return %res;
+}
+
+=item remove_oper($login, $user_id);
+
+=cut
+
+sub remove_oper {
+	my $self = shift;
+	my $login = shift;
+	my $user_id = shift;
+
+	return undef unless(defined $user_id and $user_id =~ /^[\d]+$/);
+
+	my $q = "DELETE FROM admins WHERE user_id=?";
+	$self->_connect();
+	my $sth = $dbh->prepare($q);
+	eval {
+		$sth->execute($user_id);
+	};
+
+	if($@) {
+		$error = "Ошибка удаления оператора. Обратитесь к администратору.";
+		$dbh->rollback();
+		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		warn $warn;
+		return ();
+	}
+	$dbh->commit();
+	$self->write_to_log($login, $q, $user_id);
+	return 1;
 }
 
 =item %orgs = get_org_list();
@@ -375,10 +455,10 @@ sub get_cnfr {
 	$cnfr{'auth_type'} = (defined $tmp[8])? $tmp[8] : "";
 	$cnfr{'auth_string'} = (defined $tmp[9])? $tmp[9] : "";
 	$cnfr{'auto_assemble'} = (defined $tmp[10])? $tmp[10] : "";
-	$cnfr{'lost_control'} = (defined $tmp[10])? $tmp[10] : "";
-	$cnfr{'need_record'} = (defined $tmp[11])? $tmp[11] : "";
-	$cnfr{'number_b'} = (defined $tmp[12])? $tmp[12] : "";
-	$cnfr{'audio_lang'} = (defined $tmp[13])? $tmp[13] : "";
+	$cnfr{'lost_control'} = (defined $tmp[11])? $tmp[11] : "";
+	$cnfr{'need_record'} = (defined $tmp[12])? $tmp[12] : "";
+	$cnfr{'number_b'} = (defined $tmp[13])? $tmp[13] : "";
+	$cnfr{'audio_lang'} = (defined $tmp[14])? $tmp[14] : "";
 
 	$q = "SELECT u.full_name, a.admin_id FROM operators_of_conferences ooc, admins a, ".
 			 "users u WHERE ooc.cnfr_id=? AND ooc.admin_id=a.admin_id AND ".
@@ -452,7 +532,8 @@ sub save_cnfr {
 	$audio_lang = undef unless(length $audio_lang);
 	my $p = shift;
 
-	my @phs_id = (@{$p});
+	my @phs_id = ();
+	@phs_id = (@{$p}) if(defined $p);
 
 	my $q = "UPDATE conferences SET cnfr_name=?, next_start=to_timestamp(?, 'YYYY-MM-DD HH24:MI'), ".
 					"next_duration=?, schedule_date=?, schedule_time=?, schedule_duration=?, auth_type=?, ".
@@ -509,6 +590,37 @@ sub save_cnfr {
 	return 1;
 }
 
+sub set_number_b {
+	my $self = shift;
+	my $login = shift;
+	my $c_id = shift;
+	my $number_b = shift;
+	$number_b = undef unless(defined $number_b);
+
+	unless($self->is_admin($login)) {
+		$error = "Недостаточно прав для установки номера конференции";
+		return undef;
+	}
+
+	my $q = "UPDATE conferences SET number_b=? WHERE cnfr_id=?";
+	$self->_connect();
+	eval {
+		$dbh->do($q, undef, $number_b, $c_id);
+	};
+
+	if($@) {
+		$error = "Ошибка задания номера конференции";
+		$dbh->rollback();
+		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		warn $warn;
+		return undef;
+	}
+
+	$dbh->commit();
+	$self->write_to_log($login, $q, $number_b, $c_id);
+	return 1;
+}
+
 =item %orgs = update_orgs($id, $name, $user)
 
 Добавляет или обновляет название организации. Входные параметры:
@@ -529,7 +641,7 @@ sub update_orgs {
 
 	my $q = "";
 	my @bind = ();
-	return undef unless(defined $user);
+	return () unless(defined $user);
 
 	$self->_connect();
 
@@ -551,7 +663,7 @@ sub update_orgs {
 		$dbh->rollback();
 		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
 		warn $warn;
-		return undef;
+		return ();
 	}
 
 	$dbh->commit();
@@ -579,7 +691,7 @@ sub update_posns {
 
 	my $q = "";
 	my @bind = ();
-	return undef unless(defined $user);
+	return () unless(defined $user);
 
 	$self->_connect();
 	if($id eq "new") {
@@ -604,7 +716,7 @@ sub update_posns {
 		$dbh->rollback();
 		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
 		warn $warn;
-		return undef;
+		return ();
 	}
 
 	$dbh->commit();
@@ -647,7 +759,7 @@ sub update_user {
 	my %user = %{$h};
 	my @phones = (@{$p});
 	my %admin = %{$a};
-  return undef unless(defined $loggedin);
+  return () unless(defined $loggedin);
 	$self->_connect();
 	my $sth;
 
@@ -675,7 +787,7 @@ sub update_user {
 		$dbh->rollback();
 		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
 		warn $warn;
-		return undef;
+		return ();
 	}
 
 	$dbh->commit();
@@ -693,7 +805,7 @@ sub update_user {
 				$dbh->rollback();
 				my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
 				warn $warn;
-				return undef;
+				return ();
 			}
 			$dbh->commit;
 			$self->write_to_log($loggedin, $q, $user{'id'});
@@ -730,7 +842,7 @@ sub update_user {
 					$dbh->rollback();
 					my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
 					warn $warn;
-					return undef;
+					return ();
 				}
 				$dbh->commit();
 				$self->write_to_log($loggedin, $q, $new_id, $numb, $cnt);
@@ -740,7 +852,7 @@ sub update_user {
 			$error = "Ошибка создания пользователя. Обратитесь к администратору.";
 			my $warn = "Can't find id of newly created user " . $user{'name'};
 			warn $warn;
-			return undef;
+			return ();
 		}
 	} else {
 		$self->write_to_log($loggedin, $q, @bind);
@@ -768,7 +880,7 @@ sub update_user {
 				$dbh->rollback();
 				my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
 				warn $warn;
-				return undef;
+				return ();
 			}
 			$dbh->commit();
 			$self->write_to_log($loggedin, $q, $user{'id'}, @to_delete);
@@ -797,7 +909,7 @@ sub update_user {
 				$dbh->rollback();
 				my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
 				warn $warn;
-				return undef;
+				return ();
 			}
 			$dbh->commit();
 			$self->write_to_log($loggedin, $qr[$sel_query], $cnt, $user{'id'}, $ph);
@@ -823,9 +935,9 @@ sub update_user {
 				if($@) {
 					$error = "Такое имя для входа уже используется. Выберите другое.";
 					$dbh->rollback();
-					my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+					my $warn = $0 . " " . scalar(localtime (time)) . " " . $sth->errstr;
 					warn $warn;
-					return undef;
+					return ();
 				}
   
 				$dbh->commit();
@@ -840,7 +952,7 @@ sub update_user {
 						$upd = $tmp[0];
 					} else {
 						$error = "Такое имя для входа уже используется. Выберите другое.";
-						return undef;
+						return ();
 					}
 				}
 				if($upd) {
@@ -859,7 +971,7 @@ sub update_user {
 						@bind = ($user{'id'}, $admin{'login'}, $hashed, $admin{'admin'});
 					} else {
 						$error = "Нельзя создавать оператора без пароля. Задайте пароль.";
-						return undef;
+						return ();
 					}
 				}
 				$sth = $dbh->prepare($q);
@@ -872,7 +984,7 @@ sub update_user {
 					$dbh->rollback();
 					my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
 					warn $warn;
-					return undef;
+					return ();
 				}
 				$dbh->commit();
 				$self->write_to_log($loggedin, $q, @bind);
@@ -880,6 +992,73 @@ sub update_user {
 		}
 	}
 	return $self->get_user_list();
+}
+
+sub get_conference_operators {
+	my $self = shift;
+	my $cid = shift;
+
+	my %ops = ();
+	$self->_connect();
+
+	my $q = "SELECT a.admin_id, u.full_name, a.login FROM operators_of_conferences as ooc left ".
+					"outer join admins as a on (ooc.admin_id=a.admin_id) left outer join users as u on ".
+					"(a.user_id=u.user_id) WHERE ooc.cnfr_id=?";
+	my $sth = $dbh->prepare($q);
+	$sth->execute($cid);
+	while(my @tmp = $sth->fetchrow_array()) {
+		$ops{$tmp[0]}{'name'} = $tmp[1];
+		$ops{$tmp[0]}{'login'} = $tmp[2];
+	}
+	return %ops;
+}
+
+sub set_cnfr_operators {
+	my $self = shift;
+	my $login = shift;
+	my $c_id = shift;
+	my @adms = @_;
+
+	unless($self->is_admin($login)) {
+		$error = "У вас нету прав устанавливать операторов конференции";
+		return undef;
+	}
+	$self->_connect();
+	eval {
+		$dbh->do("DELETE FROM operators_of_conferences WHERE cnfr_id=?", undef, $c_id);
+	};
+
+	if($@) {
+		$error = "Ошибка базы данных, обратитесь к администратору.";
+		$dbh->rollback();
+		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		warn $warn;
+		return undef;
+	}
+
+	$dbh->commit();
+	$self->write_to_log($login, "DELETE FROM operators_of_conferences WHERE cnfr_id=?", $c_id);
+
+	my $q = "INSERT INTO operators_of_conferences (admin_id, cnfr_id) VALUES (?, ?)";
+	my $sth = $dbh->prepare($q);
+	while(my $i = shift @adms) {
+		eval {
+			$sth->execute($i, $c_id);
+		};
+
+		if($@) {
+			$error = "Ошибка задания оператора конференции, обратитесь к администратору.";
+			$dbh->rollback();
+			my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+			warn $warn;
+			return undef;
+		}
+
+		$dbh->commit();
+		$self->write_to_log($login, $q, $i, $c_id);
+	}
+
+	return 1;
 }
 
 =item @phones = get_user_phones($user_id)
@@ -891,7 +1070,7 @@ $user_id -- id пользователя, телефоны которого ин�
 sub get_user_phones {
 	my $self = shift;
 	my $uid = shift;
-	my %phones = {};
+	my %phones = ();
 
 	return %phones unless(defined $uid);
 
@@ -953,7 +1132,7 @@ sub write_to_log {
 
 sub get_error {
 	my $self;
-	return $self->error;
+	return $error;
 }
 
 sub cnfr_update {
@@ -1023,5 +1202,8 @@ sub cnfr_get {
 }
 
 
+sub get_htpasswd {
+	return $HTPASSWD;
+}
 
 1;

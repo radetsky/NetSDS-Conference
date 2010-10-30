@@ -29,11 +29,6 @@ my $json = "[";
 for(my $i=0; $i<=$#users; $i++) {
 	my $obj = "\n" . '{ "name": "' . $users[$i]{'name'} . '",';
 	$obj .= '"uid": "' . $users[$i]{'id'} . '",';
-	if(exists $u_to_ph{$users[$i]{'id'}}{'id'}) {
-		$obj .= ' "disable": true, ';
-	} else {
-		$obj .= ' "disable": false, ';
-	}
 	my @phs = @{$users[$i]{'phones'}};
 	my @phs_id =  @{$users[$i]{'phones_id'}};
 	my $p_lst = "";

@@ -2,6 +2,7 @@
 
 use strict;
 use CGI;
+use Date::Manip;
 
 use lib './lib';
 use ConferenceDB;
@@ -35,6 +36,14 @@ if(!grep(/^$id$/, @rights)) {
 	exit;
 }
 
+if($admin) {
+	my @ops =  split(/[\s]+/, $cgi->param('ops_ids'));
+	$cnfr->set_cnfr_operators($login, $id, @ops);
+	my $number_b = $cgi->param('number_b');
+	$number_b = "" unless(defined $number_b and length $number_b);
+	my $res = $cnfr->set_number_b($login, $id, $number_b);
+}
+
 my $ce_name = $cgi->param('ce_name');
 $ce_name = "Конференция $id" unless(defined $ce_name);
 
@@ -43,12 +52,6 @@ my ($next_start, $next_duration, $schedule_day, $schedule_time, $schedule_durati
 ("", "", "", "", "");
 
 if($next_type eq "next") {
-	my $n_d = $cgi->param('next_date');
-	my $n_h = $cgi->param('hours_begin');
-	my $n_m = $cgi->param('min_begin');
-
-	$next_start = "$n_d $n_h:$n_m" if(defined $n_d and defined $n_h and defined $n_m);
-
 	my $n_d_h = $cgi->param('dur_hours');
 	my $n_d_m = $cgi->param('dur_min');
 
@@ -66,7 +69,10 @@ if($next_type eq "next") {
 	my $s_h_d = $cgi->param("sched_dur_hours");
 	my $s_m_d = $cgi->param("sched_dur_min");
 	$schedule_duration = "$s_h_d:$s_m_d:00" if(defined $s_h_d and defined $s_m_d);
+	$next_duration = $schedule_duration;
 }
+
+$next_start = UnixDate("today", "%Y-%m-%d %H:%M");
 
 #warn "$schedule_day $schedule_time $schedule_duration";
 
@@ -97,14 +103,6 @@ if(defined $pp and length $pp) {
 $cnfr->save_cnfr($login, $id, $ce_name, $next_start, $next_duration, $schedule_day, $schedule_time, $schedule_duration,
 								 $auth_type, $auth_string, $auto_assemble, $lost_control, $need_record, $audio_lang,
 								 \@partic);
-
-if($admin) {
-	my @ops =  split(/[\s]+/, $cgi->param('ops_ids'));
-	$cnfr->set_cnfr_operators($login, $id, @ops);
-	my $number_b = $cgi->param('number_b');
-	$number_b = "" unless(defined $number_b and length $number_b);
-	my $res = $cnfr->set_number_b($login, $id, $number_b);
-}
 
 my $out = sprintf $error, "false";
 print $cgi->header(-type=>'application/json',-charset=>'utf-8');
