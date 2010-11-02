@@ -115,17 +115,30 @@ sub originate {
 	my $callerid       = $this->{'callerid'}; 
 	my $return_context = $this->{'return_context'};
         my $variables       = $this->{'variables'}; 
-	my $channel        = $this->{'channel'}; 
-
-	my $sent = $this->AMI->sendcommand ( 
-        	Action  => 'Originate',
-        	Async   => 'On',
-        	Channel => $channel,
-        	Exten   => $callerid, 
-        	Context => $return_context,
-        	CallerID => $callerid,
-        	Variable => $variables, 
-        ); 
+	my $channel        = $this->{'channel'};
+        my $sent; 
+        if ( defined ($this->{'actionid'} ) ) {
+		 $sent =  $this->AMI->sendcommand (
+	              Action  => 'Originate',
+	              Async   => 'On',
+       	              Channel => $channel,
+                      Exten   => $destination,
+                      Context => $return_context,
+                      CallerID => $callerid,
+                      Variable => $variables,
+		      ActionID => $this->{'actionid'}
+        	);
+        } else { 
+ 		 $sent = $this->AMI->sendcommand ( 
+        		Action  => 'Originate',
+        		Async   => 'On',
+       		 	Channel => $channel,
+       		 	Exten   => $destination, 
+       	 		Context => $return_context,
+        		CallerID => $callerid,
+        		Variable => $variables, 
+        	); 
+	}
         unless ( defined ($sent) ) { 
         	return undef; 
         } 

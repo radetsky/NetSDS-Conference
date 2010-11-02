@@ -1202,8 +1202,31 @@ sub cnfr_get {
 }
 
 
+=item B <is_operator(cnfr_id, callerid)> 
+
+Возвращает 1 если callerid is operator , 0 иначе. 
+
+=cut 
+
+sub is_operator { 
+	my ($self, $cnfr_id, $callerid) = @_; 
+
+	my $q = "select count(*) as c1 from phones p, admins a, operators_of_conferences ooc where phone_number=? and p.user_id=a.user_id and a.admin_id=ooc.admin_id and ooc.cnfr_id=?"; 
+	$self->_connect();
+	my $sth = $dbh->prepare($q);
+	$sth->execute($callerid,$cnfr_id);
+	my $res = $sth->fetchrow_hashref(); 
+	unless (defined ($res)) { 
+		return undef; 
+	} 
+	return $res->{'c1'}; 
+}
+
+
 sub get_htpasswd {
 	return $HTPASSWD;
 }
+
+
 
 1;

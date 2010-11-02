@@ -423,37 +423,6 @@ sub konference_unmutechannel {
 	unless ( defined($reply) ) { return undef; }
 	return 1;
 }
-#***********************************************************************
-=item B<konference_muteconference(<conference>)> - Mutes all members in conference
-
-RETURN: undef if error, 1 if ok. 
-
-=cut
-
-#-----------------------------------------------------------------------
-
-sub konference_muteconference { 
-	my ( $this, $konfnum )  = @_; 
-
-	unless ( defined ( $konfnum ) ) { return undef; } 
-	
-	my $sent = $this->AMI->sendcommand ( 
-		Action => 'Command', 
-		Command => "konference muteconference $konfnum"
- 	); 
-
-	unless ( defined ( $sent ) ) { return undef; } 
-	my $reply = $this->_receive_raw();
-	unless ( defined($reply) ) { return undef; }
-	return 1;
-}
-=item B<konference_listenvolume(<channel>,<up | down>)> - Adjust listen volume for conference member <channel>
-
-RETURN: undef if error, 1 if ok. 
-
-=cut
-
-#-----------------------------------------------------------------------
 
 sub konference_listenvolume { 
 	my ( $this, $channel, $updown )  = @_; 
@@ -497,6 +466,82 @@ sub konference_talkvolume {
 	unless ( defined($reply) ) { return undef; }
 	return 1;
 }
+
+=item B<konference_playsound(<channel>,<sound>> - Play sound to conference member <channel>
+
+RETURN: undef if error, 1 if ok. 
+
+=cut
+
+#-----------------------------------------------------------------------
+
+sub konference_playsound { 
+	my ( $this, $channel, $sound )  = @_; 
+
+	unless ( defined ( $channel ) ) { return undef; } 
+	unless ( defined ( $sound ) ) { return undef; } 
+
+	my $sent = $this->AMI->sendcommand ( 
+		Action => 'Command', 
+		Command => "konference play sound $channel $sound mute",
+ 	); 
+
+	unless ( defined ( $sent ) ) { return undef; } 
+	my $reply = $this->_receive_raw();
+	unless ( defined($reply) ) { return undef; }
+	return 1;
+}
+#***********************************************************************
+=item B<konference_muteconferemce()> - Mute all 
+
+RETURN: undef if error, 1 if ok. 
+
+=cut
+
+#-----------------------------------------------------------------------
+
+sub konference_muteconference { 
+	my ( $this, $konfnum )  = @_; 
+
+	unless ( defined ( $konfnum ) ) { return undef; } 
+	
+	my $sent = $this->AMI->sendcommand ( 
+		Action => 'Command', 
+		Command => "konference muteconference $konfnum"
+ 	); 
+
+	unless ( defined ( $sent ) ) { return undef; } 
+	my $reply = $this->_receive_raw();
+	unless ( defined($reply) ) { return undef; }              
+	
+	return 1; 
+}
+#***********************************************************************
+=item B<konference_unmuteconferemce()> - Mute all 
+
+RETURN: undef if error, 1 if ok. 
+
+=cut
+
+#-----------------------------------------------------------------------
+
+sub konference_unmuteconference { 
+	my ( $this, $konfnum )  = @_; 
+
+	unless ( defined ( $konfnum ) ) { return undef; } 
+	
+	my $sent = $this->AMI->sendcommand ( 
+		Action => 'Command', 
+		Command => "konference unmuteconference $konfnum"
+ 	); 
+
+	unless ( defined ( $sent ) ) { return undef; } 
+	my $reply = $this->_receive_raw();
+	unless ( defined($reply) ) { return undef; }              
+	
+	return 1; 
+}
+
 
 =item B<_receive_raw(...)> - Replace NetSDS::AMI->receiveanswer
 
