@@ -570,6 +570,7 @@ $cid -- id конференции
 keys %users даст список id участников конференции
 $user{$u_id}{'id'} содержит id телефона, участвующего в конференции
 $user{$u_id}{'number'} содержит номер телефона, участвующего в конференции
+$user{$u_id}{'name'} содержит имя пользователя, участвующего в конференции
 
 =cut
 
@@ -579,13 +580,15 @@ sub get_cnfr_participants {
 	my %u_to_ph = ();
 
 	$self->_connect();
-	my $q = "SELECT uoc.phone_id, ph.user_id, ph.phone_number FROM users_on_conference uoc, phones ph ".
-					"WHERE uoc.phone_id=ph.phone_id AND uoc.cnfr_id=?";
+	my $q = "SELECT uoc.phone_id, ph.user_id, ph.phone_number, u.full_name FROM ".
+					"users_on_conference uoc, phones ph, users u ".
+					"WHERE uoc.phone_id=ph.phone_id AND ph.user_id=u.user_id AND uoc.cnfr_id=?";
 	my $sth = $dbh->prepare($q);
 	$sth->execute($cid);
 	while(my @tmp = $sth->fetchrow_array()) {
 		$u_to_ph{$tmp[1]}{'id'} = $tmp[0];
 		$u_to_ph{$tmp[1]}{'number'} = $tmp[2];
+		$u_to_ph{$tmp[1]}{'name'} = $tmp[3];
 	}
 	return %u_to_ph;
 }
@@ -1312,6 +1315,10 @@ sub _disconnect {
 
 =cut
 
+sub get_htpasswd {
+	return $HTPASSWD;
+}
+
 sub cnfr_get {
 	my $self = shift;
 	my $conf = shift; 
@@ -1355,12 +1362,6 @@ sub is_operator {
 	} 
 	return $res->{'c1'}; 
 }
-
-
-sub get_htpasswd {
-	return $HTPASSWD;
-}
-
 
 
 1;
