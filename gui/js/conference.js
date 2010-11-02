@@ -189,7 +189,7 @@
 			}
 
 			function send_cnfr() {
-				var lst;
+				var lst = '';
 				$("td.hidden_id").each(function(index) {
 					if(index == 0) {
 						lst = $(this).text();
@@ -197,7 +197,7 @@
 						lst += '+'+$(this).text();
 					}
 				});
-				var oprs;
+				var oprs = '';
 				$("td.hidden_op_id").each(function(index) {
 					if(index == 0) {
 						oprs = $(this).text();
@@ -217,7 +217,7 @@
 			}
 
 			function start_now() {
-				var lst;
+				var lst = '';
 				$("td.hidden_id").each(function(index) {
 					if(index == 0) {
 						lst = $(this).text();
@@ -225,7 +225,7 @@
 						lst += '+'+$(this).text();
 					}
 				});
-				var oprs;
+				var oprs = '';
 				$("td.hidden_op_id").each(function(index) {
 					if(index == 0) {
 						oprs = $(this).text();

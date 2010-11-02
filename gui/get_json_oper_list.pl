@@ -34,9 +34,13 @@ unless($cnfr->is_admin($login)) {
 my $empty_list = 1;
 for(my $i=0; $i<=$#oper; $i++) {
 	next if($oper[$i]{'admin'});
-	unless(exists ${$oper[$i]{'cnfrs'}}{$cid}) {
-		$empty_list = 0;
-	}
+	$empty_list = 0;
+}
+
+if($empty_list) {
+	my $out = sprintf $error, "Отсутствуют операторы конференций";
+	print $out,"\n";
+	exit(0);
 }
 
 my $json = "[";

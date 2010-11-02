@@ -25,6 +25,12 @@ sub _connect {
 	}
 }
 
+=item new()
+
+Конструктор. Не делает практически ничего
+
+=cut
+
 sub new {
 	my $self = {};
 	bless $self;
@@ -131,6 +137,21 @@ sub is_admin {
 	return $tmp[0] if(defined $tmp[0]);
 	return 0;
 }
+
+=item @oper = get_oper_list()
+
+Возвращает массив операторов, определенных в базе. Каждый элемент массива
+является ссылкой на hash. Элемент array'я содержит следующие элементы
+aid -- id оператора в таблице операторов
+uid -- id оператора в таблице пользователей
+login -- логин оператора
+admin -- 1/0 является ли оператор администратором
+name -- полное имя оператора
+cnfrs -- ссылка на hash, содержащий список конференций, для которых данный
+         пользователь является оператором. Индексы hash'а -- id конференций,
+				 элементы -- названия конференций
+
+=cut
 
 sub get_oper_list {
 	my $self = shift;
@@ -270,6 +291,17 @@ sub get_user_list {
 	return @users;
 }
 
+=item add_participant_to_conference($cid, $phid, $login);
+
+Добавляет участника конференции. Принимаемые параметры:
+$cid -- id конференции
+$phid -- id добавляемого телефона
+$login -- логин добавляющего оператора (для логгинга действий)
+
+Возвращает 1 в случае успешной работы и undef в случае ошибки.
+
+=cut 
+
 sub add_participant_to_conference {
 	my $self = shift;
 	my $cid = shift;
@@ -358,6 +390,10 @@ sub get_user_by_id {
 
 =item remove_oper($login, $user_id);
 
+Снимает с пользователя права оператора. Принимаемые параметры:
+$login -- логин администратора, снимающего права оператора с пользователя
+$user_id -- id пользователя, с которого снимают права оператора
+
 =cut
 
 sub remove_oper {
@@ -366,6 +402,11 @@ sub remove_oper {
 	my $user_id = shift;
 
 	return undef unless(defined $user_id and $user_id =~ /^[\d]+$/);
+
+	unless($self->is_admin($login)) {
+		$error = "Снимать права оператора имеет право только администратор";
+		return undef;
+	}
 
 	my $q = "DELETE FROM admins WHERE user_id=?";
 	$self->_connect();
@@ -433,6 +474,38 @@ sub get_pos_list {
 	return @pos;
 }
 
+=item %cnfr = get_cnfr($cid)
+
+Получение параметров конференции по id конференции. Принимаемые параметры:
+$cid -- id конференции
+
+Возвращает hash. Элементами которого являются
+id -- id конференции
+name -- название конференции
+cnfr_state -- состояние конференции
+schedule_date -- планируемые дни конференции
+schedule_time -- планируемое время конференции
+schedule_duration -- планируемая продолжительность конференции
+next_start -- дата/время ближайшего запуска
+next_duration -- продолжительность ближайшей конференции
+auth_type -- тип аутентификации
+auth_string -- PIN код при аутентификации по PIN
+auto_assemble -- признак автоматического сбора участников
+lost_control -- признак контроля потери участников
+need_record -- признак необходимости записи конференции
+number_b -- номер конференции
+audio_lang -- аудио язык сообщений конференции
+operators -- ссылка на hash, содержащий список операторов данной конференции.
+             Индекс hash'а -- idmin_id оператора, элементы -- полное имя
+						 оператора.
+users -- ссылка на array, состоящий из ссылок на hash. Содержит всех
+         пользователей конференции. Индексами каждого hash'а являются:
+				 name -- имя пользователя
+				 phone -- телефон пользователя, участвующий в конференции
+				 phone_id -- id телефона, участвующего в конференции
+
+=cut
+
 sub get_cnfr {
 	my $self = shift;
 	my $id = shift;
@@ -489,6 +562,17 @@ sub get_cnfr {
 	return %cnfr;
 }
 
+=item %users = get_cnfr_participants($cid)
+Получение списка участников конференции. Получаемые параметры:
+$cid -- id конференции
+Возвращает hash of hash.
+
+keys %users даст список id участников конференции
+$user{$u_id}{'id'} содержит id телефона, участвующего в конференции
+$user{$u_id}{'number'} содержит номер телефона, участвующего в конференции
+
+=cut
+
 sub get_cnfr_participants {
 	my $self = shift;
 	my $cid = shift;
@@ -505,6 +589,11 @@ sub get_cnfr_participants {
 	}
 	return %u_to_ph;
 }
+
+=item save_cnfr
+Сохраняет параметры конференции.
+
+=cut
 
 sub save_cnfr {
 	my $self = shift;
@@ -589,6 +678,19 @@ sub save_cnfr {
 	$dbh->commit();
 	return 1;
 }
+
+=item $res = set_number_b($login, $c_id, $number_b)
+Устанавливает номер конференции. Принимает следующие параметры
+$login -- логин администратора (оператор не может установить номер конференции)
+$c_id -- id конференции
+$number_b -- номер конференции. Если содержит пустую строку, то стирает номер
+             конференции.
+
+Возвращаемые значения:
+1 -- в случае удачного выполнения
+undef -- в случае ошибки
+
+=cut
 
 sub set_number_b {
 	my $self = shift;
@@ -994,6 +1096,17 @@ sub update_user {
 	return $self->get_user_list();
 }
 
+=item %ops = get_conference_operators($cid)
+Возвращает список операторов конференции. 
+$cid -- id конференции
+
+Возвращает hash of hashes
+keys %ops возвращает список admin_id операторов
+$ops{'admin_id'}{'name'} -- имя оператора конференции
+$ops{'admin_id'}{'login'} -- логин оператора конференции
+
+=cut
+
 sub get_conference_operators {
 	my $self = shift;
 	my $cid = shift;
@@ -1012,6 +1125,19 @@ sub get_conference_operators {
 	}
 	return %ops;
 }
+
+=item $res = set_cnfr_operators($login, $c_id, @adms)
+
+Устанавливает операторов конференции. Получаемые параметры:
+$login -- логин администратора, устанавливающего операторов для конференции
+$c_id -- id конференции
+@adms -- список admin_id операторов конференции
+
+Возвращаемые значения:
+1 -  в случае успеха
+undef в случае ошибки
+
+=cut
 
 sub set_cnfr_operators {
 	my $self = shift;
@@ -1130,6 +1256,13 @@ sub write_to_log {
 	return 1;
 }
 
+=item $err = get_error()
+
+Возвращает последнее сообщение об ошибке, если она произошла при выполнении
+какой-либо функции.
+
+=cut
+
 sub get_error {
 	my $self;
 	return $error;
@@ -1147,7 +1280,7 @@ sub cnfr_update {
 	}
 	
 	my $update_string = join (',',@update_array); 
-	#warn $update_string;
+	warn $update_string;
 
 	my $query = sprintf("update conferences set %s where cnfr_id=%d", 
 		$update_string, $cnfr_id);
@@ -1172,9 +1305,10 @@ sub _disconnect {
 	$dbh->disconnect; 
 }
 
-=item 
+=item $htpasswd = get_htpasswd()
 
-Возвращает текущие свойства указанной по ИД конференции
+Возвращает паеременную $HTPASSWD, которая устанавливается в начале и должна
+содержать полный путь к апачевской утилите htpasswd
 
 =cut
 
