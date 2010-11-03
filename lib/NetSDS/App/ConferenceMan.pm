@@ -274,6 +274,16 @@ sub process {
 		   }
 		}
 
+		if ($event->{'Event'} =~ /ConferenceJoin/i ) { 
+		  warn Dumper ($event); 
+		  if ($event->{'Type'} =~ /konference/i ) {
+                    if ( $event->{'ConferenceName'} eq $conf_id ) { 
+		    	my $callerid = $event->{'CallerID'}; 
+		    	$this->speak("[$$] $callerid has joined the conference #".$event->{'ConferenceName'}); 
+		    }
+		  } 
+                }
+
 # Мы к кому-то дозвонились. Если была поставлена задача дозвониться, 
 # То мы таки дозваниваемся. Попыток пока по-умолчанию 5. 
 # FIXME: вынести количество попыток в конфиг 
@@ -282,11 +292,25 @@ sub process {
 			if ( $event->{'Response'} =~ /Failure/i ) { 
 				my $destination = $event->{'ActionID'}; 
 				my $restore_konf = $this->manager_queries->{$destination}->{'cnfr_id'};
+				unless ( defined ( $restore_konf ) ) { 
+					# Не текущий процесс. Оставим другим. 
+					next; 
+				} 
+				
 				$this->speak("[$$] Retrying to restore link with $destination");  
 				$this->_restore_control($destination,$restore_konf); 
 			}
 			if ( $event->{'Response'} =~ /Success/i  ) {
-				my $destination = $event->{'ActionID'};  
+				my $destination = $event->{'ActionID'}; 
+				unless ( defined ( $destination ) ) { 
+					# Это может быть запись. Если нет ActionID, ну и фигсним.
+					next; 
+				}
+				my $restore_konf = $this->manager_queries->{$destination}->{'cnfr_id'};
+                                unless ( defined ( $restore_konf ) ) {
+                                        # Не текущий процесс. Оставим другим. 
+                                        next;
+                                }
 				delete $this->manager_queries->{$destination}; 
 				$this->speak("[$$] Link restored with $destination"); 
 			}
@@ -437,6 +461,8 @@ sub _DTMF {
     my ($this, $channel, $key, $mute, $callerid,$conf_id ) = @_; 
 
     my $menu = 'conf-usermenu-162'; 
+    my $gimme = 'conf-give-me-a-chance'; 
+
     my $konf = NetSDS::Konference->new();
     $konf->konference_connect( 'localhost', '5038', 'asterikastwww',
         'asterikastwww' );
@@ -511,8 +537,24 @@ sub _DTMF {
         }
     }
 
-    if ($key eq '2') { 
-
+# Функция "Прошу слова". 
+    if ($key eq '2') {
+	my $members = $konf->konference_list_konf($conf_id);
+        unless ( defined ( $members ) ) { 
+		return undef;
+	} 
+	unless ( $members ) {
+		return undef;
+	}
+	foreach my $member ( keys %$members ) {
+	    my $channel = $members->{$member}->{'channel'}; 
+            my $res = $konf->konference_playsound ($channel,$gimme);
+            unless ( defined ( $res ) ) { 
+		$this->speak("[$$] Playing $gimme to $channel FAILED"); 
+	    } else { 
+		$this->speak("[$$] Playing $gimme to $channel SUCCESS"); 
+	    }
+        }
     }
     if ($key eq '3') { 
 	my $is_operator = $this->mydb->is_operator($conf_id,$callerid); 

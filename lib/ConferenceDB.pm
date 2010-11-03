@@ -1280,7 +1280,6 @@ sub cnfr_update {
 	}
 	
 	my $update_string = join (',',@update_array); 
-	warn $update_string;
 
 	my $query = sprintf("update conferences set %s where cnfr_id=%d", 
 		$update_string, $cnfr_id);

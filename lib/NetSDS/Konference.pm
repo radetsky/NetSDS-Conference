@@ -202,7 +202,7 @@ sub konference_list_konf {
 		foreach my $row ( @$lines ) {
 			# warn Dumper ($row);
 			# Что-то получили. Парсим. Должно быть что-то наподобие:
-			#User Flags Audio Volume  Duration  Spy  Channel 
+			# User Flags Audio Volume  Duration  Spy  Channel 
 			# 1 Ra Unmuted 0:0  01:48:38  * IP/4001-0000001f
 			my ( $KUser,  $KFlags, $KAudio, $KVolume, $KDuration, $KSpy, $KChannel ) = split( ' ', $row );
 			if ($KUser =~ /User/i ) { 
