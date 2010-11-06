@@ -1385,5 +1385,46 @@ sub get_cnfr_operator_by_callerid {
 
 }
 
+=item B<conflog(cnfr_id,event_type,userfield) 
 
+Добавляет в таблицу conflog событие описываемое тремя параметрами,
+1. ИД конференции
+2. Тип события: started, stopped, joined, leaved, record. 
+3. Userfield: 	может быть пустым только при started, stopped, 
+joined, leaved должен иметь callerid
+record - имя файла 
+
+=cut 
+
+sub conflog { 
+	my ($self, $cnfr_id, $event_type, $userfield) = @_;
+
+       	unless ( defined ( $cnfr_id ) ) { 
+		return undef; 
+	} 
+	unless ( defined ( $event_type ) ) { 
+		return undef; 
+	} 
+	unless ( defined ( $userfield ) ) { 
+		if ( ( $event_type eq 'joined') or ( $event_type eq 'leaved' ) or ($event_type eq 'record') ) { 
+			return undef; 
+		}
+	}
+	if ( ( $event_type ne 'started' ) and 
+		( $event_type ne 'stopped' ) and 
+		( $event_type ne 'joined' ) and 
+		( $event_type ne 'leaved' ) and 
+		( $event_type ne 'record' ) ) { 
+		return undef; 
+	}
+
+        my $q = "insert into conflog ( cnfr_id, event_type, userfield ) values ( ? , ? , ? );"; 
+	$self->_connect(); 
+	my $sth =  $dbh->prepare($q); 
+	$sth->execute($cnfr_id,$event_type,$userfield);
+	$dbh->commit();  
+
+ 	return 1; 
+}
+	
 1;

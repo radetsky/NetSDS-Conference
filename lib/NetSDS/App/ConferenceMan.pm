@@ -112,6 +112,9 @@ sub start {
             "[$$] Database updated sucessfully while starting the conference.");
     }
 
+    # log record 
+    $this->mydb->conflog($konf->{'cnfr_id'},'started',undef); 
+
     # If we have to make self-connection to users, just to it.
 
     if (    defined( $konf->{'auto_assemble'} )
@@ -272,12 +275,14 @@ sub process {
 		    if ($event->{'ConferenceName'} == $conf_id ) { 
 # Кто-то пожелал покинуть конференцию.  
 # Если установлен атрибут контроля потери, то дозвониться Х раз. 
+			my $destination = $event->{'CallerID'};
+			$this->speak("[$$] $destination leaved the conference #".$conf_id);
+                        $this->mydb->conflog($this->{'konf'}->{'cnfr_id'}, 'leaved',$destination);
+ 
 			if ( defined( $this->{'konf'}->{'lost_control'} )
 			        and ( $this->{'konf'}->{'lost_control'} )
 			        and ( $this->{'konf'}->{'lost_control'} == 1 ) ) {   	
-				my $destination = $event->{'CallerID'}; 
-
-				$this->speak("[$$] $destination leaves the conference #".$conf_id); 
+				
 			        $this->_restore_control($destination,$conf_id);
 
 			}
@@ -290,6 +295,7 @@ sub process {
                     if ( $event->{'ConferenceName'} eq $conf_id ) { 
 		    	my $callerid = $event->{'CallerID'}; 
 		    	$this->speak("[$$] $callerid has joined the conference #".$event->{'ConferenceName'});
+			$this->mydb->conflog($this->{'konf'}->{'cnfr_id'}, 'joined', $callerid); 
 			if (defined ($this->{'BLOCK'} ) ) { 
 			    if ($this->{'BLOCK'} == 1 ) {
 				my $is_operator = $this->mydb->is_operator($conf_id,$callerid);
@@ -478,6 +484,7 @@ sub stop {
             }
         }
     }
+    $this->mydb->conflog( $this->{'konf'}->{'cnfr_id'}, 'stopped'); 
 
 }
 

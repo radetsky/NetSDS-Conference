@@ -214,6 +214,7 @@ context NetSDS-Conference-Record {
   _X! => {  
 	FILENAME="${STRFTIME(${EPOCH},,%Y%m%d-%H%M)}-${EXTEN}";
         MixMonitor(${FILENAME}.wav,a);
+	AGI(netsds_conflog,${EXTEN},record,${FILENAME}); 
 	Answer(); 
 	
 W1:

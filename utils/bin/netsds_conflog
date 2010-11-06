@@ -1,0 +1,28 @@
+#!/usr/bin/perl 
+
+use warnings; 
+use strict; 
+
+use lib '/home/rad/NetSDS-Conference/lib'; 
+
+use ConferenceDB; 
+use Asterisk::AGI;
+
+my $konf_id     = $ARGV[0]; 
+my $event_type  = $ARGV[1];
+my $userfield  = $ARGV[2];
+
+unless ( defined ( $konf_id ) ) { 
+	exit 255; 
+}
+unless ( defined ( $event_type ) ) { 
+	exit 255; 
+} 
+
+
+my $AGI = new Asterisk::AGI; 
+
+my $cdb = ConferenceDB->new(); 
+$cdb->conflog($konf_id,$event_type,$userfield); 
+exit(0);
+
