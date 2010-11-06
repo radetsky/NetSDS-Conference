@@ -155,13 +155,20 @@ sub _getPhones {
 sub _start_assemble {
     my ( $this, $konf_id, @phones ) = @_;
 
+    
+    my $callerid = $this->conf->{'general_callerid'}; 
+    if ( defined ( $this->{'konf'}->{'number_b'} ) ) { 
+	 $callerid =  $this->{'konf'}->{'number_b'};
+    }
+
     # we have a list to originate. Start it. and Return to KONF_ID in asterisk.
     foreach my $dst (@phones) {
         my $orig = NetSDS::Asterisk::Originator->new(
+	    actionid       => $dst, 
             destination    => $dst,
-            callerid       => '0445930143',
+            callerid       => $callerid,
             return_context => 'NetSDS-Conference-Outgoing',
-            variables      => 'KONFNUM=' . $konf_id,
+            variables      => 'KONFNUM=' . $konf_id. '|DIAL='.$dst,,
             channel        => sprintf( "SIP/%s@%s", $dst, "softswitch" ),
         );
         my $reply =
@@ -176,11 +183,16 @@ sub _start_assemble {
 sub _start_record {
     my ( $this, $konf_id ) = @_;
 
+    my $callerid = $this->conf->{'general_callerid'};
+    if ( defined ( $this->{'konf'}->{'number_b'} ) ) {
+         $callerid =  $this->{'konf'}->{'number_b'}; 
+    }
+
     # Originate call with two local channels.
     my $orig = NetSDS::Asterisk::Originator->new(
         destination    => $konf_id,
-        callerid       => '0445930143',
-        return_context => 'NetSDS-Conference-Outgoing',
+        callerid       => $callerid,
+        return_context => 'NetSDS-Conference-Outgoing-Record',
         variables      => 'KONFNUM=' . $konf_id,
         channel        => "Local/" . $konf_id . "\@NetSDS-Conference-Record"
     );
@@ -262,8 +274,7 @@ sub process {
 # Если установлен атрибут контроля потери, то дозвониться Х раз. 
 			if ( defined( $this->{'konf'}->{'lost_control'} )
 			        and ( $this->{'konf'}->{'lost_control'} )
-			        and ( $this->{'konf'}->{'lost_control'} == 1 ) ) {   
-				
+			        and ( $this->{'konf'}->{'lost_control'} == 1 ) ) {   	
 				my $destination = $event->{'CallerID'}; 
 
 				$this->speak("[$$] $destination leaves the conference #".$conf_id); 
@@ -275,18 +286,28 @@ sub process {
 		}
 
 		if ($event->{'Event'} =~ /ConferenceJoin/i ) { 
-		  warn Dumper ($event); 
 		  if ($event->{'Type'} =~ /konference/i ) {
                     if ( $event->{'ConferenceName'} eq $conf_id ) { 
 		    	my $callerid = $event->{'CallerID'}; 
-		    	$this->speak("[$$] $callerid has joined the conference #".$event->{'ConferenceName'}); 
+		    	$this->speak("[$$] $callerid has joined the conference #".$event->{'ConferenceName'});
+			if (defined ($this->{'BLOCK'} ) ) { 
+			    if ($this->{'BLOCK'} == 1 ) {
+				my $is_operator = $this->mydb->is_operator($conf_id,$callerid);
+				unless ( defined ( $is_operator ) ) {  
+				    $this->_kick_blocked($event->{'Channel'},$conf_id); 
+				}
+				unless ( $is_operator ) { 
+			            $this->_kick_blocked($event->{'Channel'},$conf_id); 
+			        }
+                           }
+			}
+
 		    }
 		  } 
                 }
 
 # Мы к кому-то дозвонились. Если была поставлена задача дозвониться, 
 # То мы таки дозваниваемся. Попыток пока по-умолчанию 5. 
-# FIXME: вынести количество попыток в конфиг 
 
 		if ( $event->{'Event'} =~ /OriginateResponse/i ) {
 			if ( $event->{'Response'} =~ /Failure/i ) { 
@@ -372,9 +393,12 @@ check_stop:
             my $date_started = $this->{'konf'}->{'date_started'};
             my $delta        = $date_now - $date_started;
 
-            if ( $delta > 300 ) {
+	    my $max_delta = 300; 
+            if ( defined ( $this->conf->{'max_delta_empty_conference'} ) ) { 
+		$max_delta = $this->conf->{'max_delta_empty_conference'}; 
+	    }
 
-                # FIXME must be in config
+            if ( $delta > $max_delta ) {
                 # Exit from main_loop means that we will stop
                 $this->speak(
                     "[$$] Stop the conference because conference is empty.");
@@ -457,11 +481,28 @@ sub stop {
 
 }
 
+sub _kick_blocked { 
+
+	my ($this, $channel, $conf_id) = @_; 
+
+#FIXME: connect parameters to config 
+
+	my $konf = NetSDS::Konference->new();
+	$konf->konference_connect( 'localhost', '5038', 'asterikastwww','asterikastwww' );
+	$konf->konference_playsound($channel, "conf-blocked");
+	$konf->konference_kickchannel($channel);
+	$this->speak("[$$] $channel kicked off from $conf_id. It's blocked."); 
+	
+	return 1; 
+
+}
 sub _DTMF { 
     my ($this, $channel, $key, $mute, $callerid,$conf_id ) = @_; 
 
     my $menu = 'conf-usermenu-162'; 
     my $gimme = 'conf-give-me-a-chance'; 
+
+#FIXME connect parameters to config 
 
     my $konf = NetSDS::Konference->new();
     $konf->konference_connect( 'localhost', '5038', 'asterikastwww',
@@ -593,7 +634,19 @@ sub _DTMF {
 
     }
     if ($key eq '5') { 
+	# Block to accept from new 
+	my $is_operator = $this->mydb->is_operator($conf_id,$callerid); 
+	unless ( defined ( $is_operator ) ) { 
+		$this->speak("[$$] DB ERROR: $callerid is not operator for $conf_id"); 
+		return undef; 
+	} 
+	unless ( $is_operator ) {  
+		$this->speak("{$$] $callerid is not operator for $conf_id"); 
+		return 0;
+	}
 
+	$this->{'BLOCK'} = 1; 
+	$this->speak("[$$] $conf_id blocked to accept new connections."); 
     }
     if ($key eq '6') {
 
@@ -617,6 +670,19 @@ sub _DTMF {
 
     }
     if ($key eq '8') { 
+	# Unblock 
+	my $is_operator = $this->mydb->is_operator($conf_id,$callerid); 
+	unless ( defined ( $is_operator ) ) { 
+		$this->speak("[$$] DB ERROR: $callerid is not operator for $conf_id"); 
+		return undef; 
+	} 
+	unless ( $is_operator ) {  
+		$this->speak("{$$] $callerid is not operator for $conf_id"); 
+		return 0;
+	}
+
+	$this->{'BLOCK'} = 0;
+	$this->speak("[$$] $conf_id unblocked to accept new connections."); 
 
     }
     if ($key eq '9') {
@@ -651,19 +717,26 @@ sub _restore_control {
         $this->manager_queries->{$dst}->{'cnfr_id'} = $konf_id;  
     }  
 
-# Если прошло пять попыток, то нуегонафиг! 
-# FIXME: копытки в конфиг 
+    my $max_tries = 5; 
+    if ( defined ($this->conf->{'max_tries_restore_link'} ) ) { 
+         $max_tries = $this->conf->{'max_tries_restore_link'}; 
+    }
 
-    if ($try > 5) { 
+    if ($try > $max_tries ) { 
 	return undef; 
+    }
+
+    my $callerid = $this->conf->{'general_callerid'};
+    if ( defined ( $this->{'konf'}->{'number_b'} ) ) {
+         $callerid =  $this->{'konf'}->{'number_b'}; 
     }
 
     my $orig = NetSDS::Asterisk::Originator->new(
 	    actionid       => $dst, 
             destination    => $dst,
-            callerid       => '0445930143',
+            callerid       => $callerid,
             return_context => 'NetSDS-Conference-Outgoing',
-            variables      => 'KONFNUM=' . $konf_id,
+            variables      => 'KONFNUM=' . $konf_id . '|DIAL='.$dst,
             channel        => sprintf( "SIP/%s@%s", $dst, "softswitch" ),
     );
     my $reply =

@@ -1,0 +1,37 @@
+#!/usr/bin/perl 
+
+use warnings; 
+use strict; 
+
+use lib '/home/rad/NetSDS-Conference/lib'; 
+
+use ConferenceDB; 
+use Asterisk::AGI;
+use Data::Dumper; 
+
+my $callerid = $ARGV[0]; 
+my $konf_id  = $ARGV[1]; 
+
+unless ( defined ( $callerid ) ) {
+	exit 255; 
+}
+unless ( defined ( $konf_id ) ) { 
+	exit 255; 
+}
+
+my $AGI = new Asterisk::AGI; 
+
+my $cdb = ConferenceDB->new(); 
+my $is_operator = $cdb->is_operator($konf_id,$callerid); 
+$AGI->verbose( Dumper ($is_operator), 3); 
+unless ( defined ($is_operator ) ) { 
+	$AGI->set_variable('IS_OPERATOR','-1'); 
+	exit 0;
+}
+unless ( $is_operator ) { 
+	$AGI->set_variable('IS_OPERATOR','0');
+	exit 0; 
+}
+$AGI->set_variable('IS_OPERATOR','1');
+
+

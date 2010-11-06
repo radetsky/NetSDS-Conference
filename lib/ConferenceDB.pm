@@ -1363,4 +1363,27 @@ sub is_operator {
 }
 
 
+=item B<get_cnfr_operator_by_callerid($callerid,$cnfr_id)
+
+Возвращает имя логина-оператора конференции, по указанным параметрам
+
+=cut 
+
+
+sub get_cnfr_operator_by_callerid { 
+	my ($self, $cnfr_id, $callerid )  = @_; 
+
+	my $q = "select a.login as login from phones p, admins a, operators_of_conferences ooc where phone_number=? and p.user_id=a.user_id and a.admin_id=ooc.admin_id and ooc.cnfr_id=?"; 
+	$self->_connect();
+	my $sth = $dbh->prepare($q);
+	$sth->execute($callerid,$cnfr_id);
+	my $res = $sth->fetchrow_hashref(); 
+	unless (defined ($res)) { 
+		return undef; 
+	} 
+	return $res->{'login'}; 
+
+}
+
+
 1;

@@ -1,0 +1,37 @@
+#!/usr/bin/perl 
+
+use warnings; 
+use strict; 
+
+use lib '/home/rad/NetSDS-Conference/lib'; 
+
+use ConferenceDB; 
+use Asterisk::AGI;
+use Data::Dumper; 
+
+my $callerid = $ARGV[0]; 
+my $konf_id  = $ARGV[1]; 
+
+unless ( defined ( $callerid ) ) {
+	exit 255; 
+}
+unless ( defined ( $konf_id ) ) { 
+	exit 255; 
+}
+my $AGI = new Asterisk::AGI; 
+my $cdb = ConferenceDB->new();
+my %cnfr = $cdb->get_cnfr($konf_id);
+if ( $cnfr{'cnfr_state'} ne 'active') { 
+	my $login = $cdb->get_cnfr_operator_by_callerid($konf_id,$callerid);
+ 	$cdb->cnfr_update($konf_id,
+		{ cnfr_state => '\'state\'',
+		  next_start => 'now()'	}
+	); 
+}
+
+#cdb->save_cnfr($login, $id, $ce_name, $next_start, $next_duration, $schedule_day, $schedule_time, $schedule_duration,
+#                                   $auth_type, $auth_string, $auto_assemble, $lost_control, $need_record, $audio_lang,
+#                                  \@partic);
+
+ 
+

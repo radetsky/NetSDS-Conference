@@ -57,6 +57,8 @@ my %ACTIVE;
 sub start {
     my ($this) = @_;
 
+#    warn Dumper ($this->conf); 
+
     $this->_add_signal_handlers();
 
     $this->speak("[$$] NetStyle NetSDS-Conference Service start.");
@@ -237,7 +239,7 @@ sub _conference_start {
             infinite    => undef,
             verbose     => 1,
             has_conf    => 1,
-            config_file => '/etc/netstyle/conference.conf',
+            conf_file   => '/etc/netstyle/conference.conf',
             debug       => 1,
 
         );
