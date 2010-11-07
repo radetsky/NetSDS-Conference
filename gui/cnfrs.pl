@@ -6,7 +6,8 @@ use CGI;
 use lib './lib';
 use ConferenceDB;
 
-my %c_states = ("inactive"=>"Выкл");
+my %c_states = ("inactive"=>"Выкл", "active"=>"Вкл");
+my %funct = ("inactive"=>"edit_cnfr", "active"=>"show_active");
 
 my %s_days = ("mo"=>"Пн", "tu"=>"Вт", "we"=>"Ср", "th"=>"Чт", "fr"=>"Пт", "sa"=>"Сб", "su"=>"Вс");
 
@@ -51,7 +52,7 @@ my @cnfrs = $cnfr->cnfr_list();
 my @rights = $cnfr->get_cnfr_rights($login);
 
 my $row =<<EOR;
-<tr onclick="edit_cnfr(%s); return false;">
+<tr onclick="%s(%s); return false;">
 <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td>
 <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td>
 <td>%s</td>
@@ -65,6 +66,7 @@ my $minus = '<span class="ui-icon ui-icon-minus center-icon"></span>';
 
 while(my $i = shift @rights) {
 	my @args = ();
+	push @args, $funct{$cnfrs[$i]{'cnfr_state'}};
 	push @args, $i;
 	push @args, $i;
 	push @args, $cnfrs[$i]{'cnfr_name'};

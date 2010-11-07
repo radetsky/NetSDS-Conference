@@ -581,8 +581,8 @@ sub get_cnfr_participants {
 
 	$self->_connect();
 	my $q = "SELECT uoc.phone_id, ph.user_id, ph.phone_number, u.full_name FROM ".
-					"users_on_conference uoc, phones ph, users u ".
-					"WHERE uoc.phone_id=ph.phone_id AND ph.user_id=u.user_id AND uoc.cnfr_id=?";
+					"users_on_conference uoc, phones ph, users u WHERE uoc.phone_id=ph.phone_id ".
+					"AND ph.user_id=u.user_id AND uoc.cnfr_id=? ORDER BY participant_order";
 	my $sth = $dbh->prepare($q);
 	$sth->execute($cid);
 	while(my @tmp = $sth->fetchrow_array()) {
