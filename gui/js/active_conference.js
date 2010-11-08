@@ -1,10 +1,39 @@
+var logins = new Object;
+var logoffs = new Object;
+var channels = new Object;
+var pongs = new Object;
+var loggedon = -1;
+
+var watcher = new Object;
+
+watcher.logins = function(msgs) {
+	$('statusbar').innerHTML = msgs[0].headers['message'];
+	astmanEngine.pollEvents(); 
+}
+
+function doLogin(username,secret) {
+	$('statusbar').innerHTML = "<i>Logging in...</i>";
+	astmanEngine.sendRequest('action=login&username=' + username + "&secret=" + secret, watcher.logins);
+}
+
+watcher.eventCB  = function(msgs) {
+	alert('watcher work');
+}
+
 function show_active(confid) {
 	$.getJSON('get_json_active.pl', {"cid": confid}, function(data) {
+		if(data.status == 'error') {
+			$("#error_text").empty();
+			$("#error_text").append(data.message);
+			$("#error").dialog('open');
+			return;
+		}
 		$("#show_active table").empty();
+		online_conf = data;
 		for(x=0; x<data.length; x++) {
 			y = '<tr><td rowspan="2">'+data[x].user_name+'</td>';
 			y += '<td rowspan="2"><input type="radio" name="pr_user" value="'+data[x].user_id+'"/></td>';
-			y += '<td rowspan="2">Состояние</td>';
+			y += '<td rowspan="2">'+data[x].state+'</td>';
 			ph = 'ph'+x;
 			dn = 'dn'+x;
 			y += '<td class="vol-slider"><div id="'+ph+'"></div></td>';
@@ -17,6 +46,10 @@ function show_active(confid) {
 			$("#"+dn).slider({value: 20, min: 0, max: 40, step: 10});
 		}
 		$("#show_active").dialog('open');
+
+		astmanEngine.setURL('http://conference.netstyle.com.ua:8081/konference/rawman');
+		astmanEngine.setEventCallback(watcher.eventCB);
+		doLogin('konference','MoNit040fConf');
 	});
 }
 
