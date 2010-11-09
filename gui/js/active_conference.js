@@ -6,21 +6,67 @@ var loggedon = -1;
 
 var watcher = new Object;
 
+var conference_id = -1;
+var online_conf = new Object;
+
 watcher.logins = function(msgs) {
-	$('statusbar').innerHTML = msgs[0].headers['message'];
+	eventname = msgs[0].headers['response'];
+//	alert(eventname); 
 	astmanEngine.pollEvents(); 
 }
 
 function doLogin(username,secret) {
-	$('statusbar').innerHTML = "<i>Logging in...</i>";
 	astmanEngine.sendRequest('action=login&username=' + username + "&secret=" + secret, watcher.logins);
 }
 
-watcher.eventCB  = function(msgs) {
-	alert('watcher work');
+watcher.eventCB = function(msgs) {
+	
+	for (x=0;x<msgs.length;x++) {
+		eventname = msgs[x].headers['event'];
+		if(eventname == 'ConferenceState') {
+//			alert(msgs[x].headers['state']);
+//			alert('online_conf.length='+online_conf.length);
+//			alert('caller_id='+msgs[x].headers['channel']);
+			for(y=0; y<online_conf.length; y++) {
+				if(online_conf[y].channel == msgs[x].headers['channel']) {
+//				alert(msgs[x].headers['state']);
+					$('#st'+y).empty();
+					if( msgs[x].headers['state'] == 'speaking') {
+						$('#st'+y).append('Говорит');
+					} else {
+						$('#st'+y).append('Молчит');
+					}
+				}
+			}
+		}
+//	    for(y=0;y<msgs[x].names.length;y++) {
+//		alert('names='+msgs[x].names[y]);
+//	    }
+		if(msgs[x].headers['conferencename'] == conference_id) {
+			for(y=0; y<online_conf.length; y++) {
+				if(online_conf[y].phone == msgs[x].headers['callerid']) {
+					$('#st'+y).empty();
+					if (eventname == 'ConferenceJoin') {
+						$('#st'+y).append('Молчит');
+						online_conf[y].channel = msgs[x].headers['channel'];
+					}
+					if (eventname == 'ConferenceLeave') {
+						$('#st'+y).append('Отключен');
+					}
+				}
+			}
+		}
+//		if(conference_id == msgs[x].headers['conferencename']) {
+//			eventname = msgs[x].headers['event'];
+//			alert(eventname);
+//		}
+	}
+
+	astmanEngine.pollEvents();
 }
 
 function show_active(confid) {
+	conference_id = confid;
 	$.getJSON('get_json_active.pl', {"cid": confid}, function(data) {
 		if(data.status == 'error') {
 			$("#error_text").empty();
@@ -33,7 +79,12 @@ function show_active(confid) {
 		for(x=0; x<data.length; x++) {
 			y = '<tr><td rowspan="2">'+data[x].user_name+'</td>';
 			y += '<td rowspan="2"><input type="radio" name="pr_user" value="'+data[x].user_id+'"/></td>';
-			y += '<td rowspan="2">'+data[x].state+'</td>';
+			st = 'st'+x;
+			if(data[x].state == 'offline') {
+				y += '<td rowspan="2" id="'+st+'">Отключен</td>';
+			} else {
+				y += '<td rowspan="2" id="'+st+'">Молчит</td>';
+			}
 			ph = 'ph'+x;
 			dn = 'dn'+x;
 			y += '<td class="vol-slider"><div id="'+ph+'"></div></td>';
@@ -46,8 +97,8 @@ function show_active(confid) {
 			$("#"+dn).slider({value: 20, min: 0, max: 40, step: 10});
 		}
 		$("#show_active").dialog('open');
-
-		astmanEngine.setURL('http://conference.netstyle.com.ua:8081/konference/rawman');
+		var myurl = "/konference/rawman";
+		astmanEngine.setURL(myurl);
 		astmanEngine.setEventCallback(watcher.eventCB);
 		doLogin('konference','MoNit040fConf');
 	});

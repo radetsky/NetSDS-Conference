@@ -43,34 +43,28 @@ unless(defined $res) {
 	exit;
 }
 
-unless($res ne 0 and exists $$res{$cid}) {
-	my $out = sprintf $error, "Выбранная конференция не является активной.";
-	print $cgi->header(-type=>'application/json',-charset=>'utf-8');
-	print $out,"\n";
-	exit;
-}
-
-my $u_list = $konf->konference_list_konf($cid);
-
 my %users = $cnfr->get_cnfr_participants($cid);
 
-foreach my $j (keys(%{$u_list})) {
-	my $found = 0;
-	foreach my $k (keys %users) {
-		if($users{$k}{'number'} eq $$u_list{$j}{'callerid'}) {
-			$found = 1;
-			$users{$k}{'audio'} = $$u_list{$j}{'audio'};
-			$users{$k}{'member_id'} = $j;
-			$users{$k}{'spy'} = $$u_list{$j}{'spy'};
-			$users{$k}{'flags'} = $$u_list{$j}{'flags'};
-			$users{$k}{'volume'} = $$u_list{$j}{'volume'};
-			$users{$k}{'channel'} = $$u_list{$j}{'channel'};
+if($res ne 0 and exists $$res{$cid}) {
+	my $u_list = $konf->konference_list_konf($cid);
+
+	foreach my $j (keys(%{$u_list})) {
+		my $found = 0;
+		foreach my $k (keys %users) {
+			if($users{$k}{'number'} eq $$u_list{$j}{'callerid'}) {
+				$found = 1;
+				$users{$k}{'audio'} = $$u_list{$j}{'audio'};
+				$users{$k}{'member_id'} = $j;
+				$users{$k}{'spy'} = $$u_list{$j}{'spy'};
+				$users{$k}{'flags'} = $$u_list{$j}{'flags'};
+				$users{$k}{'volume'} = $$u_list{$j}{'volume'};
+				$users{$k}{'channel'} = $$u_list{$j}{'channel'};
+			}
+		}
+		unless($found) {
 		}
 	}
-	unless($found) {
-	}
 }
-
 
 my $json = '[';
 
@@ -83,6 +77,7 @@ foreach my $k (keys %users) {
 		$json .= '"state": "online",';
 		$json .= '"audio": "' . $users{$k}{'audio'} . '",';
 		$json .= '"member_id": "' . $users{$k}{'member_id'} . '",';
+		$json .= '"channel": "' . $users{$k}{'channel'} . '",';
 	} else {
 		$json .= '"state": "offline",';
 	}
