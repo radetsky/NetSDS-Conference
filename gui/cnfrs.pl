@@ -21,7 +21,6 @@ my $thead=<<EOH;
 <th rowspan="2">Состояние</th>
 <th colspan="2">Последнее совещание</th>
 <th colspan="2">Следующее совещание</th>
-<th colspan="3">Планирование совещаний</th>
 <th rowspan="2">Тип опознания</th>
 <th rowspan="2">Пароль</th>
 <th rowspan="2">Автосбор</th>
@@ -33,10 +32,7 @@ my $thead=<<EOH;
 <th>Начало</th>
 <th>Окончание</th>
 <th>Начало</th>
-<th>Продолжительность</th>
-<th>Дни</th>
-<th>Время</th>
-<th>Продолжительность</th>
+<th>Длительность</th>
 <tr>
 </tr>
 </thead>
@@ -53,9 +49,8 @@ my @rights = $cnfr->get_cnfr_rights($login);
 
 my $row =<<EOR;
 <tr onclick="%s(%s); return false;">
-<td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td>
-<td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td>
-<td>%s</td>
+<td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td>
+<td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td>
 </tr>
 EOR
 
@@ -79,21 +74,21 @@ while(my $i = shift @rights) {
 	} else {
 		push @args, $cnfrs[$i]{'next_duration'};
 	}
-	if(length $cnfrs[$i]{'schedule_date'}) {
-		if($cnfrs[$i]{'schedule_date'} =~ /^[0-9\s]+$/) {
-			push @args, join(',',split(/[\s]+/, $cnfrs[$i]{'schedule_date'}));
-		} else {
-			push @args, join(',', (map {$s_days{$_}} split(/[\s]+/, $cnfrs[$i]{'schedule_date'})));
-		}
-	} else {
-		push @args, $cnfrs[$i]{'schedule_date'};
-	}
-	push @args, $cnfrs[$i]{'schedule_time'};
-	if(length $cnfrs[$i]{'schedule_duration'} and $cnfrs[$i]{'schedule_duration'} =~ /^(.*):[\d]{2}$/) {
-		push @args, $1;
-	} else {
-		push @args, $cnfrs[$i]{'schedule_duration'};
-	}
+#	if(length $cnfrs[$i]{'schedule_date'}) {
+#		if($cnfrs[$i]{'schedule_date'} =~ /^[0-9\s]+$/) {
+#			push @args, join(',',split(/[\s]+/, $cnfrs[$i]{'schedule_date'}));
+#		} else {
+#			push @args, join(',', (map {$s_days{$_}} split(/[\s]+/, $cnfrs[$i]{'schedule_date'})));
+#		}
+#	} else {
+#		push @args, $cnfrs[$i]{'schedule_date'};
+#	}
+#	push @args, $cnfrs[$i]{'schedule_time'};
+#	if(length $cnfrs[$i]{'schedule_duration'} and $cnfrs[$i]{'schedule_duration'} =~ /^(.*):[\d]{2}$/) {
+#		push @args, $1;
+#	} else {
+#		push @args, $cnfrs[$i]{'schedule_duration'};
+#	}
 	my $at = "";
 	if($cnfrs[$i]{'auth_type'} =~ /number/) {
 		$at .= "По номеру";
