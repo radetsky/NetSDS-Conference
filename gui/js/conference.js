@@ -101,11 +101,16 @@
 					}
 					if( data.number_auth == true ) {
 						$("#number_auth").attr('checked', 'checked');
+						data.auto_assemble = 0;
+						$("#auto_assemble").attr('checked', '');
+						$("#auto_assemble").attr('disabled','disabled');
 					} else {
 						$("#number_auth").attr('checked', '');
 					}
 					if ( data.auto_assemble == 1 ) {
 						$("#auto_assemble").attr('checked', 'checked');
+						$("#number_auth").attr('checked', '');
+						$("#number_auth").attr('disabled','disabled');
 					} else {
 						$("#auto_assemble").attr('checked', '');
 					}
@@ -243,6 +248,22 @@
 					$("#cnfrs").load('/cnfrs.pl');
 				});
 
+			}
+
+			function auth_change() {
+				if($("#number_auth").attr('checked') == true) {
+					$("#auto_assemble").attr("disabled", "disabled");
+				} else {
+					$("#auto_assemble").attr("disabled", '');
+				}
+			}
+
+			function assem_change() {
+				if($("#auto_assemble").attr('checked') == true) {
+					$("#number_auth").attr("disabled", "disabled");
+				} else {
+					$("#number_auth").attr("disabled", '');
+				}
 			}
 
 			function send_part() {

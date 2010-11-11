@@ -112,6 +112,8 @@
 			</form>
 		</div>
 		<div id="edit_cnfr" style="display: none;">
+			<fieldset>
+				<legend>Редактирование конференции</legend>
 <form id="modify_cnfr">
 <input type="hidden" name="ce_id" value="" id="ce_id" />
 <input type="button" onclick="start_now();return false;" value="Начать сейчас"/>
@@ -180,7 +182,7 @@
 	<td rowspan="3" colspan="2">Аутентификация</td>
 	<td rowspan="2">тип</td>
 	<td>
-		<input type="checkbox" name="number_auth" id="number_auth"/>По номеру "А"
+		<input type="checkbox" name="number_auth" id="number_auth" onchange="auth_change();"/>По номеру "А"
 	</td>
 </tr>
 <tr>
@@ -194,7 +196,7 @@
 </tr>
 <tr>
 	<td colspan="3">Автосбор участников</td>
-	<td><input type="checkbox" name="auto_assemble" id="auto_assemble" /></td>
+	<td><input type="checkbox" name="auto_assemble" id="auto_assemble" onchange="assem_change();"/></td>
 </tr>
 <tr>
 	<td colspan="3">Контроль потери участников</td>
@@ -234,6 +236,7 @@
 <input type="button" onclick="send_cnfr();return false;" value="Сохранить"/>
 <input type="button" onclick="close_cnfr_dialog();return false;" value="Отменить"/>
 </form>
+	</fieldset>
 		</div>
 
 <div style="display: none;" id="new_participant">
