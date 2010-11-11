@@ -12,7 +12,7 @@ $conference = ConferenceDB->new;
 
 =cut
 
-my $HTPASSWD = "/usr/local/sbin/htpasswd";
+my $HTPASSWD = "/usr/bin/htpasswd";
 
 my $dbh;
 
@@ -117,6 +117,80 @@ sub get_cnfr_rights {
 		push @ret, $tmp[0] if(defined $tmp[0]);
 	}
 	return @ret;
+}
+
+=item $res = set_priority($login, $cnfr_id, $phone_id)
+
+=cut
+
+sub set_priority {
+	my $self = shift;
+	my $login = shift;
+	my $cnfr_id = shift;
+	my $phone_id = shift;
+
+	$self->_connect();
+	my $q = "UPDATE users_on_conference SET priority_member=? WHERE cnfr_id=?";
+	eval {
+		$dbh->do($q, undef, 0, $cnfr_id);
+	};
+
+	if($@) {
+		$error = "Ошибка снятия приоритета пользователя в конференции";
+		$dbh->rollback();
+		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		warn $warn;
+		return 0;
+	}
+
+	$dbh->commit();
+	$self->write_to_log($login, $q, 0, $cnfr_id);
+
+	return 1 unless(defined $phone_id and length $phone_id);
+
+	$q = "UPDATE users_on_conference SET priority_member=? WHERE cnfr_id=? AND phone_id=?";
+
+	eval {
+		$dbh->do($q, undef, 1, $cnfr_id, $phone_id);
+	};
+
+	if($@) {
+		$error = "Ошибка установки приоритета пользователя в конференции";
+		$dbh->rollback();
+		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		warn $warn;
+		return 0;
+	}
+
+	$dbh->commit();
+	$self->write_to_log($login, $q, 1, $cnfr_id, $phone_id);
+
+	return 1;
+}
+
+=item %user = get_user_by_phone($phone)
+
+Пытается найти пользователя по номеру телефона
+
+=cut
+
+sub get_user_by_phone {
+	my $self = shift;
+	my $phone = shift;
+	my %u = ();
+
+	$self->_connect();
+	my $q = "SELECT p.phone_id, p.user_id, u.full_name FROM phones p, users u ".
+					"WHERE p.user_id=u.user_id AND p.phone_number=?";
+	my @tmp = $dbh->selectrow_array($q, undef, $phone);
+	if(@tmp) {
+		$u{'phone'} = $phone;
+		$u{'name'} = $tmp[2];
+		$u{'phone_id'} = $tmp[0];
+		$u{'user_id'} = $tmp[1];
+	}
+
+	return %u;
 }
 
 =item $res = is_admin($login);

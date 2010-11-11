@@ -35,7 +35,7 @@
 				$("#schedule_select").dialog('open');
 			}
 
-			function edit_cnfr(confid) {
+			function edit_cnfr(confid, confname) {
 				$.getJSON('/get_json_cnfr.pl', {"id":confid}, function(data){
 					$("#part_of_conf").val(data.id);
 					$("#conf_oper").val(data.id);
