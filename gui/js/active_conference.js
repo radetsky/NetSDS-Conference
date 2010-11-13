@@ -57,7 +57,7 @@ watcher.eventCB = function(msgs) {
 						$('#td_mute'+y).append('<input id="mute'+y+'" type="image" src="css/images/green_mphone.png" value="green" onclick="change_mute('+y+'); return false;"/>');
 						$('#td_drop'+y).empty();
 						$('#td_drop'+y).append('<input type="image" src="css/images/drop.png" onclick="drop_line('+y+'); return false;" />');
-						$('#chan'+y).append('<input type="hidden" id="chan'+y+'" value="'+online_conf[y].channel+'" />');
+						$('#hidin'+y).append('<input type="hidden" id="chan'+y+'" value="'+online_conf[y].channel+'" />');
 						$('#dn'+y).slider("option", "disabled", false);
 						$('#ph'+y).slider("option", "disabled", false);
 						$("#sel"+y).removeAttr("disabled");
@@ -183,10 +183,14 @@ function show_active(confid, confname) {
 		for(x=0; x<data.length; x++) {
 			y = '<tr><td rowspan="2">'+data[x].user_name+'</td>';
 			y += '<td rowspan="2">';
-			if(data[x].state == 'offline') {
-				y += '<input type="radio" id="sel'+x+'" class="prior" name="pr_user" onchange="set_pr('+data[x].phone_id+');" disabled="disabled" /></td>';
+			if(data[x].known) {
+				if(data[x].state == 'offline') {
+					y += '<input type="radio" id="sel'+x+'" class="prior" name="pr_user" onchange="set_pr('+data[x].phone_id+');" disabled="disabled" /></td>';
+				} else {
+					y += '<input type="radio" id="sel'+x+'" class="prior" name="pr_user" onchange="set_pr('+data[x].phone_id+');"/></td>';
+				}
 			} else {
-				y += '<input type="radio" id="sel'+x+'" class="prior" name="pr_user" onchange="set_pr('+data[x].phone_id+');"/></td>';
+				y += '&nbsp;</td>';
 			}
 			if(data[x].state == 'offline') {
 				y += '<td rowspan="2" id="st'+x+'"><img src="/css/images/thumbs_003207-green-jelly-icon-media-a-media292-minus3.png" alt="Отключен"/></td>';

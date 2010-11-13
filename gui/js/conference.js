@@ -64,6 +64,7 @@
 					$("#sched_dur_hours").val(data.sched_dur_hours);
 					$("#sched_dur_min").val('');
 					$("#sched_dur_min").val(data.sched_dur_min);
+
 					if(typeof(data.schedule_day) == 'string' &&
 						 data.schedule_day.length > 0) {
 						$("#next_date").attr('disabled','disabled');
@@ -155,7 +156,7 @@
 					}
 					$("#participant_list").sortable({ items: 'tr' });
 					$("#participant_list").disableSelection();
-
+					
 					$("#edit_cnfr").dialog("open");
 
 				});

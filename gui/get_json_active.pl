@@ -44,6 +44,8 @@ unless(defined $res) {
 }
 
 my %users = $cnfr->get_cnfr_participants($cid);
+my %guests = ();
+my $ind = 0;
 
 if($res ne 0 and exists $$res{$cid}) {
 	my $u_list = $konf->konference_list_konf($cid);
@@ -62,6 +64,22 @@ if($res ne 0 and exists $$res{$cid}) {
 			}
 		}
 		unless($found) {
+			my %u = $cnfr->get_user_by_phone($$u_list{$j}{'callerid'});
+			if(%u) {
+				$guests{$ind}{'user_id'} = $u{'user_id'};
+				$guests{$ind}{'phone_id'} = $u{'phone_id'};
+				$guests{$ind}{'name'} = $u{'name'};
+			} else {
+				$guests{$ind}{'name'} = "Неизвестный пользователь";
+			}
+			$guests{$ind}{'number'} = $$u_list{$j}{'callerid'};
+			$guests{$ind}{'audio'} = $$u_list{$j}{'audio'};
+			$guests{$ind}{'member_id'} = $j;
+			$guests{$ind}{'spy'} = $$u_list{$j}{'spy'};
+			$guests{$ind}{'flags'} = $$u_list{$j}{'flags'};
+			$guests{$ind}{'volume'} = $$u_list{$j}{'volume'};
+			$guests{$ind}{'channel'} = $$u_list{$j}{'channel'};
+			$ind++;
 		}
 	}
 }
@@ -73,6 +91,7 @@ foreach my $k (keys %users) {
 	$json .= '"user_name": "' . $users{$k}{'name'} . '", ';
 	$json .= '"phone": "' . $users{$k}{'number'} . '", ';
 	$json .= '"phone_id": "' . $users{$k}{'id'} . '",';
+	$json .= '"known": true,';
 	if(defined $users{$k}{'member_id'}) {
 		$json .= '"state": "online",';
 		$json .= '"audio": "' . $users{$k}{'audio'} . '",';
@@ -83,6 +102,21 @@ foreach my $k (keys %users) {
 	}
 	chop $json;
 	$json .= '},';
+}
+
+foreach my $k (keys %guests) {
+	$json .= '{ ';
+	if(exists $guests{$k}{'user_id'}) {
+		$json .= '"user_id": "' . $guests{$k}{'user_id'} . '", ';
+		$json .= '"phone_id": "' . $guests{$k}{'phone_id'} . '",';
+	}
+	$json .= '"known": false,';
+	$json .= '"user_name": "' . $guests{$k}{'name'} . '",';
+	$json .= '"phone": "' . $guests{$k}{'number'} . '",';
+	$json .= '"state": "online",';
+	$json .= '"audio": "' . $guests{$k}{'audio'} . '",';
+	$json .= '"member_id": "' . $guests{$k}{'member_id'} . '",';
+	$json .= '"channel": "' . $guests{$k}{'channel'} . '"},';
 }
 
 chop $json;
