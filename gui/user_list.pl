@@ -6,7 +6,8 @@ use CGI;
 use lib './lib';
 use ConferenceDB;
 
-my $thead=<<EOH;
+my $thead;
+my $th=<<EOH;
 <thead>
 <tr>
 <th>ФИО</th>
@@ -16,6 +17,7 @@ my $thead=<<EOH;
 <th>Должность</th>
 <th>E-mail</th>
 <th>Имя оператора</th>
+%s
 </tr>
 </thead>
 EOH
@@ -28,25 +30,51 @@ my $cnfr = ConferenceDB->new;
 
 my $admin = $cnfr->is_admin($login);
 
+if($admin) {
+	$thead = sprintf $th, '<th>Удалить</th>';
+} else {
+	$thead = sprintf $th, '';
+}
+
 my @users = ();
 
 @users = $cnfr->get_user_list();
 
 my $row =<<EOR;
-<tr onclick="edit_user('%s')">
-<td valign="top" align="left">%s</td> <td valign="top" align="left">%s</td> 
+<tr>
+<td  onclick="edit_user('%s')"valign="top" align="left">%s</td> 
+<td valign="top" align="left">%s</td> 
 <td valign="top" align="left">%s</td> <td valign="top" align="left">%s</td> 
 <td valign="top" align="left">%s</td> <td valign="top" align="left">%s</td>
-<td valign="top" align="left">%s</td>
+<td valign="top" align="left">%s</td> 
+</tr>
+EOR
+
+my $adm_row =<<EOR;
+<tr id="user%s">
+<td  onclick="edit_user('%s')"valign="top" align="left">%s</td> 
+<td valign="top" align="left">%s</td> 
+<td valign="top" align="left">%s</td> <td valign="top" align="left">%s</td> 
+<td valign="top" align="left">%s</td> <td valign="top" align="left">%s</td>
+<td valign="top" align="left">%s</td> 
+<td onclick="remove_user('%s'); return false;"><span class="ui-icon ui-icon-close"></span></td>
 </tr>
 EOR
 
 my $out = "<table id=\"user-list\">" . $thead;
 
-while(my $i = shift @users) {
-	$out .= sprintf $row, $$i{'id'}, $$i{'name'}, join('<br/>',@{$$i{'phones'}}), 
+if($admin) {
+	while(my $i = shift @users) {
+		$out .= sprintf $adm_row, $$i{'id'}, $$i{'id'}, $$i{'name'}, join('<br/>',@{$$i{'phones'}}), 
+			$$i{'organization'}, $$i{'department'}, $$i{'position'}, $$i{'email'}, $$i{'login'}, $$i{'id'};
+	}
+} else {
+	while(my $i = shift @users) {
+		$out .= sprintf $row, $$i{'id'}, $$i{'name'}, join('<br/>',@{$$i{'phones'}}), 
 									$$i{'organization'}, $$i{'department'}, $$i{'position'}, $$i{'email'}, $$i{'login'};
+	}
 }
+
 $out .= "</table>";
 $out .= "<p onclick=\"edit_user('new');return false;\" id=\"add\">Добавить >>>>>>></p>\n";
 
