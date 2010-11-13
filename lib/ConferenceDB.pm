@@ -1500,5 +1500,29 @@ sub conflog {
 
  	return 1; 
 }
+
+=item B<get_priority> returns phone number of priority member of the conference if exist; 
+
+=cut 
+
+sub get_priority {
+	my $self = shift;
+	my $cnfr_id = shift;
+
+	unless ( defined ( $cnfr_id ) ) { 
+		return undef; 
+	} 
+
+	$self->_connect();
+
+	my $q = "select priority_member, phone_number from users_on_conference u, phones p where u.phone_id=p.phone_id and u.cnfr_id=? and priority_member='t'"; 
+	my $sth = $dbh->prepare($q);
+	$sth->execute($cnfr_id);
+	my $res = $sth->fetchrow_hashref(); 
+	unless (defined ($res)) { 
+		return undef; 
+	} 
+	return $res->{'phone_number'}; 
+}
 	
 1;

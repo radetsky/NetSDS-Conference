@@ -273,7 +273,7 @@ sub _conference_restore {
             infinite    => undef,
             verbose     => 1,
             has_conf    => 1,
-            config_file => '/etc/netstyle/conference.conf',
+            conf_file => '/etc/netstyle/conference.conf',
             debug       => 1,
 
         );

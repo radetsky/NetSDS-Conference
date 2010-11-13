@@ -52,7 +52,6 @@ TODO: Проверить запись и начать запись
 sub start {
     my $this = shift;
 
-
     $SIG{INT} = sub {
         warn "[$$] SIGINT caught";
         exit(1);
@@ -65,12 +64,30 @@ sub start {
 
     setproctitle( "ConferenceMan (" . $this->{'konf'}->{'cnfr_id'} . ")" );
 
+    # ConferenceDB
     $this->mk_accessors('mydb');
     $this->mydb( ConferenceDB->new() );
 
     # Для отслеживания активных аинхронных запросов
     $this->mk_accessors('manager_queries');
     $this->manager_queries({});  
+
+    # Для учета members конференции 
+    $this->mk_accessors('members'); 
+    $this->members({});
+
+    # Для установки приоритета 
+    $this->mk_accessors('priority_channel');
+    $this->priority_channel(''); 	
+
+    # Для оперативного управления 
+    my $konf = NetSDS::Konference->new();
+    $konf->konference_connect( 'localhost', '5038', 'asterikastwww',
+            'asterikastwww' );
+    $this->mk_accessors('konference'); 
+    $this->konference($konf); 
+
+
 
     $this->speak( "[$$] ConferenceMan start with conference ID: "
           . $this->{'konf'}->{'cnfr_id'} );
@@ -232,6 +249,15 @@ sub process {
 
     while (1) {
 
+# Проверяем приоритет пользователей в конференции
+		my $priority_phone = $this->mydb->get_priority($conf_id); 
+		if ( defined ($priority_phone) ) { 
+			$this->_set_priority_for_member($priority_phone); 
+		} else { 
+			$this->priority_channel('');
+			$this->_unmute_nonpriority_channels(); 
+		} 
+
 # Читаем события 
 # Фильтруем события
 		my $event = $event_listener->_getEvent(); 
@@ -246,8 +272,27 @@ sub process {
 			next;
 		}
 	
-#		warn Dumper ($event); 	
+# Работаем с приоритетом
 
+		if ($event->{'Event'} =~ /ConferenceState/i ) { 
+			my $channel = $event->{'Channel'}; 
+			my $state = $event->{'State'};
+ 
+		        if ($state =~ /Speaking/i ) { 
+				if ( $channel eq $this->priority_channel ) {
+					# Mute another channels
+					$this->speak("[$$] Priority channel speaks. Mute another."); 
+					$this->_mute_nonpriority_channels(); 
+				}
+			}
+			if ($state =~ /Silent/i ) { 				
+				if ( $channel eq $this->priority_channel ) {
+					# unmute another channels 
+					$this->speak("[$$] Priority channel is silented. Unmute another."); 
+					$this->_unmute_nonpriority_channels();
+				}
+			}
+		}	
 		if ($event->{'Event'} =~ /ConferenceDTMF/i ) { 
 # ConferenceName: 4 
 # Type: konference
@@ -275,6 +320,9 @@ sub process {
 		    if ($event->{'ConferenceName'} == $conf_id ) { 
 # Кто-то пожелал покинуть конференцию.  
 # Если установлен атрибут контроля потери, то дозвониться Х раз. 
+			my $channel = $event->{'Channel'}; 
+			delete $this->members->{$channel}; 
+
 			my $destination = $event->{'CallerID'};
 			$this->speak("[$$] $destination leaved the conference #".$conf_id);
                         $this->mydb->conflog($this->{'konf'}->{'cnfr_id'}, 'leaved',$destination);
@@ -292,10 +340,17 @@ sub process {
 
 		if ($event->{'Event'} =~ /ConferenceJoin/i ) { 
 		  if ($event->{'Type'} =~ /konference/i ) {
-                    if ( $event->{'ConferenceName'} eq $conf_id ) { 
+                    if ( $event->{'ConferenceName'} eq $conf_id ) {
+			# Add new member to memory 
+			my $unique_channel = $event->{'Channel'}; 
 		    	my $callerid = $event->{'CallerID'}; 
+			$this->members->{$unique_channel} = $callerid; 
+			
+			# Logging 
 		    	$this->speak("[$$] $callerid has joined the conference #".$event->{'ConferenceName'});
 			$this->mydb->conflog($this->{'konf'}->{'cnfr_id'}, 'joined', $callerid); 
+
+			# Check for blocking
 			if (defined ($this->{'BLOCK'} ) ) { 
 			    if ($this->{'BLOCK'} == 1 ) {
 				my $is_operator = $this->mydb->is_operator($conf_id,$callerid);
@@ -392,7 +447,7 @@ check_stop:
             next;
         }
 
-        if ( $members == 0 ) {
+        if ( ( $members == 0 ) or ($members eq "0") )  {
 
             # No more anybody AND conference length more than 5 minutes
             my $date_now     = time();
@@ -410,15 +465,17 @@ check_stop:
                     "[$$] Stop the conference because conference is empty.");
                 return 1;
             }
+	    next; 
         }
 
 #
 # Если только пишуший робот присутствует, то тоже останавливаем конференцию.
 #
+	#warn Dumper ($members); 
         my $count = keys %$members;
         if ( $count == 1 ) {
             foreach my $member ( keys %$members ) {
-                my $channel = $members->{'channel'};
+                my $channel = $members->{$member}->{'channel'};
                 if ( $channel =~ /Local/ ) {
                     $this->speak(
 "[$$] Conference is empty. Only recording channel. Stopping."
@@ -756,6 +813,36 @@ sub _restore_control {
 
 }
 
+sub _set_priority_for_member {
+	my ($this,$priority_phone) = @_; 
+	
+	foreach my $channel ( keys %{$this->members} ) { 
+		if ($priority_phone eq $this->members->{$channel} ) {
+			$this->priority_channel($channel); 	
+		} 
+	}
+}
+
+sub _mute_nonpriority_channels { 
+	my ($this) = @_;
+
+	foreach my $channel ( keys %{$this->members} ) {
+		if ($channel ne $this->priority_channel) { 
+			$this->konference->konference_mutechannel($channel); 
+		}
+	}
+
+}
+sub _unmute_nonpriority_channels { 
+	my ($this) = @_;
+
+	foreach my $channel ( keys %{$this->members} ) {
+		if ($channel ne $this->priority_channel) { 
+			$this->konference->konference_unmutechannel($channel); 
+		}
+	}
+
+}
 
 1;
 
