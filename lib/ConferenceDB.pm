@@ -523,6 +523,78 @@ sub get_org_list {
 	return %orgs;
 }
 
+=item $res = del_org($login, $org_id)
+
+Удаляет организацию из базы данных по id организации. В случае успешного
+выполнения возвращает 1, в случае ошибки -- 0 и выставляет сообщение, которое
+можно получить по get_error
+
+=cut
+
+sub del_org {
+	my $self = shift;
+	my $login = shift;
+	my $org_id = shift;
+
+	unless(defined $org_id) {
+		$error = "Не определена организация к удалению";
+		return 0;
+	}
+
+	$self->_connect();
+	my $q = "DELETE FROM organizations WHERE org_id=?";
+	eval {
+		$dbh->do($q, undef, $org_id);
+	};
+
+	if($@) {
+		$error = "Ошибка удаления организации. Возможно существуют пользователи, принадлежащие этой организации";
+		$dbh->rollback();
+		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		warn $warn;
+		return 0;
+	}
+	$dbh->commit();
+	$self->write_to_log($login, $q, $org_id);
+	return 1;
+}
+
+=item $res = del_user($login, $user_id)
+
+Удаляет пользователя из базы данных по id пользователя. В случае успешного
+выполнения возвращает 1, в случае ошибки -- 0 и выставляет сообщение, которое
+можно получить по get_error
+
+=cut
+
+sub del_user {
+	my $self = shift;
+	my $login = shift;
+	my $user_id = shift;
+
+	unless(defined $user_id) {
+		$error = "Не определен пользователь к удалению";
+		return 0;
+	}
+
+	$self->_connect();
+	my $q = "DELETE FROM users WHERE user_id=?";
+	eval {
+		$dbh->do($q, undef, $user_id);
+	};
+
+	if($@) {
+		$error = "Ошибка удаления пользователя. Возможно он участник одной из конференций или является администратором";
+		$dbh->rollback();
+		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		warn $warn;
+		return 0;
+	}
+	$dbh->commit();
+	$self->write_to_log($login, $q, $user_id);
+	return 1;
+}
+
 =item @pos = get_pos_list()
 
 Возвращает array of hashes. В array'е должности выстроены по порядку
