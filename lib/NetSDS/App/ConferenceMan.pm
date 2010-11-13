@@ -81,13 +81,11 @@ sub start {
     $this->priority_channel(''); 	
 
     # Для оперативного управления 
-    my $konf = NetSDS::Konference->new();
-    $konf->konference_connect( 'localhost', '5038', 'asterikastwww',
+    my $KONF = NetSDS::Konference->new();
+    $KONF->konference_connect( 'localhost', '5038', 'asterikastwww',
             'asterikastwww' );
     $this->mk_accessors('konference'); 
-    $this->konference($konf); 
-
-
+    $this->konference($KONF); 
 
     $this->speak( "[$$] ConferenceMan start with conference ID: "
           . $this->{'konf'}->{'cnfr_id'} );
@@ -254,8 +252,10 @@ sub process {
 		if ( defined ($priority_phone) ) { 
 			$this->_set_priority_for_member($priority_phone); 
 		} else { 
-			$this->priority_channel('');
-			$this->_unmute_nonpriority_channels(); 
+			if ($this->priority_channel ne '') { 
+				$this->priority_channel('');
+				$this->_unmute_nonpriority_channels(); 
+			}
 		} 
 
 # Читаем события 
@@ -317,13 +317,14 @@ sub process {
 
 		if ($event->{'Event'} =~ /ConferenceLeave/i ) { 
 		  if ($event->{'Type'} =~ /konference/i ) { 
-		    if ($event->{'ConferenceName'} == $conf_id ) { 
+		    if ($event->{'ConferenceName'} eq $conf_id ) { 
 # Кто-то пожелал покинуть конференцию.  
 # Если установлен атрибут контроля потери, то дозвониться Х раз. 
 			my $channel = $event->{'Channel'}; 
 			delete $this->members->{$channel}; 
 
 			my $destination = $event->{'CallerID'};
+
 			$this->speak("[$$] $destination leaved the conference #".$conf_id);
                         $this->mydb->conflog($this->{'konf'}->{'cnfr_id'}, 'leaved',$destination);
  
