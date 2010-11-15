@@ -55,8 +55,7 @@ sub cnfr_list {
 	my $query = "SELECT cnfr_id, cnfr_name, cnfr_state, to_char(last_start, ".
 							"'YYYY-MM-DD HH24:MI'), to_char(last_end, 'YYYY-MM-DD HH24:MI'), ".
 							"to_char(next_start, 'YYYY-MM-DD HH24:MI'), next_duration, ".
-							"schedule_date, to_char(schedule_time, 'HH24:MI'), ".
-							"schedule_duration, auth_type, auth_string, auto_assemble, ".
+							"auth_type, auth_string, auto_assemble, ".
 							"lost_control, need_record, number_b, audio_lang FROM ".
 							"conferences order by cnfr_id";
 	$self->_connect();
@@ -71,16 +70,13 @@ sub cnfr_list {
 		$res[$tmp[0]]{'last_end'} = (defined $tmp[4])? $tmp[4] : "";
 		$res[$tmp[0]]{'next_start'} = (defined $tmp[5])? $tmp[5] : "";
 		$res[$tmp[0]]{'next_duration'} = (defined $tmp[6])? $tmp[6] : "";
-		$res[$tmp[0]]{'schedule_date'} = (defined $tmp[7])? $tmp[7] : "";
-		$res[$tmp[0]]{'schedule_time'} = (defined $tmp[8])? $tmp[8] : "";
-		$res[$tmp[0]]{'schedule_duration'} = (defined $tmp[9])? $tmp[9] : "";
-		$res[$tmp[0]]{'auth_type'} = (defined $tmp[10])? $tmp[10] : "";
-		$res[$tmp[0]]{'auth_string'} = (defined $tmp[11])? $tmp[11] : "";
-		$res[$tmp[0]]{'auto_assemble'} = (defined $tmp[12])? $tmp[12] : "";
-		$res[$tmp[0]]{'lost_control'} = (defined $tmp[13])? $tmp[13] : "";
-		$res[$tmp[0]]{'need_record'} = (defined $tmp[14])? $tmp[14] : "";
-		$res[$tmp[0]]{'number_b'} = (defined $tmp[15])? $tmp[15] : "";
-		$res[$tmp[0]]{'audio_lang'} = (defined $tmp[16])? $tmp[16] : "";
+		$res[$tmp[0]]{'auth_type'} = (defined $tmp[7])? $tmp[7] : "";
+		$res[$tmp[0]]{'auth_string'} = (defined $tmp[8])? $tmp[8] : "";
+		$res[$tmp[0]]{'auto_assemble'} = (defined $tmp[9])? $tmp[9] : "";
+		$res[$tmp[0]]{'lost_control'} = (defined $tmp[10])? $tmp[10] : "";
+		$res[$tmp[0]]{'need_record'} = (defined $tmp[11])? $tmp[11] : "";
+		$res[$tmp[0]]{'number_b'} = (defined $tmp[12])? $tmp[12] : "";
+		$res[$tmp[0]]{'audio_lang'} = (defined $tmp[13])? $tmp[13] : "";
 	}
 
 	return @res;
@@ -665,9 +661,6 @@ $cid -- id конференции
 id -- id конференции
 name -- название конференции
 cnfr_state -- состояние конференции
-schedule_date -- планируемые дни конференции
-schedule_time -- планируемое время конференции
-schedule_duration -- планируемая продолжительность конференции
 next_start -- дата/время ближайшего запуска
 next_duration -- продолжительность ближайшей конференции
 auth_type -- тип аутентификации
@@ -694,26 +687,22 @@ sub get_cnfr {
 	my %cnfr = ();
 
 	$self->_connect();
-	my $q = "SELECT cnfr_id, cnfr_name, cnfr_state, schedule_date, to_char(schedule_time, ".
-					"'HH24:MI'), schedule_duration, to_char(next_start, 'YYYY-MM-DD HH24:MI'), ".
+	my $q = "SELECT cnfr_id, cnfr_name, cnfr_state, to_char(next_start, 'YYYY-MM-DD HH24:MI'), ".
 					"next_duration, auth_type, auth_string, auto_assemble, lost_control, need_record, ".
 					"number_b, audio_lang FROM conferences WHERE cnfr_id=?";
 	my @tmp = $dbh->selectrow_array($q, undef, $id);
 	$cnfr{'id'} = $tmp[0];
 	$cnfr{'name'} = (defined $tmp[1])? $tmp[1] : "";
 	$cnfr{'cnfr_state'} = (defined $tmp[2])? $tmp[2] : "";
-	$cnfr{'schedule_date'} = (defined $tmp[3])? $tmp[3] : "";
-	$cnfr{'schedule_time'} = (defined $tmp[4])? $tmp[4] : "";
-	$cnfr{'schedule_duration'} = (defined $tmp[5])? $tmp[5] : "";
-	$cnfr{'next_start'} = (defined $tmp[6])? $tmp[6] : "";
-	$cnfr{'next_duration'} = (defined $tmp[7])? $tmp[7] : "";
-	$cnfr{'auth_type'} = (defined $tmp[8])? $tmp[8] : "";
-	$cnfr{'auth_string'} = (defined $tmp[9])? $tmp[9] : "";
-	$cnfr{'auto_assemble'} = (defined $tmp[10])? $tmp[10] : "";
-	$cnfr{'lost_control'} = (defined $tmp[11])? $tmp[11] : "";
-	$cnfr{'need_record'} = (defined $tmp[12])? $tmp[12] : "";
-	$cnfr{'number_b'} = (defined $tmp[13])? $tmp[13] : "";
-	$cnfr{'audio_lang'} = (defined $tmp[14])? $tmp[14] : "";
+	$cnfr{'next_start'} = (defined $tmp[3])? $tmp[3] : "";
+	$cnfr{'next_duration'} = (defined $tmp[4])? $tmp[4] : "";
+	$cnfr{'auth_type'} = (defined $tmp[5])? $tmp[5] : "";
+	$cnfr{'auth_string'} = (defined $tmp[6])? $tmp[6] : "";
+	$cnfr{'auto_assemble'} = (defined $tmp[7])? $tmp[7] : "";
+	$cnfr{'lost_control'} = (defined $tmp[8])? $tmp[8] : "";
+	$cnfr{'need_record'} = (defined $tmp[9])? $tmp[9] : "";
+	$cnfr{'number_b'} = (defined $tmp[10])? $tmp[10] : "";
+	$cnfr{'audio_lang'} = (defined $tmp[11])? $tmp[11] : "";
 
 	$q = "SELECT u.full_name, a.admin_id FROM operators_of_conferences ooc, admins a, ".
 			 "users u WHERE ooc.cnfr_id=? AND ooc.admin_id=a.admin_id AND ".
@@ -789,12 +778,6 @@ sub save_cnfr {
 	$next_start = undef unless(length $next_start);
 	my $next_duration = shift;
 	$next_duration = undef unless(length $next_duration);
-	my $schedule_day = shift;
-	$schedule_day = undef unless(length $schedule_day);
-	my $schedule_time = shift;
-	$schedule_time = undef unless(length $schedule_time);
-	my $schedule_duration = shift;
-	$schedule_duration = undef unless(length $schedule_duration);
 	my $auth_type = shift;
 	$auth_type = undef unless(length $auth_type);
 	my $auth_string = shift;
@@ -810,12 +793,10 @@ sub save_cnfr {
 	@phs_id = (@{$p}) if(defined $p);
 
 	my $q = "UPDATE conferences SET cnfr_name=?, next_start=to_timestamp(?, 'YYYY-MM-DD HH24:MI'), ".
-					"next_duration=?, schedule_date=?, schedule_time=?, schedule_duration=?, auth_type=?, ".
-					"auth_string=?, auto_assemble=?, lost_control=?, need_record=?, audio_lang=? WHERE ".
-					"cnfr_id=?";
-	my @bind = ($ce_name, $next_start, $next_duration, $schedule_day, $schedule_time, $schedule_duration,
-						  $auth_type, $auth_string, $auto_assemble, $lost_control, $need_record,
-							$audio_lang, $id);
+					"next_duration=?, auth_type=?, auth_string=?, auto_assemble=?, lost_control=?, ".
+					"need_record=?, audio_lang=? WHERE cnfr_id=?";
+	my @bind = ($ce_name, $next_start, $next_duration, $auth_type, $auth_string, 
+							$auto_assemble, $lost_control, $need_record, $audio_lang, $id);
 	eval {
 		$dbh->do($q, undef, @bind);
 	};
@@ -1511,8 +1492,7 @@ sub cnfr_get {
 	my $query = "SELECT cnfr_id, cnfr_name, cnfr_state, to_char(last_start, ".
 							"'YYYY-MM-DD HH24:MI'), to_char(last_end, 'YYYY-MM-DD HH24:MI'), ".
 							"to_char(next_start, 'YYYY-MM-DD HH24:MI'), next_duration, ".
-							"schedule_date, to_char(schedule_time, 'HH24:MI'), ".
-							"schedule_duration, auth_type, auth_string, auto_assemble, ".
+							"auth_type, auth_string, auto_assemble, ".
 							"lost_control, need_record, number_b, audio_lang FROM ".
 							"conferences where cnfr_id=$conf";
 	$self->_connect();

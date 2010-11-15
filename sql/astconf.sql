@@ -24,9 +24,6 @@ CREATE TABLE Conferences(
  last_end timestamp,
  next_start timestamp,
  next_duration interval,
- schedule_date varchar(30),
- schedule_time time,
- schedule_duration interval,
  auth_type varchar(30),
  auth_string varchar(30),
  auto_assemble boolean,
@@ -39,6 +36,18 @@ CREATE TABLE Conferences(
 
 CREATE TRIGGER Cnfr_stamp BEFORE UPDATE ON Conferences
     FOR EACH ROW EXECUTE PROCEDURE upd_tstamp();
+
+CREATE TABLE Schedule(
+	sched_id serial primary key,
+	cnfr_id integer REFERENCES Conferences(cnfr_id) ON DELETE CASCADE,
+	schedule_date varchar(10),
+	schedule_time time,
+	schedule_duration interval,
+	change_date timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER Schedule_stamp BEFORE UPDATE ON Schedule
+		FOR EACH ROW EXECUTE PROCEDURE upd_tstamp();
 
 CREATE TABLE Users(
  user_id serial primary key,

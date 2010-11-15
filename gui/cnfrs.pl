@@ -75,21 +75,6 @@ while(my $i = shift @rights) {
 	} else {
 		push @args, $cnfrs[$i]{'next_duration'};
 	}
-#	if(length $cnfrs[$i]{'schedule_date'}) {
-#		if($cnfrs[$i]{'schedule_date'} =~ /^[0-9\s]+$/) {
-#			push @args, join(',',split(/[\s]+/, $cnfrs[$i]{'schedule_date'}));
-#		} else {
-#			push @args, join(',', (map {$s_days{$_}} split(/[\s]+/, $cnfrs[$i]{'schedule_date'})));
-#		}
-#	} else {
-#		push @args, $cnfrs[$i]{'schedule_date'};
-#	}
-#	push @args, $cnfrs[$i]{'schedule_time'};
-#	if(length $cnfrs[$i]{'schedule_duration'} and $cnfrs[$i]{'schedule_duration'} =~ /^(.*):[\d]{2}$/) {
-#		push @args, $1;
-#	} else {
-#		push @args, $cnfrs[$i]{'schedule_duration'};
-#	}
 	my $at = "";
 	if($cnfrs[$i]{'auth_type'} =~ /number/) {
 		$at .= "По номеру";
