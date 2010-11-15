@@ -559,6 +559,42 @@ sub del_org {
 	return 1;
 }
 
+=item $res = del_pos($login, $pos_id)
+
+Удаляет должность из базы данных по id должности. В случае успешного
+выполнения возвращает 1, в случае ошибки -- 0 и выставляет сообщение, которое
+можно получить по get_error
+
+=cut
+
+sub del_pos {
+	my $self = shift;
+	my $login = shift;
+	my $pos_id = shift;
+
+	unless(defined $pos_id) {
+		$error = "Не определена должность к удалению";
+		return 0;
+	}
+
+	$self->_connect();
+	my $q = "DELETE FROM positions WHERE position_id=?";
+	eval {
+		$dbh->do($q, undef, $pos_id);
+	};
+
+	if($@) {
+		$error = "Ошибка удаления должности. Возмсжно существует пользователь, занимающий эту должность.";
+		$dbh->rollback();
+		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		warn $warn;
+		return 0;
+	}
+	$dbh->commit();
+	$self->write_to_log($login, $q, $pos_id);
+	return 1;
+}
+
 =item $res = del_user($login, $user_id)
 
 Удаляет пользователя из базы данных по id пользователя. В случае успешного
@@ -1571,30 +1607,6 @@ sub conflog {
 	$dbh->commit();  
 
  	return 1; 
-}
-
-=item B<get_priority> returns phone number of priority member of the conference if exist; 
-
-=cut 
-
-sub get_priority {
-	my $self = shift;
-	my $cnfr_id = shift;
-
-	unless ( defined ( $cnfr_id ) ) { 
-		return undef; 
-	} 
-
-	$self->_connect();
-
-	my $q = "select priority_member, phone_number from users_on_conference u, phones p where u.phone_id=p.phone_id and u.cnfr_id=? and priority_member='t'"; 
-	my $sth = $dbh->prepare($q);
-	$sth->execute($cnfr_id);
-	my $res = $sth->fetchrow_hashref(); 
-	unless (defined ($res)) { 
-		return undef; 
-	} 
-	return $res->{'phone_number'}; 
 }
 	
 1;
