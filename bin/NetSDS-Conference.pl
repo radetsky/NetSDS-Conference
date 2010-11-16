@@ -48,6 +48,7 @@ use ConferenceDB;
 use Data::Dumper;
 use Date::Manip;
 use NetSDS::App::ConferenceMan;
+use Time::HiRes qw/usleep/;
 
 # Массив для запоминания списков
 # Детей, что  им можно было  послать сигналы.
@@ -90,36 +91,12 @@ sub _add_signal_handlers {
 sub process {
     my ($this) = @_;
     while (1) {
-		#$this->speak("[$$] Processing .");
-
         # Get list of the conference
         my @conf_list = $this->mydb->cnfr_list();
 
         foreach my $conf (@conf_list) {
 
-            # Looking for conferences with defined 'next start'
-            #		warn Dumper ($conf);
-            #$VAR1 = {
-            #          'cnfr_state' => 'inactive',
-            #          'number_b' => '',
-            #          'schedule_date' => '',
-            #          'cnfr_id' => 2,
-            #          'schedule_duration' => '',
-            #          'next_start' => '2010-10-19 11:00',
-            #          'next_duration' => '00:00:00',
-            #          'lost_control' => '0',
-            #          'need_record' => '1',
-            #          'auth_type' => '',
-            #          'auto_assemble' => '0',
-            #          'last_end' => '',
-            #          'auth_string' => '',
-            #          'audio_lang' => '',
-            #          'schedule_time' => '',
-            #          'last_start' => '',
-            #          'cnfr_name' => 'Тестовая'
- 
-			# Restore crushed (?) ConferenceMan's ?
-
+	    # Restore crushed (?) ConferenceMan's ?
             if ( defined( $conf->{'cnfr_state'} ) ) {
                 if ( $conf->{'cnfr_state'} =~ /^active/i ) {
                     unless ( exists ( $ACTIVE{ $conf->{'cnfr_id'} } ) ) {
@@ -135,9 +112,10 @@ sub process {
                 }
             }
 
-           unless ( defined( $conf->{'next_start'} ) ) {
+            unless ( defined( $conf->{'next_start'} ) ) {
                 next;
             }
+
             if ( $conf->{'next_start'} eq '' ) {  # Next start not exist - next!
                 next;
             }
@@ -155,8 +133,7 @@ sub process {
                 $last_start = undef;
             }
 
-            unless ( defined($last_start) ) {
-
+            unless ( defined ( $last_start ) ) {
                 # Last start field does not filled. Simple case.
                 # check only next_start
                 # Compare
@@ -173,13 +150,13 @@ sub process {
                 }
                 next;
             }
+
             my $last_end = $conf->{'last_end'};
             if ( $last_end eq '' ) {
                 $last_end = undef;
             }
 
             unless ( defined($last_end) ) {
-
              # Abnormal situation when last_start defined, not active conference
              # and last_end not defined.
              # Doing like last_start not defined;
@@ -193,6 +170,7 @@ sub process {
                 }
                 next;
             }
+
             my $date_last_start = ParseDate($last_start);
             my $date_last_end   = ParseDate($last_end);
             my $flag = Date_Cmp( $date_next_start, $date_last_start );
@@ -212,7 +190,7 @@ sub process {
             }
 
         }
-        sleep(1);
+        usleep(500);
     }
 }
 
