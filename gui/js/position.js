@@ -29,13 +29,15 @@ function close_pos_dialog() {
 }
 
 function del_pos(pos_id) {
-	$.getJSON('del_pos.pl', { "pos_id": pos_id }, function (data) {
-		if(data.status == 'error') {
-			$("#error_text").empty();
-			$("#error_text").append(data.message);
-			$("#error").dialog('open');
-			return;
-		}
-		$('#pos'+pos_id).remove();
-	});
+	if(confirm('Вы действительно хотите удалить должность?')) {
+		$.getJSON('del_pos.pl', { "pos_id": pos_id }, function (data) {
+			if(data.status == 'error') {
+				$("#error_text").empty();
+				$("#error_text").append(data.message);
+				$("#error").dialog('open');
+				return;
+			}
+			$('#pos'+pos_id).remove();
+		});
+	}
 }

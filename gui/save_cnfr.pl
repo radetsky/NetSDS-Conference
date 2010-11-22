@@ -39,8 +39,8 @@ my $ce_name = $cgi->param('ce_name');
 $ce_name = "Конференция $id" unless(defined $ce_name);
 
 my $next_type = $cgi->param('next_sched');
-my ($next_start, $next_duration, $schedule_day, $schedule_time, $schedule_duration) =
-("", "", "", "", "");
+my ($next_start, $next_duration) = ("", "");
+my @schedules = ();
 
 if($next_type eq "next") {
 	my $n_d = $cgi->param('next_date');
@@ -54,21 +54,24 @@ if($next_type eq "next") {
 
 	$next_duration = "$n_d_h:$n_d_m:00" if(defined $n_d_h and defined $n_d_m);
 } else {
-	my $sched = $cgi->param('schedule_day');
-	if($sched =~ /^[0-9\s]+$/) {
-		$schedule_day = $sched;
-	} else {
-		$schedule_day = join(' ', (map { $days{$_} } split(/[\s]/, $sched)));
+	my $scheds = $cgi->param('schedules');
+	my @every_sch = split(/\|/,$scheds);
+	while(my $it = shift @every_sch) {
+		warn $it;
+		my %sch = ();
+		my $d;
+		($d, $sch{'begin'}, $sch{'duration'}) = split(/,/, $it);
+		$d =~ s/^(.*)[\s]+$/$1/;
+		if($d =~ /^[\d]+$/) {
+			$sch{'day'} = $d;
+		} else {
+			$sch{'day'} = $days{$d};
+		}
+		$sch{'duration'} .= ":00";
+		push @schedules, \%sch;
 	}
-	my $s_h = $cgi->param('schedule_hours_begin');
-	my $s_m = $cgi->param('schedule_min_begin');
-	$schedule_time = "$s_h:$s_m" if(defined $s_h and defined $s_m );
-	my $s_h_d = $cgi->param("sched_dur_hours");
-	my $s_m_d = $cgi->param("sched_dur_min");
-	$schedule_duration = "$s_h_d:$s_m_d:00" if(defined $s_h_d and defined $s_m_d);
+# FIXME вот здесь должно идти выяснение, когда следующая конференция
 }
-
-#warn "$schedule_day $schedule_time $schedule_duration";
 
 my $auth_type = "";
 my $auth_string = $cgi->param('auth_string');
@@ -87,6 +90,13 @@ my $auto_assemble = (defined $cgi->param('auto_assemble'))? 1 : 0;
 my $lost_control = (defined $cgi->param('lost_control'))? 1 : 0;
 my $need_record = (defined $cgi->param('need_record'))? 1 : 0;
 my $audio_lang = $cgi->param('audio_lang');
+my $phone_remind = (defined $cgi->param('ph_remind'))? 1 : 0;
+my $email_remind = (defined $cgi->param('em_remind'))? 1 : 0;
+my $till_remind = "";
+if($phone_remind or $email_remind) {
+	$till_remind = $cgi->param('remind_time');
+}
+
 
 my @partic = ();
 my $pp = $cgi->param('phs_ids');
@@ -94,9 +104,9 @@ if(defined $pp and length $pp) {
 	@partic = split(/[\s]+/, $pp);
 }
 
-$cnfr->save_cnfr($login, $id, $ce_name, $next_start, $next_duration, $schedule_day, $schedule_time, $schedule_duration,
-								 $auth_type, $auth_string, $auto_assemble, $lost_control, $need_record, $audio_lang,
-								 \@partic);
+$cnfr->save_cnfr($login, $id, $ce_name, $next_start, $next_duration, $auth_type, $auth_string, 
+								 $auto_assemble, $phone_remind, $email_remind, $till_remind, $lost_control, 
+								 $need_record, $audio_lang, \@partic, \@schedules);
 
 if($admin) {
 	my @ops =  split(/[\s]+/, $cgi->param('ops_ids'));

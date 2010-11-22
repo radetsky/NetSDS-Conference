@@ -26,10 +26,12 @@
 			thead { font:italic bold 10px Georgia,serif; }
 			#day-selectable .ui-selecting { background: #FECA40; }
 			#day-selectable .ui-selected { background: #F39814; color: white; }
+			#date-selectable span { margin: 3px; }
 			#date-selectable .ui-selecting { background: #FECA40; }
 			#date-selectable .ui-selected { background: #F39814; color: white; }
 			#day-selectable { list-style-type: none; margin: 0; padding: 0; }
 			#date-selectable { list-style-type: none; margin: 0; padding: 0; }
+			.active { background: #dee104; }
 
 		</style>
 		<script type="text/javascript">
@@ -47,11 +49,29 @@
 				$('#show_active').dialog({ autoOpen: false, width: 800 });
 				$('#new_participant').dialog({ autoOpen: false, minWidth: 550, modal: true });
 				$('#new_oper').dialog({ autoOpen: false, modal: true });
-				$('#edit_cnfr').dialog({ autoOpen: false,  minWidth: 550 });
-				$('#schedule_select').dialog({ autoOpen: false, modal: true });
+				$('#edit_cnfr').dialog({ autoOpen: false, minWidth: 700 });
+				$('#schedule_select').dialog({ autoOpen: false, modal: true, minWidth: 500  });
 
-				$("#day-selectable").selectable({ filter: 'td' });
-				$("#date-selectable").selectable({ filter: 'td' });
+				$('#add_sched').button();
+				$('#add_sched').click( function () {
+					add_schedule();
+					return false;
+				});
+ 				$("#day-selectable").selectable({ filter: 'span',
+					stop: function(e, ui) {
+						$(".ui-selected:first", this).each(function() {
+							$(this).siblings().removeClass("ui-selected");
+						});
+					}
+				});
+				$("#date-selectable").selectable({ filter: 'span', 
+					disabled: true,
+					stop: function(e, ui) {
+						$(".ui-selected:first", this).each(function() {
+							$(this).siblings().removeClass("ui-selected");
+						});
+					}
+				});
 				$('#error').dialog({ buttons: { "Ok": function() { $(this).dialog("close"); } },
 														 autoOpen: false,
 														 modal: true});
@@ -133,10 +153,10 @@
 	<td>
 		<select name="hours_begin" id="hours_begin">
 			<option></option> <option>00</option> <option>01</option> <option>02</option> <option>03</option> <option>04</option> <option>05</option> <option>06</option> <option>07</option> <option>08</option> <option>09</option> <option>10</option> <option>11</option> <option>12</option> <option>13</option> <option>14</option> <option>15</option> <option>16</option> <option>17</option> <option>18</option> <option>19</option> <option>20</option> <option>21</option> <option>22</option> <option>23</option>
-		</select>
+		</select>ч
 		<select name="min_begin" id="min_begin">
-			<option></option> <option>00</option> <option>01</option> <option>02</option> <option>03</option> <option>04</option> <option>05</option> <option>06</option> <option>07</option> <option>08</option> <option>09</option> <option>10</option> <option>11</option> <option>12</option> <option>13</option> <option>14</option> <option>15</option> <option>16</option> <option>17</option> <option>18</option> <option>19</option> <option>20</option> <option>21</option> <option>22</option> <option>23</option> <option>24</option> <option>25</option> <option>26</option> <option>27</option> <option>28</option> <option>29</option> <option>30</option> <option>31</option> <option>32</option> <option>33</option> <option>34</option> <option>35</option> <option>36</option> <option>37</option> <option>38</option> <option>39</option> <option>40</option> <option>41</option> <option>42</option> <option>43</option> <option>44</option> <option>45</option> <option>46</option> <option>47</option> <option>48</option> <option>49</option> <option>50</option> <option>51</option> <option>52</option> <option>53</option> <option>54</option> <option>55</option> <option>56</option> <option>57</option> <option>58</option> <option>59</option>
-		</select>
+			<option></option><option>00</option><option>05</option><option>10</option><option>15</option><option>20</option><option>25</option><option>30</option><option>35</option><option>40</option><option>45</option><option>50</option><option>55</option>
+		</select>мин
 	</td>
 </tr>
 <tr>
@@ -144,23 +164,23 @@
 	<td>
 		<select name="dur_hours" id="dur_hours">
 			<option></option> <option value="00">0</option> <option value="01">1</option> <option value="02">2</option> <option value="03">3</option> <option value="04">4</option> <option value="05">5</option> <option value="06">6</option> <option value="07">7</option>
-		</select>
+		</select>ч
 		<select name="dur_min" id="dur_min">
-			<option></option> <option>00</option> <option>01</option> <option>02</option> <option>03</option> <option>04</option> <option>05</option> <option>06</option> <option>07</option> <option>08</option> <option>09</option> <option>10</option> <option>11</option> <option>12</option> <option>13</option> <option>14</option> <option>15</option> <option>16</option> <option>17</option> <option>18</option> <option>19</option> <option>20</option> <option>21</option> <option>22</option> <option>23</option> <option>24</option> <option>25</option> <option>26</option> <option>27</option> <option>28</option> <option>29</option> <option>30</option> <option>31</option> <option>32</option> <option>33</option> <option>34</option> <option>35</option> <option>36</option> <option>37</option> <option>38</option> <option>39</option> <option>40</option> <option>41</option> <option>42</option> <option>43</option> <option>44</option> <option>45</option> <option>46</option> <option>47</option> <option>48</option> <option>49</option> <option>50</option> <option>51</option> <option>52</option> <option>53</option> <option>54</option> <option>55</option> <option>56</option> <option>57</option> <option>58</option> <option>59</option>
-		</select>
+			<option></option><option>00</option><option>05</option><option>10</option><option>15</option><option>20</option><option>25</option><option>30</option><option>35</option><option>40</option><option>45</option><option>50</option><option>55</option>
+		</select>мин
 	</td>
 </tr>
 <tr>
 	<td><input type="radio" name="next_sched" id="sched" value="sched"/></td>
 	<td>Планировщик</td>
-	<td colspan="2" id="add_sched" onclick="add_schedule(); return false;">
-		Запланировать совещание &gt;&gt;&gt;
+	<td colspan="2">
+		<button id="add_sched">Запланировать совещание &gt;&gt;&gt;</button>
 	</td>
 </tr>
 <tr>
 	<td colspan="2">&nbsp;</td>
 	<td colspan="2">
-		<table id="schedules">
+		<table id="schedules" style="width: 100%;">
 		</table>
 	</td>
 </tr>
@@ -183,6 +203,29 @@
 <tr>
 	<td colspan="3">Автосбор участников</td>
 	<td><input type="checkbox" name="auto_assemble" id="auto_assemble" onchange="assem_change();"/></td>
+</tr>
+<tr>
+	<td colspan="3">Оповещение по телефону</td>
+	<td><input type="checkbox" name="ph_remind" id="ph_remind" onchange="remind_change();"/></td>
+</tr>
+<tr>
+	<td colspan="3">Оповещение по email</td>
+	<td><input type="checkbox" name="em_remind" id="em_remind" onchange="remind_change();"/></td>
+</tr>
+<tr>
+	<td colspan="3">Оповещать за</td>
+	<td>
+		<select name="remind_time" id="remind_time" disabled="disabled">
+			<option value="00:15:00">15 минут</option>
+			<option value="00:30:00">30 минут</option>
+			<option value="01:00:00">1 час</option>
+			<option value="02:00:00">2 часа</option>
+			<option value="04:00:00">4 часа</option>
+			<option value="06:00:00">6 часов</option>
+			<option value="1 00:00:00">1 сутки</option>
+			<option value="2 00:00:00">2 суток</option>
+		</select>
+	</td>
 </tr>
 <tr>
 	<td colspan="3">Контроль потери участников</td>
@@ -260,24 +303,26 @@
 </div>
 
 <div style="display: none;" id="schedule_select">
+	<form>
+	<fieldset>
 	<table>
 		<tr>
 			<td colspan="2">Дни недели</td>
 		</tr>
 		<tr>
-			<td><input type="radio" id="sched-day" name="sched_day" value="week"/></td>
 			<td>
-				<table id="day-selectable">
-					<tr>
-						<td>Пн</td>
-						<td>Вт</td>
-						<td>Ср</td>
-						<td>Чт</td>
-						<td>Пт</td>
-						<td>Сб</td>
-						<td>Вс</td>
-					</tr>
-				</table>
+				<input type="radio" id="sched-day" name="sched_day" value="week" checked="checked" />
+			</td>
+			<td>
+				<div id="day-selectable">
+						<span>Пн</span>
+						<span>Вт</span>
+						<span>Ср</span>
+						<span>Чт</span>
+						<span>Пт</span>
+						<span>Сб</span>
+						<span>Вс</span>
+				</div>
 			</td>
 		</tr>
 		<tr>
@@ -286,45 +331,35 @@
 		<tr>
 			<td><input type="radio" id="sched-date" name="sched_day" value="month"/></td>
 			<td>
-				<table id="date-selectable">
-					<tr>
-						<td>01</td><td>02</td><td>03</td><td>04</td><td>05</td><td>06</td><td>07</td>
-					</tr><tr>
-						<td>08</td><td>09</td><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td>
-					</tr><tr>
-						<td>15</td><td>16</td><td>17</td><td>18</td><td>19</td><td>20</td><td>21</td>
-					</tr><tr>
-						<td>22</td><td>23</td><td>24</td><td>25</td><td>26</td><td>27</td><td>28</td>
-					</tr><tr>
-						<td>29</td><td>30</td><td>31</td><td></td><td></td><td></td><td></td>
-					</tr>
-				</table>
+				<div id="date-selectable">
+					<span>01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span><span>07</span><br/>
+					<span>08</span><span>09</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><br/>
+					<span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><br/>
+					<span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><br/>
+					<span>29</span><span>30</span><span>31</span>
+				</div>
 			</td>
 		</tr>
 <tr>
-	<td>время</td>
-</tr>
-<tr>
+	<td>начало в</td>
 	<td>
 		<select name="schedule_hours_begin" id="schedule_hours_begin">
 			<option> </option> <option>00</option> <option>01</option> <option>02</option> <option>03</option> <option>04</option> <option>05</option> <option>06</option> <option>07</option> <option>08</option> <option>09</option> <option>10</option> <option>11</option> <option>12</option> <option>13</option> <option>14</option> <option>15</option> <option>16</option> <option>17</option> <option>18</option> <option>19</option> <option>20</option> <option>21</option> <option>22</option> <option>23</option>
-		</select>
+		</select>ч
 		<select name="schedule_min_begin" id="schedule_min_begin">
-			<option></option> <option>00</option> <option>01</option> <option>02</option> <option>03</option> <option>04</option> <option>05</option> <option>06</option> <option>07</option> <option>08</option> <option>09</option> <option>10</option> <option>11</option> <option>12</option> <option>13</option> <option>14</option> <option>15</option> <option>16</option> <option>17</option> <option>18</option> <option>19</option> <option>20</option> <option>21</option> <option>22</option> <option>23</option> <option>24</option> <option>25</option> <option>26</option> <option>27</option> <option>28</option> <option>29</option> <option>30</option> <option>31</option> <option>32</option> <option>33</option> <option>34</option> <option>35</option> <option>36</option> <option>37</option> <option>38</option> <option>39</option> <option>40</option> <option>41</option> <option>42</option> <option>43</option> <option>44</option> <option>45</option> <option>46</option> <option>47</option> <option>48</option> <option>49</option> <option>50</option> <option>51</option> <option>52</option> <option>53</option> <option>54</option> <option>55</option> <option>56</option> <option>57</option> <option>58</option> <option>59</option>
-		</select>
+			<option></option> <option>00</option><option>05</option><option>10</option><option>15</option><option>20</option><option>25</option><option>30</option><option>35</option><option>40</option><option>45</option><option>50</option><option>55</option>
+		</select>мин
 	</td>
 </tr>
 <tr>
 	<td>продолжительность</td>
-</tr>
-<tr>
 	<td>
 		<select name="sched_dur_hours" id="sched_dur_hours">
 			<option></option> <option value="00">0</option> <option value="01">1</option> <option value="02">2</option> <option value="03">3</option> <option value="04">4</option> <option value="05">5</option> <option value="06">6</option> <option value="07">7</option>
-		</select>
+		</select>ч
 		<select name="sched_dur_min" id="sched_dur_min">
-			<option></option> <option>00</option> <option>01</option> <option>02</option> <option>03</option> <option>04</option> <option>05</option> <option>06</option> <option>07</option> <option>08</option> <option>09</option> <option>10</option> <option>11</option> <option>12</option> <option>13</option> <option>14</option> <option>15</option> <option>16</option> <option>17</option> <option>18</option> <option>19</option> <option>20</option> <option>21</option> <option>22</option> <option>23</option> <option>24</option> <option>25</option> <option>26</option> <option>27</option> <option>28</option> <option>29</option> <option>30</option> <option>31</option> <option>32</option> <option>33</option> <option>34</option> <option>35</option> <option>36</option> <option>37</option> <option>38</option> <option>39</option> <option>40</option> <option>41</option> <option>42</option> <option>43</option> <option>44</option> <option>45</option> <option>46</option> <option>47</option> <option>48</option> <option>49</option> <option>50</option> <option>51</option> <option>52</option> <option>53</option> <option>54</option> <option>55</option> <option>56</option> <option>57</option> <option>58</option> <option>59</option>
-		</select>
+			<option></option> <option>00</option><option>05</option><option>10</option><option>15</option><option>20</option><option>25</option><option>30</option><option>35</option><option>40</option><option>45</option><option>50</option><option>55</option>
+		</select>мин
 	</td>
 </tr>
 		<tr>
@@ -336,6 +371,8 @@
 			</td>
 		</tr>
 	</table>
+	</fieldset>
+	</form>
 </div>
 <div id="loading" style="display: none;">
 	<em>Loading&#8230;</em>
@@ -356,6 +393,7 @@
 
 	$("input[name='next_sched']").change(function() {
 		if($(this).val() == 'sched') {
+			$("#add_sched").button( "option", "disabled", false );
 			$("#next_date").attr('disabled','disabled');
 			$("#next_date").val('');
 			$("#hours_begin").attr('disabled','disabled');
@@ -366,33 +404,24 @@
 			$("#dur_hours").val('');
 			$("#dur_min").attr('disabled','disabled');
 			$("#dur_min").val('');
-			$("#schedule_day").removeAttr("disabled");
-			$("#schedule_hours_begin").removeAttr("disabled");
-			$("#schedule_min_begin").removeAttr("disabled");
-			$("#sched_dur_hours").removeAttr("disabled");
-			$("#sched_dur_min").removeAttr("disabled");
 		}
 		if($(this).val() == 'next') {
-			$("#schedule_day").attr('disabled','disabled');
 			$("#schedule_day").val('');
-			$("#schedule_hours_begin").attr('disabled','disabled');
 			$("#schedule_hours_begin").val('');
-			$("#schedule_min_begin").attr('disabled','disabled');
 			$("#schedule_min_begin").val('');
 			$("#sched_dur_hours").val('');
-			$("#sched_dur_hours").attr('disabled','disabled');
 			$("#sched_dur_min").val('');
-			$("#sched_dur_min").attr('disabled','disabled');
+			$("#add_sched").button( "option", "disabled", true );
 			$("#next_date").removeAttr("disabled");
 			$("#hours_begin").removeAttr("disabled");
 			$("#min_begin").removeAttr("disabled");
 			$("#dur_hours").removeAttr("disabled");
 			$("#dur_min").removeAttr("disabled");
+			$('#schedules').empty();
+			for(var x=0; x<sched_strings.length; x++) {
+				sched_strings[x].valid = false;
+			}
 		}
-	});
-
-	$('#schedule_day').focus(function() {
-		show_schedule_select();
 	});
 
 	$("input[name='sched_day']").change(function() {

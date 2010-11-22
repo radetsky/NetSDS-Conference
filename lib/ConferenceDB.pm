@@ -689,7 +689,8 @@ sub get_cnfr {
 	$self->_connect();
 	my $q = "SELECT cnfr_id, cnfr_name, cnfr_state, to_char(next_start, 'YYYY-MM-DD HH24:MI'), ".
 					"next_duration, auth_type, auth_string, auto_assemble, lost_control, need_record, ".
-					"number_b, audio_lang FROM conferences WHERE cnfr_id=?";
+					"number_b, audio_lang, voice_remind, email_remind, remind_ahead FROM conferences ".
+					"WHERE cnfr_id=?";
 	my @tmp = $dbh->selectrow_array($q, undef, $id);
 	$cnfr{'id'} = $tmp[0];
 	$cnfr{'name'} = (defined $tmp[1])? $tmp[1] : "";
@@ -703,6 +704,9 @@ sub get_cnfr {
 	$cnfr{'need_record'} = (defined $tmp[9])? $tmp[9] : "";
 	$cnfr{'number_b'} = (defined $tmp[10])? $tmp[10] : "";
 	$cnfr{'audio_lang'} = (defined $tmp[11])? $tmp[11] : "";
+	$cnfr{'ph_remind'} = (defined $tmp[12])? $tmp[12] : "";
+	$cnfr{'em_remind'} = (defined $tmp[13])? $tmp[13] : "";
+	$cnfr{'remind_time'} = (defined $tmp[14])? $tmp[14] : "";
 
 	$q = "SELECT u.full_name, a.admin_id FROM operators_of_conferences ooc, admins a, ".
 			 "users u WHERE ooc.cnfr_id=? AND ooc.admin_id=a.admin_id AND ".
@@ -730,6 +734,21 @@ sub get_cnfr {
 	}
 
 	$cnfr{'users'} = \@conf_users;
+
+	$q = "SELECT schedule_date, schedule_time, schedule_duration FROM schedule WHERE ".
+			 "cnfr_id=? ORDER BY sched_id";
+	$sth = $dbh->prepare($q);
+	$sth->execute($id);
+	my @schedules = ();
+	while(@tmp = $sth->fetchrow_array()) {
+		my %sch_str = ();
+		$sch_str{'day'} = $tmp[0];
+		$sch_str{'begin'} = $tmp[1];
+		$sch_str{'duration'} = $tmp[2];
+		push @schedules, \%sch_str;
+	}
+
+	$cnfr{'schedules'} = \@schedules;
 	return %cnfr;
 }
 
@@ -783,20 +802,28 @@ sub save_cnfr {
 	my $auth_string = shift;
 	$auth_string = undef unless(length $auth_string);
 	my $auto_assemble = shift;
+	my $ph_remind = shift;
+	my $em_remind = shift;
+	my $remind_time = shift;
+	$remind_time = undef unless(length $remind_time);
 	my $lost_control = shift;
 	my $need_record = shift;
 	my $audio_lang = shift;
 	$audio_lang = undef unless(length $audio_lang);
 	my $p = shift;
+	my $s = shift;
 
 	my @phs_id = ();
 	@phs_id = (@{$p}) if(defined $p);
+	my @schedules = ();
+	@schedules = (@{$s}) if(defined $s);
 
 	my $q = "UPDATE conferences SET cnfr_name=?, next_start=to_timestamp(?, 'YYYY-MM-DD HH24:MI'), ".
 					"next_duration=?, auth_type=?, auth_string=?, auto_assemble=?, lost_control=?, ".
-					"need_record=?, audio_lang=? WHERE cnfr_id=?";
+					"need_record=?, audio_lang=?, voice_remind=?, email_remind=?, remind_ahead=?  WHERE cnfr_id=?";
 	my @bind = ($ce_name, $next_start, $next_duration, $auth_type, $auth_string, 
-							$auto_assemble, $lost_control, $need_record, $audio_lang, $id);
+							$auto_assemble, $lost_control, $need_record, $audio_lang, $ph_remind, $em_remind,
+							$remind_time, $id);
 	eval {
 		$dbh->do($q, undef, @bind);
 	};
@@ -842,6 +869,44 @@ sub save_cnfr {
 	}
 
 	$dbh->commit();
+
+	eval {
+		$dbh->do("DELETE FROM schedule WHERE cnfr_id=?", undef, $id);
+	};
+
+	if($@) {
+		$error = "Ошибка удаления запланированных конференций. Обратитесь к разрабочику.";
+		$dbh->rollback();
+		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		warn $warn;
+		return undef;
+	};
+	$dbh->commit();
+	$self->write_to_log($login, "DELETE FROM schedule WHERE cnfr_id=?", $id);
+
+	if(@schedules) {
+		$q = "INSERT INTO schedule (cnfr_id, schedule_date, schedule_time, schedule_duration) ".
+				 "VALUES (?, ?, ?, ?)";
+		$sth = $dbh->prepare($q);
+		eval {
+			while(my $i = shift @schedules) {
+				$sth->execute($id, $$i{'day'}, $$i{'begin'}, $$i{'duration'});
+				$bind_str = join(' ', map {$dbh->quote($_)} ($id, $$i{'day'}, $$i{'begin'}, $$i{'duration'}));
+				$sth1->execute($login, $q, $bind_str);
+			}
+		};
+
+		if($@) {
+			$error = "Ошибка сохранения планируемых конференций. Обратитесь к разрабочику.";
+			$dbh->rollback();
+			my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+			warn $warn;
+			return undef;
+		}
+
+		$dbh->commit();
+	}
+
 	return 1;
 }
 

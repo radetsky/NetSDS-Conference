@@ -31,6 +31,9 @@ CREATE TABLE Conferences(
  need_record boolean,
  number_B varchar(20),
  audio_lang varchar(2),
+ voice_remind boolean,
+ email_remind boolean,
+ remind_ahead interval,
  change_date timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
