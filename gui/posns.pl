@@ -53,7 +53,7 @@ my $row =<<EOR;
 </tr>
 EOR
 
-my $out = "<table id=\"user-list\">" . $thead;
+my $out = "<table id=\"user-list\" class=\"tab-table\">" . $thead;
 
 if($admin) {
 	while(my $i = shift @posns) {

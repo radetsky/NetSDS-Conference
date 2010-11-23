@@ -52,7 +52,7 @@ my $adm_row =<<EOAR;
 </tr>
 EOAR
 
-my $out = "<table id=\"orgs-list\">" . $thead;
+my $out = "<table id=\"orgs-list\" class=\"tab-table\">" . $thead;
 
 if($admin) {
 	foreach my $i (sort keys %orgs) {
