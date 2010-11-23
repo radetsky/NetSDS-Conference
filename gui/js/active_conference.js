@@ -172,6 +172,11 @@ function show_active(confid, confname) {
 		$.getJSON('set_priority.pl', {"cid": conference_id, "phid": "empty"});
 		return false;
 	});
+	$("#stop_cnfr").button();
+	$("#stop_cnfr").click( function() {
+		$.getJSON('stop_cnfr.pl', {"cid": conference_id});
+		return false;
+	});
 	$.getJSON('get_json_active.pl', {"cid": confid}, function(data) {
 		if(data.status == 'error') {
 			$("#error_text").empty();

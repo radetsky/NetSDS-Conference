@@ -653,6 +653,37 @@ sub get_pos_list {
 	return @pos;
 }
 
+=item $res = stop_cnfr($login, $cid);
+$login -- логин оператора, остановившего конференцию
+$cid -- id конференции
+
+=cut
+
+sub stop_cnfr {
+	my $self = shift;
+	my $login = shift;
+	my $cid = shift;
+
+	$self->_connect();
+	my $q = "UPDATE conferences SET cnfr_state='stop' WHERE cnfr_id=?";
+	eval {
+		$dbh->do($q, undef, $cid);
+	};
+
+	if($@) {
+		$error = "Ошибка остановки конференции. Обратитесь к разработчику";
+		$dbh->rollback();
+		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		warn $warn;
+		return undef;
+	}
+
+	$dbh->commit();
+	$self->write_to_log($login, $q, $cid);
+	return 1;
+}
+
+
 =item %cnfr = get_cnfr($cid)
 
 Получение параметров конференции по id конференции. Принимаемые параметры:
