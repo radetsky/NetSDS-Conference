@@ -9,7 +9,7 @@ use ConferenceDB;
 my %c_states = ("inactive"=>"Выкл", "active"=>"Вкл");
 my %funct = ("inactive"=>"edit_cnfr", "active"=>"show_active");
 
-my %s_days = ("mo"=>"Пн", "tu"=>"Вт", "we"=>"Ср", "th"=>"Чт", "fr"=>"Пт", "sa"=>"Сб", "su"=>"Вс");
+my %s_days = ("Mon"=>"Пн", "Tue"=>"Вт", "Wed"=>"Ср", "Thu"=>"Чт", "Fri"=>"Пт", "Sat"=>"Сб", "Sun"=>"Вс");
 
 my %langs = ("ru"=>"Русский", "ua"=>"Украинский");
 

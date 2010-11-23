@@ -2,17 +2,20 @@
 
 use strict;
 use CGI;
+use Date::Manip;
 
 use lib './lib';
 use ConferenceDB;
 
-my %days = ("Пн"=>"mo",
-						"Вт"=>"tu",
-						"Ср"=>"we",
-						"Чт"=>"th",
-						"Пт"=>"fr",
-						"Сб"=>"sa",
-						"Вс"=>"su");
+my %days = ("Пн"=>"Mon",
+						"Вт"=>"Tue",
+						"Ср"=>"Wed",
+						"Чт"=>"Thu",
+						"Пт"=>"Fri",
+						"Сб"=>"Sat",
+						"Вс"=>"Sun");
+
+my %d_ord = ("Mon"=>1, "Tue"=>2, "Wed"=>3, "Thu"=>4, "Fri"=>5, "Sat"=>6, "Sun"=>7);
 
 my $error = '{ "error": %s}';
 
@@ -56,21 +59,42 @@ if($next_type eq "next") {
 } else {
 	my $scheds = $cgi->param('schedules');
 	my @every_sch = split(/\|/,$scheds);
+	my @deltas = ();
+	my @nexts = ();
+	my $base = ParseDate("today");
+	my $start = $base;
+	my $err;
+	my $stop = DateCalc("today","+ 2 month",\$err);
 	while(my $it = shift @every_sch) {
-		warn $it;
 		my %sch = ();
 		my $d;
 		($d, $sch{'begin'}, $sch{'duration'}) = split(/,/, $it);
 		$d =~ s/^(.*)[\s]+$/$1/;
+		my $format;
 		if($d =~ /^[\d]+$/) {
 			$sch{'day'} = $d;
+			$format = sprintf "0:1*0:%s:%s:0", $d, $sch{'begin'};
 		} else {
 			$sch{'day'} = $days{$d};
+			$format = sprintf "0:0:1*%s:%s:0", $d_ord{$sch{'day'}}, $sch{'begin'};
 		}
+		my @recur = ParseRecur($format,$base,$start,$stop);
+		my $diff = DateCalc("today", $recur[0], $err, 1);
 		$sch{'duration'} .= ":00";
 		push @schedules, \%sch;
+		push @deltas, $diff;
+		push @nexts, $recur[0];
 	}
 # FIXME вот здесь должно идти выяснение, когда следующая конференция
+	my $min = &ParseDateDelta($deltas[0]);
+	my $ind = 0;
+	for(my $j=1; $j<=$#deltas; $j++) {
+		next if(&Date_Cmp(&ParseDateDelta($deltas[$j]), $min) >= 0);
+		$ind = $j;
+		$min = &ParseDateDelta($deltas[$j]);
+	}
+	$next_start = &UnixDate($nexts[$ind], "%Y-%m-%d %H:%M");
+	$next_duration = $schedules[$ind]{'duration'};
 }
 
 my $auth_type = "";

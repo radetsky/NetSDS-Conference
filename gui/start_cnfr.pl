@@ -7,13 +7,13 @@ use Date::Manip;
 use lib './lib';
 use ConferenceDB;
 
-my %days = ("Пн"=>"mo",
-						"Вт"=>"tu",
-						"Ср"=>"we",
-						"Чт"=>"th",
-						"Пт"=>"fr",
-						"Сб"=>"sa",
-						"Вс"=>"su");
+my %days = ("Пн"=>"Mon",
+						"Вт"=>"Tue",
+						"Ср"=>"Wed",
+						"Чт"=>"Thu",
+						"Пт"=>"Fri",
+						"Сб"=>"Sat",
+						"Вс"=>"Sun");
 
 my $error = '{ "error": %s}';
 

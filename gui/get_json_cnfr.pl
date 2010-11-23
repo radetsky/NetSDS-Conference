@@ -3,7 +3,7 @@
 use strict;
 use CGI;
 
-my %s_days = ("mo"=>"Пн", "tu"=>"Вт", "we"=>"Ср", "th"=>"Чт", "fr"=>"Пт", "sa"=>"Сб", "su"=>"Вс");
+my %s_days = ("Mon"=>"Пн", "Tue"=>"Вт", "Wed"=>"Ср", "Thu"=>"Чт", "Fri"=>"Пт", "Sat"=>"Сб", "Sun"=>"Вс");
 
 use lib './lib';
 use ConferenceDB;

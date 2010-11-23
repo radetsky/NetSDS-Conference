@@ -805,7 +805,7 @@ sub save_cnfr {
 	my $ph_remind = shift;
 	my $em_remind = shift;
 	my $remind_time = shift;
-	$remind_time = undef unless(length $remind_time);
+	$remind_time = undef unless(defined $remind_time and length $remind_time);
 	my $lost_control = shift;
 	my $need_record = shift;
 	my $audio_lang = shift;
