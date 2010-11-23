@@ -20,7 +20,8 @@ my $error;
 
 sub _connect {
 	unless(defined $dbh and $dbh->ping()) {
-		$dbh = DBI->connect("dbi:Pg:dbname=astconf", 'astconf', 'Rjyathtywbz',
+		$dbh = DBI->connect("dbi:Pg:dbname=astconf",
+												'astconf', 'Rjyathtywbz',
 												{AutoCommit => 0, RaiseError => 1});
 	}
 }
@@ -689,7 +690,8 @@ sub get_cnfr {
 	$self->_connect();
 	my $q = "SELECT cnfr_id, cnfr_name, cnfr_state, to_char(next_start, 'YYYY-MM-DD HH24:MI'), ".
 					"next_duration, auth_type, auth_string, auto_assemble, lost_control, need_record, ".
-					"number_b, audio_lang, voice_remind, email_remind, remind_ahead FROM conferences ".
+					"number_b, audio_lang, voice_remind, email_remind, to_char(remind_ahead, ".
+					"'DD HH24:MI:SS') FROM conferences ".
 					"WHERE cnfr_id=?";
 	my @tmp = $dbh->selectrow_array($q, undef, $id);
 	$cnfr{'id'} = $tmp[0];

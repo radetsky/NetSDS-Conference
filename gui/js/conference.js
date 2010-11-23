@@ -100,6 +100,10 @@ function edit_cnfr(confid, confname) {
 		}
 		if(rem_t_en) {
 			$("#remind_time").val(data.remind_time);
+			$("#remind_time").removeAttr("disabled");
+		} else {
+			$("#remind_time").val('00 00:15:00');
+			$("#remind_time").attr("disabled", "disabled");
 		}
 
 		$("#operator_list").empty();
@@ -441,6 +445,6 @@ function remind_change() {
 		$('#remind_time').removeAttr("disabled");
 	} else {
 		$('#remind_time').attr('disabled', 'disabled');
-		$('#remind_time').val('00:15:00');
+		$('#remind_time').val('00 00:15:00');
 	}
 }
