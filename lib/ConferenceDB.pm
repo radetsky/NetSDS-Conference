@@ -84,6 +84,39 @@ sub cnfr_list {
 	return @res;
 }
 
+=item @log_list = get_log($cnfr_if, $from, $to)
+Функция получения логов.
+$cnfr_if -- id конференции
+$from -- с даты
+$to - по дату
+
+=cut
+
+sub get_log {
+	my $self = shift;
+	my $cnfr_if = shift;
+	my $from = shift;
+	my $to = shift;
+	my @log_list = ();
+
+	$self->_connect();
+	my $q = "SELECT to_char(event_time, 'YYYY-MM-DD HH24:MI'), event_type, userfield FROM conflog ".
+					"WHERE cnfr_id=? AND event_time > ? AND event_time < ? ORDER BY event_time DESC";
+	my $sth = $dbh->prepare($q);
+	$sth->execute($cnfr_if, $from, $to);
+	while(my @tmp = $sth->fetchrow_array()) {
+		my %st = ();
+		$st{'time'} = $tmp[0];
+		$st{'type'} = $tmp[1];
+		$st{'field'} = "";
+		$st{'field'} = $tmp[2] if(defined $tmp[2]);
+		push @log_list, \%st;
+	}
+
+	$dbh->rollback();
+	return @log_list;
+}
+
 =item @cnfr_list = get_cnfr_rights($login)
 
 Возвращает список номеров конференций, доступных оператору с

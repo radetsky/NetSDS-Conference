@@ -3,6 +3,9 @@
 use strict;
 use CGI;
 
+use lib './lib';
+use ConferenceDB;
+
 my $form =<<EOF;
 <form method="post" enctype="multipart/form-data" action="/save_audio.pl" onsubmit="return AIM.submit(this, {'onStart' : startCallback, 'onComplete' : completeCallback})">
 	Название файла: <input type="text" name="fname" id="fname" />
@@ -10,9 +13,6 @@ my $form =<<EOF;
 	<button type="submit" name="send" value="send">Загрузить</button>
 </form>
 EOF
-
-use lib './lib';
-use ConferenceDB;
 
 my $cgi = CGI->new;
 my $login = $cgi->remote_user();
