@@ -103,29 +103,18 @@ sub start {
         return 1;
     }
 
-    # Set active flag,
-    # Set next_start to NULL,
-    # Set Last_start to now()
-    my $res = $this->mydb->cnfr_update(
-        $konf->{'cnfr_id'},
-        {
-            cnfr_state => '\'active\'',
-            next_start => 'NULL',
-            last_start => 'now()'
-        }
-    );
+#		my $res = $this->mydb->cnfr_update(                         This code moved to NetSDS-Conference.pl
+#        $konf->{'cnfr_id'},                                    
+#        {
+#            cnfr_state => '\'active\'',
+#            next_start => 'NULL',
+#            last_start => 'now()'
+#        }
+#    );
+
 
     $this->{'konf'}->{'last_start'} =
       POSIX::strftime( "%Y-%m-%d %H:%M:%S", localtime );
-
-    unless ( defined($res) ) {
-        $this->speak(
-            "[$$] Fail to update database while starting the conference.");
-    }
-    else {
-        $this->speak(
-            "[$$] Database updated sucessfully while starting the conference.");
-    }
 
     # log record 
     $this->mydb->conflog($konf->{'cnfr_id'},'started',undef); 
@@ -455,10 +444,11 @@ check_stop:
             my $date_started = $this->{'konf'}->{'date_started'};
             my $delta        = $date_now - $date_started;
 
-	    my $max_delta = 300; 
+	          my $max_delta = 300;
+
             if ( defined ( $this->conf->{'max_delta_empty_conference'} ) ) { 
-		$max_delta = $this->conf->{'max_delta_empty_conference'}; 
-	    }
+		           $max_delta = $this->conf->{'max_delta_empty_conference'}; 
+	          }
 
             if ( $delta > $max_delta ) {
                 # Exit from main_loop means that we will stop
@@ -513,7 +503,7 @@ sub stop {
         $this->{'konf'}->{'cnfr_id'},
         {
             cnfr_state => '\'inactive\'',
-            last_end   => 'now()'
+            last_end   => 'now()',
         }
     );
 
