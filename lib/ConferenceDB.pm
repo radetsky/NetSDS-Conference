@@ -857,6 +857,8 @@ sub save_cnfr {
 	my @bind = ($ce_name, $next_start, $next_duration, $auth_type, $auth_string, 
 							$auto_assemble, $lost_control, $need_record, $audio_lang, $ph_remind, $em_remind,
 							$remind_time, $id);
+
+	$self->_connect();
 	eval {
 		$dbh->do($q, undef, @bind);
 	};
@@ -940,6 +942,99 @@ sub save_cnfr {
 		$dbh->commit();
 	}
 
+	return 1;
+}
+
+=item $res = load_audio($descr, $data_file)
+$descr -- описание файла, которым он будет показываться в интерфейсах
+$data_file -- содержимое аудиофайла
+=cut
+
+no strict;
+
+sub load_audio {
+	my $self = shift;
+	my $descr = shift;
+	my $file_data = shift;
+
+	$self->_connect();	
+	my $q = "INSERT INTO audio (description, audio_data) VALUES (?, ?)";
+	my $sth=$dbh->prepare($q);
+	my $rc=$sth->bind_param(1, $descr);
+	$rc=$sth->bind_param(2, $self->escape_bytea($file_data), { pg_type => PG_BYTEA });
+	eval {
+		$sth->execute();
+	};
+
+	if($@) {
+		$error = "Ошибка сохранения звукового файла.";
+		$dbh->rollback();
+		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		warn $warn;
+		return undef;
+	}
+	$dbh->commit();
+	return 1;
+}
+
+use strict;
+
+=item $data = escape_bytea
+Служебная программа для подготовки данных для загрузки в тип bytea
+
+=cut 
+
+sub escape_bytea {
+	my $self = shift;
+  my ($instring)=@_;
+  my $returnstring=join ('',map {
+    my $tmp=ord($_);
+    ($tmp >= 32 and $tmp <= 126 and $tmp != 92) ? $_ : sprintf('\%03o',$tmp);} split (//,$instring));
+		warn length($returnstring);
+  return $returnstring;
+}
+
+=item %lst = get_audio_list()
+Возвращает hash загруженных аудио файлов. Индексом hash'а является id файла в базе данных
+
+=cut
+
+sub get_audio_list {
+	my $self = shift;
+	my %list = ();
+
+	$self->_connect();
+	my $q = "SELECT au_id, description FROM audio ORDER BY description";
+	my $sth = $dbh->prepare($q);
+	$sth->execute();
+	while(my @tmp = $sth->fetchrow_array()) {
+		$list{$tmp[0]} = $tmp[1];
+	}
+	return %list;
+}
+
+=item $res = remove_audio($au_id)
+Удаляет выбранный аудио файл
+=cut
+
+sub remove_audio {
+	my $self = shift;
+	my $auid = shift;
+
+	$self->_connect();
+	my $q = "DELETE FROM audio WHERE au_id=?";
+	eval {
+		$dbh->do($q, undef, $auid);
+	};
+
+	if($@) {
+		$error = "Ошибка удаления звукового файла.";
+		$dbh->rollback();
+		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		warn $warn;
+		return undef;
+	}
+	$dbh->commit();
 	return 1;
 }
 

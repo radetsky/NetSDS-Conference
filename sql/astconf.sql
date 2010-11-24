@@ -52,6 +52,13 @@ CREATE TABLE Schedule(
 CREATE TRIGGER Schedule_stamp BEFORE UPDATE ON Schedule
 		FOR EACH ROW EXECUTE PROCEDURE upd_tstamp();
 
+CREATE TABLE Audio(
+	au_id serial primary key,
+	description varchar(200),
+	audio_data bytea,
+	create_date timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE Users(
  user_id serial primary key,
  full_name varchar(500) NOT NULL,

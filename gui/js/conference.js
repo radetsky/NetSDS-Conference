@@ -290,7 +290,7 @@ function add_operator() {
 			$("#error_text").empty();
 			$("#error_text").append(data.message);
 			$("#error").dialog('open');
-			return;
+			return false;
 		}
 		$("#oper_item").empty();
 		oper_list = data;

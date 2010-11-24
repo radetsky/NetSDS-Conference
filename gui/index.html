@@ -16,6 +16,7 @@
 		<script type="text/javascript" src="js/organization.js"></script>
 		<script type="text/javascript" src="js/position.js"></script>
 		<script type="text/javascript" src="js/user.js"></script>
+		<script type="text/javascript" src="js/audio.js"></script>
 		<style type="text/css">
 			table.tab-table {font-family:Arial,Helvetica,sans-serif; font-size:50%;}
 			.tab-table td {vertical-align:top; 
@@ -43,6 +44,7 @@
 				$("#users").load('/user_list.pl');
 				$("#posns").load('/posns.pl');
 				$("#orgs").load('/orgs.pl');
+				$('#audio').load('/audio.pl');
 
 				$('#add_org').dialog({ autoOpen: false });
 				$('#add_pos').dialog({ autoOpen: false });
@@ -87,6 +89,7 @@
 				<li><a href="#users"><span></span>Пользователи</a></li>
 				<li><a href="#posns"><span></span>Должности</a></li>
 				<li><a href="#orgs"><span></span>Организации</a></li>
+				<li><a href="#audio"><span></span>Звуковые файлы</a></li>
 			</ul>
 			<div id="cnfrs">
 			</div>
@@ -95,6 +98,8 @@
 			<div id="posns">
 			</div>
 			<div id="orgs">
+			</div>
+			<div id="audio">
 			</div>
 		</div>
 		<div id="add_org" style="display: none;">
@@ -380,7 +385,7 @@
 	<em>Loading&#8230;</em>
 </div>
 <div id="error" style="display: none;">
-	<p id="error_text" style="color:red;">
+	<p id="error_text" style="color:red; font-weight:bold; ">
 	<p>
 </div>
 <script>
