@@ -34,6 +34,7 @@ CREATE TABLE Conferences(
  voice_remind boolean,
  email_remind boolean,
  remind_ahead interval,
+ au_id integer REFERENCES Audio(au_id) ON DELETE RESTRICT,
  change_date timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

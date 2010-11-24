@@ -93,6 +93,22 @@ for(my $k=0; $k<=$#sched; $k++) {
 chop $json;
 $json .= "]";
 
+my %a_list = $cnfr->get_audio_list();
+
+$json .= ', "audio": [ ';
+foreach my $k (keys %a_list) {
+	$json .= ' {"auid": "' . $k . '", ';
+	if($cn{'au_id'} eq $k) {
+		$json .= ' "selected": true, ';
+	} else {
+		$json .= ' "selected": false, ';
+	}
+	$json .= ' "name": "' . $a_list{$k} . '"},';
+}
+
+chop $json;
+$json .= "]";
+
 my @users = @{$cn{'users'}};
 
 $json .= ', "users": [ ';

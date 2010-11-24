@@ -722,7 +722,7 @@ sub get_cnfr {
 	my $q = "SELECT cnfr_id, cnfr_name, cnfr_state, to_char(next_start, 'YYYY-MM-DD HH24:MI'), ".
 					"next_duration, auth_type, auth_string, auto_assemble, lost_control, need_record, ".
 					"number_b, audio_lang, voice_remind, email_remind, to_char(remind_ahead, ".
-					"'DD HH24:MI:SS') FROM conferences ".
+					"'DD HH24:MI:SS'), au_id FROM conferences ".
 					"WHERE cnfr_id=?";
 	my @tmp = $dbh->selectrow_array($q, undef, $id);
 	$cnfr{'id'} = $tmp[0];
@@ -740,6 +740,7 @@ sub get_cnfr {
 	$cnfr{'ph_remind'} = (defined $tmp[12])? $tmp[12] : "";
 	$cnfr{'em_remind'} = (defined $tmp[13])? $tmp[13] : "";
 	$cnfr{'remind_time'} = (defined $tmp[14])? $tmp[14] : "";
+	$cnfr{'au_id'} = (defined $tmp[15])? $tmp[15] : "";
 
 	$q = "SELECT u.full_name, a.admin_id FROM operators_of_conferences ooc, admins a, ".
 			 "users u WHERE ooc.cnfr_id=? AND ooc.admin_id=a.admin_id AND ".
@@ -843,6 +844,7 @@ sub save_cnfr {
 	my $need_record = shift;
 	my $audio_lang = shift;
 	$audio_lang = undef unless(length $audio_lang);
+	my $au_id = shift;
 	my $p = shift;
 	my $s = shift;
 
@@ -853,10 +855,11 @@ sub save_cnfr {
 
 	my $q = "UPDATE conferences SET cnfr_name=?, next_start=to_timestamp(?, 'YYYY-MM-DD HH24:MI'), ".
 					"next_duration=?, auth_type=?, auth_string=?, auto_assemble=?, lost_control=?, ".
-					"need_record=?, audio_lang=?, voice_remind=?, email_remind=?, remind_ahead=?  WHERE cnfr_id=?";
+					"need_record=?, audio_lang=?, voice_remind=?, email_remind=?, remind_ahead=?, ".
+					"au_id=? WHERE cnfr_id=?";
 	my @bind = ($ce_name, $next_start, $next_duration, $auth_type, $auth_string, 
 							$auto_assemble, $lost_control, $need_record, $audio_lang, $ph_remind, $em_remind,
-							$remind_time, $id);
+							$remind_time, $au_id, $id);
 
 	$self->_connect();
 	eval {

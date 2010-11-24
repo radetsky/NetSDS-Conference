@@ -39,8 +39,10 @@ if(defined $filename) {
 		close(CNVT);
 	
 		unless($cnfr->load_audio($desc, $file_data)) {
-		$msg = "Ошибка сохранения файла.";
+			$msg = "Ошибка сохранения файла.";
 		}
+		unlink $output;
+		unlink $convert;
 	} else {
 		$msg = "Ошибка преобразования файла. Возможно файл неверного формата. Данный файл сохранить невозможно.";
 	}

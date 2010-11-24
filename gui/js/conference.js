@@ -88,9 +88,11 @@ function edit_cnfr(confid, confname) {
 		var rem_t_en = false;
 		if(data.ph_remind == 1) {
 			$("#ph_remind").attr('checked', 'checked');
+			$('#audio_id').removeAttr("disabled");
 			rem_t_en = true;
 		} else {
 			$("#ph_remind").attr('checked', '');
+			$('#audio_id').attr("disabled", "disabled");
 		}
 		if(data.em_remind == 1) {
 			$("#em_remind").attr('checked', 'checked');
@@ -104,6 +106,23 @@ function edit_cnfr(confid, confname) {
 		} else {
 			$("#remind_time").val('00 00:15:00');
 			$("#remind_time").attr("disabled", "disabled");
+		}
+
+		if(data.audio.length == 0) {
+			$('#ph_remind').attr("disabled", "disabled");
+		} else {
+			$('#ph_remind').removeAttr("disabled");
+		}
+
+		$('#audio_id').empty();
+		for(var t=0; t<data.audio.length; t++) {
+			var y = '<option ';
+			if(data.audio[t].selected) {
+				y += 'selected="selected" ';
+			}
+			y += 'value="'+data.audio[t].auid+'">';
+			y += data.audio[t].name+'</option>';
+			$('#audio_id').append(y);
 		}
 
 		$("#operator_list").empty();
@@ -440,7 +459,22 @@ function close_sched_dialog() {
 	$('#schedule_select').dialog("close");
 }
 
-function remind_change() {
+function phrem_change() {
+	if($('#ph_remind').attr('checked') == true) {
+		$('#audio_id').removeAttr("disabled");
+	} else {
+		$('#audio_id').attr("disabled", "disabled");
+	}
+
+	if($('#ph_remind').attr('checked') == true || $('#em_remind').attr('checked') == true) {
+		$('#remind_time').removeAttr("disabled");
+	} else {
+		$('#remind_time').attr('disabled', 'disabled');
+		$('#remind_time').val('00 00:15:00');
+	}
+}
+
+function emrem_change() {
 	if($('#ph_remind').attr('checked') == true || $('#em_remind').attr('checked') == true) {
 		$('#remind_time').removeAttr("disabled");
 	} else {

@@ -116,6 +116,11 @@ my $need_record = (defined $cgi->param('need_record'))? 1 : 0;
 my $audio_lang = $cgi->param('audio_lang');
 my $phone_remind = (defined $cgi->param('ph_remind'))? 1 : 0;
 my $email_remind = (defined $cgi->param('em_remind'))? 1 : 0;
+my $au_id = "";
+if($phone_remind) {
+	$au_id = $cgi->param('audio_id');
+}
+
 my $till_remind = "";
 if($phone_remind or $email_remind) {
 	$till_remind = $cgi->param('remind_time');
@@ -130,7 +135,7 @@ if(defined $pp and length $pp) {
 
 $cnfr->save_cnfr($login, $id, $ce_name, $next_start, $next_duration, $auth_type, $auth_string, 
 								 $auto_assemble, $phone_remind, $email_remind, $till_remind, $lost_control, 
-								 $need_record, $audio_lang, \@partic, \@schedules);
+								 $need_record, $audio_lang, $au_id, \@partic, \@schedules);
 
 if($admin) {
 	my @ops =  split(/[\s]+/, $cgi->param('ops_ids'));

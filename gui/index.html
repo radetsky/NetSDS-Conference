@@ -213,11 +213,18 @@
 </tr>
 <tr>
 	<td colspan="3">Оповещение по телефону</td>
-	<td><input type="checkbox" name="ph_remind" id="ph_remind" onchange="remind_change();"/></td>
+	<td><input type="checkbox" name="ph_remind" id="ph_remind" onchange="phrem_change();"/></td>
+</tr>
+<tr>
+	<td colspan="3" disabled="disabled">Файл оповещения по телефону</td>
+	<td>
+		<select name="audio_id" id="audio_id">
+		</select>
+	</td>
 </tr>
 <tr>
 	<td colspan="3">Оповещение по email</td>
-	<td><input type="checkbox" name="em_remind" id="em_remind" onchange="remind_change();"/></td>
+	<td><input type="checkbox" name="em_remind" id="em_remind" onchange="emrem_change();"/></td>
 </tr>
 <tr>
 	<td colspan="3">Оповещать за</td>

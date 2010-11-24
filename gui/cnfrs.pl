@@ -7,7 +7,7 @@ use lib './lib';
 use ConferenceDB;
 
 my %c_states = ("inactive"=>"Выкл", "active"=>"Вкл", "stop"=>"Останов");
-my %funct = ("inactive"=>"edit_cnfr", "active"=>"show_active");
+my %funct = ("inactive"=>"edit_cnfr", "active"=>"show_active", "stop"=>"show_active");
 
 my %s_days = ("Mon"=>"Пн", "Tue"=>"Вт", "Wed"=>"Ср", "Thu"=>"Чт", "Fri"=>"Пт", "Sat"=>"Сб", "Sun"=>"Вс");
 
