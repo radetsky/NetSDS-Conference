@@ -53,8 +53,8 @@ if($next_type eq "next") {
 	my @every_sch = split(/\|/,$scheds);
 	while(my $it = shift @every_sch) {
 		warn $it;
-		my %sch = ();
 		my $d;
+		my %sch = ();
 		($d, $sch{'begin'}, $sch{'duration'}) = split(/,/, $it);
 		$d =~ s/^(.*)[\s]+$/$1/;
 		if($d =~ /^[\d]+$/) {
@@ -65,7 +65,7 @@ if($next_type eq "next") {
 		$sch{'duration'} .= ":00";
 		push @schedules, \%sch;
 	}
-	$next_duration = $sch{'duration'};
+	$next_duration = "00:00:00";
 }
 
 $next_start = UnixDate("today", "%Y-%m-%d %H:%M");
