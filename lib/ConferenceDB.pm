@@ -135,7 +135,8 @@ sub set_priority {
 	if($@) {
 		$error = "Ошибка снятия приоритета пользователя в конференции";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return 0;
 	}
@@ -154,7 +155,8 @@ sub set_priority {
 	if($@) {
 		$error = "Ошибка установки приоритета пользователя в конференции";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return 0;
 	}
@@ -396,7 +398,8 @@ sub add_participant_to_conference {
 	if($@) {
 		$error = "Ошибка добавления пользователя в совещание. Обратитесь к администратору";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return undef;
 	}
@@ -489,7 +492,8 @@ sub remove_oper {
 	if($@) {
 		$error = "Ошибка удаления оператора. Обратитесь к администратору.";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return ();
 	}
@@ -547,7 +551,8 @@ sub del_org {
 	if($@) {
 		$error = "Ошибка удаления организации. Возможно существуют пользователи, принадлежащие этой организации";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return 0;
 	}
@@ -583,7 +588,8 @@ sub del_pos {
 	if($@) {
 		$error = "Ошибка удаления должности. Возмсжно существует пользователь, занимающий эту должность.";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return 0;
 	}
@@ -619,7 +625,8 @@ sub del_user {
 	if($@) {
 		$error = "Ошибка удаления пользователя. Возможно он участник одной из конференций или является администратором";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return 0;
 	}
@@ -673,7 +680,8 @@ sub stop_cnfr {
 	if($@) {
 		$error = "Ошибка остановки конференции. Обратитесь к разработчику";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return undef;
 	}
@@ -845,6 +853,7 @@ sub save_cnfr {
 	my $audio_lang = shift;
 	$audio_lang = undef unless(length $audio_lang);
 	my $au_id = shift;
+	$au_id = undef unless(length $au_id);
 	my $p = shift;
 	my $s = shift;
 
@@ -867,9 +876,10 @@ sub save_cnfr {
 	};
 
 	if($@) {
+		my ($package, $filename, $line) = caller;
 		$error = "Ошибка обновления данных конференции. Обратитесь к администратору";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		warn join('" "', @bind);
 		return undef;
@@ -901,7 +911,8 @@ sub save_cnfr {
 	if($@) {
 		$error = "Ошибка сохранения списка участников. Обратитесь к администратору";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return undef;
 	}
@@ -915,7 +926,8 @@ sub save_cnfr {
 	if($@) {
 		$error = "Ошибка удаления запланированных конференций. Обратитесь к разрабочику.";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return undef;
 	};
@@ -937,7 +949,8 @@ sub save_cnfr {
 		if($@) {
 			$error = "Ошибка сохранения планируемых конференций. Обратитесь к разрабочику.";
 			$dbh->rollback();
-			my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+			my ($package, $filename, $line) = caller;
+			my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 			warn $warn;
 			return undef;
 		}
@@ -972,7 +985,8 @@ sub load_audio {
 	if($@) {
 		$error = "Ошибка сохранения звукового файла.";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return undef;
 	}
@@ -993,7 +1007,6 @@ sub escape_bytea {
   my $returnstring=join ('',map {
     my $tmp=ord($_);
     ($tmp >= 32 and $tmp <= 126 and $tmp != 92) ? $_ : sprintf('\%03o',$tmp);} split (//,$instring));
-		warn length($returnstring);
   return $returnstring;
 }
 
@@ -1033,7 +1046,8 @@ sub remove_audio {
 	if($@) {
 		$error = "Ошибка удаления звукового файла.";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return undef;
 	}
@@ -1075,7 +1089,8 @@ sub set_number_b {
 	if($@) {
 		$error = "Ошибка задания номера конференции";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return undef;
 	}
@@ -1125,7 +1140,8 @@ sub update_orgs {
 	if($@) {
 		$error = "Внутренняя ошибка базы. Обратитесь к администратору";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return ();
 	}
@@ -1178,7 +1194,8 @@ sub update_posns {
 	if($@) {
 		$error = "Внутренняя ошибка базы. Обратитесь к администратору";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return ();
 	}
@@ -1249,7 +1266,8 @@ sub update_user {
 			$error = "Ошибка обновления пользователя. Обратитесь к администратору";
 		}
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return ();
 	}
@@ -1267,7 +1285,8 @@ sub update_user {
 			if($@) {
 				$error = "Один из удалямых телефонов используется в совещании. Сначала нужно проверить, что удаляемый телефон нигде не используется";
 				$dbh->rollback();
-				my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+				my ($package, $filename, $line) = caller;
+				my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 				warn $warn;
 				return ();
 			}
@@ -1304,7 +1323,8 @@ sub update_user {
 				if($@) {
 					$error = "Такой номер уже существует в базе у другого пользователя. Повторение одного номера у разных пользователей невозможно";
 					$dbh->rollback();
-					my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+					my ($package, $filename, $line) = caller;
+					my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 					warn $warn;
 					return ();
 				}
@@ -1342,7 +1362,8 @@ sub update_user {
 			if($@) {
 				$error = "Один из удалямых телефонов используется в совещании. Сначала нужно проверить, что удаляемый телефон нигде не используется";
 				$dbh->rollback();
-				my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+				my ($package, $filename, $line) = caller;
+				my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 				warn $warn;
 				return ();
 			}
@@ -1371,7 +1392,8 @@ sub update_user {
 			if($@) {
 				$error = "Ошибка обновления телефонов. Обратитесь к администратору.";
 				$dbh->rollback();
-				my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+				my ($package, $filename, $line) = caller;
+				my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 				warn $warn;
 				return ();
 			}
@@ -1399,7 +1421,8 @@ sub update_user {
 				if($@) {
 					$error = "Такое имя для входа уже используется. Выберите другое.";
 					$dbh->rollback();
-					my $warn = $0 . " " . scalar(localtime (time)) . " " . $sth->errstr;
+					my ($package, $filename, $line) = caller;
+					my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 					warn $warn;
 					return ();
 				}
@@ -1446,7 +1469,8 @@ sub update_user {
 				if($@) {
 					$error = "Ошибка сохранения прав администратора. Обратитесь к администратору.";
 					$dbh->rollback();
-					my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+					my ($package, $filename, $line) = caller;
+					my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 					warn $warn;
 					return ();
 				}
@@ -1519,7 +1543,8 @@ sub set_cnfr_operators {
 	if($@) {
 		$error = "Ошибка базы данных, обратитесь к администратору.";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return undef;
 	}
@@ -1537,7 +1562,8 @@ sub set_cnfr_operators {
 		if($@) {
 			$error = "Ошибка задания оператора конференции, обратитесь к администратору.";
 			$dbh->rollback();
-			my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+			my ($package, $filename, $line) = caller;
+			my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 			warn $warn;
 			return undef;
 		}
@@ -1611,6 +1637,8 @@ sub write_to_log {
 	if($@) {
 		$dbh->rollback();
 		warn "Error writing log: $0 $user $query $bind_str";
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		return undef;
 	}
 
@@ -1651,7 +1679,8 @@ sub cnfr_update {
 	};
 	if($@) {
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return undef;
 	}

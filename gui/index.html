@@ -45,6 +45,7 @@
 				$("#posns").load('/posns.pl');
 				$("#orgs").load('/orgs.pl');
 				$('#audio').load('/audio.pl');
+				$('#logs').load('/logs.pl');
 
 				$('#add_org').dialog({ autoOpen: false });
 				$('#add_pos').dialog({ autoOpen: false });
@@ -90,6 +91,7 @@
 				<li><a href="#posns"><span></span>Должности</a></li>
 				<li><a href="#orgs"><span></span>Организации</a></li>
 				<li><a href="#audio"><span></span>Звуковые файлы</a></li>
+				<li><a href="#logs"><span></span>Протоколы</a></li>
 			</ul>
 			<div id="cnfrs">
 			</div>
@@ -100,6 +102,8 @@
 			<div id="orgs">
 			</div>
 			<div id="audio">
+			</div>
+			<div id="logs">
 			</div>
 		</div>
 		<div id="add_org" style="display: none;">
@@ -170,10 +174,10 @@
 	<td>продолжительность</td>
 	<td>
 		<select name="dur_hours" id="dur_hours">
-			<option></option> <option value="00">0</option> <option value="01">1</option> <option value="02">2</option> <option value="03">3</option> <option value="04">4</option> <option value="05">5</option> <option value="06">6</option> <option value="07">7</option>
+			<option value="00">0</option> <option value="01">1</option> <option value="02">2</option> <option value="03">3</option> <option value="04">4</option> <option value="05">5</option> <option value="06">6</option> <option value="07">7</option>
 		</select>ч
 		<select name="dur_min" id="dur_min">
-			<option></option><option>00</option><option>05</option><option>10</option><option>15</option><option>20</option><option>25</option><option>30</option><option>35</option><option>40</option><option>45</option><option>50</option><option>55</option>
+			<option>00</option><option>05</option><option>10</option><option>15</option><option>20</option><option>25</option><option>30</option><option>35</option><option>40</option><option>45</option><option>50</option><option>55</option>
 		</select>мин
 	</td>
 </tr>
@@ -369,10 +373,10 @@
 	<td>продолжительность</td>
 	<td>
 		<select name="sched_dur_hours" id="sched_dur_hours">
-			<option></option> <option value="00">0</option> <option value="01">1</option> <option value="02">2</option> <option value="03">3</option> <option value="04">4</option> <option value="05">5</option> <option value="06">6</option> <option value="07">7</option>
+			<option value="00">0</option> <option value="01">1</option> <option value="02">2</option> <option value="03">3</option> <option value="04">4</option> <option value="05">5</option> <option value="06">6</option> <option value="07">7</option>
 		</select>ч
 		<select name="sched_dur_min" id="sched_dur_min">
-			<option></option> <option>00</option><option>05</option><option>10</option><option>15</option><option>20</option><option>25</option><option>30</option><option>35</option><option>40</option><option>45</option><option>50</option><option>55</option>
+			<option>00</option><option>05</option><option>10</option><option>15</option><option>20</option><option>25</option><option>30</option><option>35</option><option>40</option><option>45</option><option>50</option><option>55</option>
 		</select>мин
 	</td>
 </tr>

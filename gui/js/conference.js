@@ -65,6 +65,7 @@ function edit_cnfr(confid, confname) {
 			$("#auto_assemble").attr('disabled','disabled');
 		} else {
 			$("#number_auth").attr('checked', '');
+			$("#number_auth").removeAttr("disabled");
 		}
 		if ( data.auto_assemble == 1 ) {
 			$("#auto_assemble").attr('checked', 'checked');
@@ -72,6 +73,7 @@ function edit_cnfr(confid, confname) {
 			$("#number_auth").attr('disabled','disabled');
 		} else {
 			$("#auto_assemble").attr('checked', '');
+			$("#auto_assemble").removeAttr("disabled");
 		}
 		if ( data.lost_control == 1 ) {
 			$("#lost_control").attr('checked', 'checked');
