@@ -14,7 +14,14 @@ function send_user() {
 		$("#error_text").empty();
 		$("#error_text").append('Пароль и подтверждение пароля должны совпадать!');
 		$("#error").dialog('open');
-		return;
+		return false;
+	}
+
+	if($('#uname').val() == '') {
+		$("#error_text").empty();
+		$("#error_text").append('У пользователя должно быть какое-то имя');
+		$("#error").dialog('open');
+		return false;
 	}
 
 	var u_qry = 'save_user.pl?'+$("#modify_user").serialize();
@@ -42,13 +49,15 @@ function add_phone_field() {
 }
 
 function remove_user(user_id) {
-	$.getJSON('del_user.pl', { "user_id": user_id }, function (data) {
-    if(data.status == 'error') {
-      $("#error_text").empty();
-      $("#error_text").append(data.message);
-      $("#error").dialog('open');
-      return;
-	  }
-		$('#user'+user_id).remove();
-	});
+	if(confirm('Вы действительно хотите удалить пользователя?')) {
+		$.getJSON('del_user.pl', { "user_id": user_id }, function (data) {
+  	  if(data.status == 'error') {
+    	  $("#error_text").empty();
+      	$("#error_text").append(data.message);
+	      $("#error").dialog('open');
+  	    return;
+	  	}
+			$('#user'+user_id).remove();
+		});
+	}
 }

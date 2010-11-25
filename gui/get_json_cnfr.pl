@@ -3,7 +3,7 @@
 use strict;
 use CGI;
 
-my %s_days = ("mo"=>"Пн", "tu"=>"Вт", "we"=>"Ср", "th"=>"Чт", "fr"=>"Пт", "sa"=>"Сб", "su"=>"Вс");
+my %s_days = ("Mon"=>"Пн", "Tue"=>"Вт", "Wed"=>"Ср", "Thu"=>"Чт", "Fri"=>"Пт", "Sat"=>"Сб", "Sun"=>"Вс");
 
 use lib './lib';
 use ConferenceDB;
@@ -31,8 +31,7 @@ if(!grep(/^$id$/, @rights)) {
 
 my %cn = $cnfr->get_cnfr($id);
 
-my ($schedule_hours_begin, $schedule_min_begin, $next_d, $next_t, $sched_d_h, $sched_d_m,
-		$hours_begin, $min_begin, $dur_hours, $dur_min) = ("","","","","","","","","","");
+my ($next_d, $next_t, $hours_begin, $min_begin, $dur_hours, $dur_min) = ("","","","","","");
 
 my $json = "{";
 $json .= '"id": '.$cn{'id'};
@@ -42,24 +41,6 @@ if($admin) {
 } else {
 	$json .= ', "admin": false';
 }
-$json .= ', "schedule_day": "';
-if(length $cn{'schedule_date'}) {
-	if($cn{'schedule_date'} =~ /^[0-9\s]+$/) {
-		$json .= join(',', split(/[\s]+/,$cn{'schedule_date'})) . '"';
-	} else {
-		$json .= join(' ', (map {$s_days{$_}} split(/[\s]+/, $cn{'schedule_date'}))) . '"';
-	}
-} else {
-	$json .= $cn{'schedule_date'} . '"';
-}
-($schedule_hours_begin, $schedule_min_begin) = split(/:/, $cn{'schedule_time'}) 
-			if(length $cn{'schedule_time'});
-$json .= ', "schedule_hours_begin": "' . $schedule_hours_begin . '"';
-$json .= ', "schedule_min_begin": "' . $schedule_min_begin . '"';
-($sched_d_h, $sched_d_m) = split(/:/, $cn{'schedule_duration'})
-		if(length $cn{'schedule_duration'});
-$json .= ', "sched_dur_hours": "'. $sched_d_h . '"';
-$json .= ', "sched_dur_min": "'. $sched_d_m . '"';
 ($next_d, $next_t) = split(/[\s]+/, $cn{'next_start'})
 			if(length $cn{'next_start'});
 ($hours_begin, $min_begin) = split(/:/, $next_t) if(length $next_t);
@@ -69,7 +50,6 @@ $json .= ', "min_begin": "' . $min_begin . '"';
 ($dur_hours, $dur_min, undef) = split(/:/, $cn{'next_duration'})
 			if(length $cn{'next_duration'});
 $json .= ', "dur_hours": "'. $dur_hours .'", "dur_min": "'. $dur_min .'"';
-#$json .= ', "next_duration": "' . $cn{'next_duration'} . '"';
 if($cn{'auth_type'} =~ /pin/) {
 	$json .= ', "pin_auth": true';
 } else {
@@ -80,12 +60,54 @@ if($cn{'auth_type'} =~ /number/) {
 } else {
 	$json .= ', "number_auth": false';
 }
+
 $json .= ', "auth_string": "' . $cn{'auth_string'} . '"';
 $json .= ', "auto_assemble": "' . $cn{'auto_assemble'} . '"';
 $json .= ', "lost_control": "' . $cn{'lost_control'} . '"';
 $json .= ', "need_record": "' . $cn{'need_record'} . '"';
 $json .= ', "number_b": "' . $cn{'number_b'} . '"';
 $json .= ', "audio_lang": "' . $cn{'audio_lang'} . '"';
+$json .= ', "ph_remind": "' . $cn{'ph_remind'} . '"';
+$json .= ', "em_remind": "' . $cn{'em_remind'} . '"';
+if(length $cn{'remind_time'}) {
+	$cn{'remind_time'} =~ s/^([\d]{2}:[\d]{2}).*$/$1/;
+}
+$json .= ', "remind_time": "' . $cn{'remind_time'} . '"';
+
+my @sched = @{$cn{'schedules'}};
+$json .= ', "schedules": [ ';
+
+for(my $k=0; $k<=$#sched; $k++) {
+	if($sched[$k]{'day'} =~ /^[\d]+$/) {
+		$json .= ' {"day": "' . $sched[$k]{'day'} .'",';
+	} else {
+		$json .= ' {"day": "' . $s_days{$sched[$k]{'day'}} .'",';
+	}
+	$sched[$k]{'begin'} =~ s/^([\d]{2}:[\d]{2}).*$/$1/;
+	$json .= ' "begin": "' . $sched[$k]{'begin'} .'",';
+	$sched[$k]{'duration'} =~ s/^([\d]{2}:[\d]{2}).*$/$1/;
+	$json .= ' "duration": "' . $sched[$k]{'duration'} .'",';
+	$json .= ' "valid": true},';
+}
+
+chop $json;
+$json .= "]";
+
+my %a_list = $cnfr->get_audio_list();
+
+$json .= ', "audio": [ ';
+foreach my $k (keys %a_list) {
+	$json .= ' {"auid": "' . $k . '", ';
+	if($cn{'au_id'} eq $k) {
+		$json .= ' "selected": true, ';
+	} else {
+		$json .= ' "selected": false, ';
+	}
+	$json .= ' "name": "' . $a_list{$k} . '"},';
+}
+
+chop $json;
+$json .= "]";
 
 my @users = @{$cn{'users'}};
 

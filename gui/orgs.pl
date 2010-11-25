@@ -37,7 +37,7 @@ if(defined $id and length $id and defined $org_name and length $org_name) {
 	$cnfr->update_orgs($id, $org_name, $login);
 }
 
-my %orgs = $cnfr->get_org_list();
+my @orgs = $cnfr->get_org_list();
 
 my $row =<<EOR;
 <tr>
@@ -52,15 +52,15 @@ my $adm_row =<<EOAR;
 </tr>
 EOAR
 
-my $out = "<table id=\"orgs-list\">" . $thead;
+my $out = "<table id=\"orgs-list\" class=\"tab-table\">" . $thead;
 
 if($admin) {
-	foreach my $i (sort keys %orgs) {
-		$out .= sprintf $adm_row, $i, $i, $orgs{$i}, $orgs{$i}, $i;
+	while(my $i = shift @orgs) {
+		$out .= sprintf $adm_row, $$i{'id'}, $$i{'id'}, $$i{'name'}, $$i{'name'}, $$i{'id'};
 	}
 } else {
-	foreach my $i (sort keys %orgs) {
-		$out .= sprintf $row, $i, $orgs{$i}, $orgs{$i};
+	while(my $i = shift @orgs) {
+		$out .= sprintf $row, $$i{'id'}, $$i{'name'}, $$i{'name'};
 	}
 }
 

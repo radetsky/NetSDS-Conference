@@ -24,9 +24,6 @@ CREATE TABLE Conferences(
  last_end timestamp,
  next_start timestamp,
  next_duration interval,
- schedule_date varchar(30),
- schedule_time time,
- schedule_duration interval,
  auth_type varchar(30),
  auth_string varchar(30),
  auto_assemble boolean,
@@ -34,11 +31,34 @@ CREATE TABLE Conferences(
  need_record boolean,
  number_B varchar(20),
  audio_lang varchar(2),
+ voice_remind boolean,
+ email_remind boolean,
+ remind_ahead interval,
+ au_id integer REFERENCES Audio(au_id) ON DELETE RESTRICT,
  change_date timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TRIGGER Cnfr_stamp BEFORE UPDATE ON Conferences
     FOR EACH ROW EXECUTE PROCEDURE upd_tstamp();
+
+CREATE TABLE Schedule(
+	sched_id serial primary key,
+	cnfr_id integer REFERENCES Conferences(cnfr_id) ON DELETE CASCADE,
+	schedule_date varchar(10),
+	schedule_time time,
+	schedule_duration interval,
+	change_date timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER Schedule_stamp BEFORE UPDATE ON Schedule
+		FOR EACH ROW EXECUTE PROCEDURE upd_tstamp();
+
+CREATE TABLE Audio(
+	au_id serial primary key,
+	description varchar(200),
+	audio_data bytea,
+	create_date timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 CREATE TABLE Users(
  user_id serial primary key,

@@ -29,13 +29,15 @@ function close_org_dialog() {
 }
 
 function remove_org(org_id) {
-	$.getJSON('del_org.pl', { "org_id": org_id }, function (data) {
-    if(data.status == 'error') {
-      $("#error_text").empty();
-      $("#error_text").append(data.message);
-      $("#error").dialog('open');
-      return;
-	  }
-		$('#org'+org_id).remove();
-	});
+	if(confirm('Вы действительно хотите удалить организацию?')) {
+		$.getJSON('del_org.pl', { "org_id": org_id }, function (data) {
+  	  if(data.status == 'error') {
+    	  $("#error_text").empty();
+      	$("#error_text").append(data.message);
+	      $("#error").dialog('open');
+  	    return;
+	  	}
+			$('#org'+org_id).remove();
+		});
+	}
 }

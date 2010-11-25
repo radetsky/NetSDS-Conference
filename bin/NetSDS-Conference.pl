@@ -50,6 +50,8 @@ use Date::Manip;
 use NetSDS::App::ConferenceMan;
 use Time::HiRes qw/usleep/;
 
+use Time::HiRes qw/usleep/;
+
 # Массив для запоминания списков
 # Детей, что  им можно было  послать сигналы.
 my @CHILDREN = array();
@@ -90,113 +92,41 @@ sub _add_signal_handlers {
 
 sub process {
     my ($this) = @_;
+    $this->speak("[$$] Start processing.");
     while (1) {
-        # Get list of the conference
-        my @conf_list = $this->mydb->cnfr_list();
-
-        foreach my $conf (@conf_list) {
-
-	    # Restore crushed (?) ConferenceMan's ?
-            if ( defined( $conf->{'cnfr_state'} ) ) {
-                if ( $conf->{'cnfr_state'} =~ /^active/i ) {
-                    unless ( exists ( $ACTIVE{ $conf->{'cnfr_id'} } ) ) {
-                        $this->speak(
-                            "[$$] Restoring active ConferenceMan with ID "
-                              . $conf->{'cnfr_id'} );
-                        $this->log( "info",
-                            "Restoring active ConferenceMan with ID "
-                              . $conf->{'cnfr_id'} );
-                        $this->_conference_restore($conf);
-						next;
-                    }
-                }
-            }
-
-            unless ( defined( $conf->{'next_start'} ) ) {
-                next;
-            }
-
-            if ( $conf->{'next_start'} eq '' ) {  # Next start not exist - next!
-                next;
-            }
-            if ( $conf->{'cnfr_state'} eq 'active' )
-            {    #Conferece already active -> next !
-                next;
-            }
-
-            # Prepare to compare next_start and now();
-            my $date_next_start = ParseDate( $conf->{'next_start'} );
-            my $date_now        = ParseDate('now');
-
-            my $last_start = $conf->{'last_start'};
-            if ( $last_start eq '' ) {
-                $last_start = undef;
-            }
-
-            unless ( defined ( $last_start ) ) {
-                # Last start field does not filled. Simple case.
-                # check only next_start
-                # Compare
-                my $flag = Date_Cmp( $date_now, $date_next_start );
-                if ( $flag >= 0 ) {    # next_start in the past
-                    printf(
-"[$$] ID: %2s Next Start: %s Last Start not defined. \n",
-                        $conf->{'cnfr_id'}, $conf->{'next_start'} );
-                    $this->_conference_start($conf);
-                }
-                else {
-                    printf( "[$$] ID: %2s Next Start: %s Waiting... \n",
-                        $conf->{'cnfr_id'}, $conf->{'next_start'} );
-                }
-                next;
-            }
-
-            my $last_end = $conf->{'last_end'};
-            if ( $last_end eq '' ) {
-                $last_end = undef;
-            }
-
-            unless ( defined($last_end) ) {
-             # Abnormal situation when last_start defined, not active conference
-             # and last_end not defined.
-             # Doing like last_start not defined;
-                printf( "ID: %2s Next Start: %s Last End not defined. \n",
-                    $conf->{'cnfr_id'}, $conf->{'next_start'} );
-
-                # Compare
-                my $flag = Date_Cmp( $date_now, $date_next_start );
-                if ( $flag >= 0 ) {    # next_start in the past
-                    $this->_conference_start($conf);
-                }
-                next;
-            }
-
-            my $date_last_start = ParseDate($last_start);
-            my $date_last_end   = ParseDate($last_end);
-            my $flag = Date_Cmp( $date_next_start, $date_last_start );
-            if ( $flag >= 0 ) {
-
-                # Next_start > $last_start
-                $flag = Date_Cmp( $date_next_start, $date_last_end );
-                if ( $flag >= 0 ) {
-
-                    #Next start > $last_end;
-                    printf(
-                        "ID: %2s Next Start: %s Last Start %s Last End %s \n",
-                        $conf->{'cnfr_id'}, $conf->{'next_start'}, $last_start,
-                        $last_end );
-                    $this->_conference_start($conf);
-                }
-            }
-
-        }
-        usleep(500);
+	# find non-active next starting conferences 
+        my $cnfrs = $this->mydb->cnfr_find_4_start();
+	foreach my $cnfr_id (keys %$cnfrs) {
+		$this->_conference_start($cnfrs->{$cnfr_id});
+	}
+	usleep(250); 
     }
 }
 
 sub _conference_start {
     my $this = shift;
     my $conf = shift;
+
+    # Set active flag,
+    # Set next_start to NULL,
+    # Set Last_start to now()
+    my $res = $this->mydb->cnfr_update(
+        $conf->{'cnfr_id'},
+        {
+            cnfr_state => '\'active\'',
+            next_start => 'NULL',
+            last_start => 'now()',
+            last_end   => 'NULL',
+        }
+    );
+    unless ( defined($res) ) {
+        $this->speak(
+            "[$$] Fail to update database while starting the conference.");
+    }
+    else {
+        $this->speak(
+            "[$$] Database updated sucessfully while starting the conference.");
+    }
 
     $this->mydb->_disconnect();
 

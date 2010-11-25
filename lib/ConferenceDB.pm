@@ -20,7 +20,8 @@ my $error;
 
 sub _connect {
 	unless(defined $dbh and $dbh->ping()) {
-		$dbh = DBI->connect("dbi:Pg:dbname=astconf", 'astconf', 'Rjyathtywbz',
+		$dbh = DBI->connect("dbi:Pg:dbname=astconf",
+												'astconf', 'Rjyathtywbz',
 												{AutoCommit => 0, RaiseError => 1});
 	}
 }
@@ -55,8 +56,7 @@ sub cnfr_list {
 	my $query = "SELECT cnfr_id, cnfr_name, cnfr_state, to_char(last_start, ".
 							"'YYYY-MM-DD HH24:MI'), to_char(last_end, 'YYYY-MM-DD HH24:MI'), ".
 							"to_char(next_start, 'YYYY-MM-DD HH24:MI'), next_duration, ".
-							"schedule_date, to_char(schedule_time, 'HH24:MI'), ".
-							"schedule_duration, auth_type, auth_string, auto_assemble, ".
+							"auth_type, auth_string, auto_assemble, ".
 							"lost_control, need_record, number_b, audio_lang FROM ".
 							"conferences order by cnfr_id";
 	$self->_connect();
@@ -71,19 +71,50 @@ sub cnfr_list {
 		$res[$tmp[0]]{'last_end'} = (defined $tmp[4])? $tmp[4] : "";
 		$res[$tmp[0]]{'next_start'} = (defined $tmp[5])? $tmp[5] : "";
 		$res[$tmp[0]]{'next_duration'} = (defined $tmp[6])? $tmp[6] : "";
-		$res[$tmp[0]]{'schedule_date'} = (defined $tmp[7])? $tmp[7] : "";
-		$res[$tmp[0]]{'schedule_time'} = (defined $tmp[8])? $tmp[8] : "";
-		$res[$tmp[0]]{'schedule_duration'} = (defined $tmp[9])? $tmp[9] : "";
-		$res[$tmp[0]]{'auth_type'} = (defined $tmp[10])? $tmp[10] : "";
-		$res[$tmp[0]]{'auth_string'} = (defined $tmp[11])? $tmp[11] : "";
-		$res[$tmp[0]]{'auto_assemble'} = (defined $tmp[12])? $tmp[12] : "";
-		$res[$tmp[0]]{'lost_control'} = (defined $tmp[13])? $tmp[13] : "";
-		$res[$tmp[0]]{'need_record'} = (defined $tmp[14])? $tmp[14] : "";
-		$res[$tmp[0]]{'number_b'} = (defined $tmp[15])? $tmp[15] : "";
-		$res[$tmp[0]]{'audio_lang'} = (defined $tmp[16])? $tmp[16] : "";
+		$res[$tmp[0]]{'auth_type'} = (defined $tmp[7])? $tmp[7] : "";
+		$res[$tmp[0]]{'auth_string'} = (defined $tmp[8])? $tmp[8] : "";
+		$res[$tmp[0]]{'auto_assemble'} = (defined $tmp[9])? $tmp[9] : "";
+		$res[$tmp[0]]{'lost_control'} = (defined $tmp[10])? $tmp[10] : "";
+		$res[$tmp[0]]{'need_record'} = (defined $tmp[11])? $tmp[11] : "";
+		$res[$tmp[0]]{'number_b'} = (defined $tmp[12])? $tmp[12] : "";
+		$res[$tmp[0]]{'audio_lang'} = (defined $tmp[13])? $tmp[13] : "";
+	}
+  
+	$dbh->rollback(); 
+	return @res;
+}
+
+=item @log_list = get_log($cnfr_if, $from, $to)
+Функция получения логов.
+$cnfr_if -- id конференции
+$from -- с даты
+$to - по дату
+
+=cut
+
+sub get_log {
+	my $self = shift;
+	my $cnfr_if = shift;
+	my $from = shift;
+	my $to = shift;
+	my @log_list = ();
+
+	$self->_connect();
+	my $q = "SELECT to_char(event_time, 'YYYY-MM-DD HH24:MI'), event_type, userfield FROM conflog ".
+					"WHERE cnfr_id=? AND event_time > ? AND event_time < ? ORDER BY event_time DESC";
+	my $sth = $dbh->prepare($q);
+	$sth->execute($cnfr_if, $from, $to);
+	while(my @tmp = $sth->fetchrow_array()) {
+		my %st = ();
+		$st{'time'} = $tmp[0];
+		$st{'type'} = $tmp[1];
+		$st{'field'} = "";
+		$st{'field'} = $tmp[2] if(defined $tmp[2]);
+		push @log_list, \%st;
 	}
 
-	return @res;
+	$dbh->rollback();
+	return @log_list;
 }
 
 =item @cnfr_list = get_cnfr_rights($login)
@@ -106,6 +137,7 @@ sub get_cnfr_rights {
 	if($self->is_admin($user)) {
 		my @tmp = $dbh->selectrow_array("SELECT max(cnfr_id) FROM conferences");
 		@ret = ( 1 .. $tmp[0] ) if(defined $tmp[0]);
+		$dbh->rollback(); 
 		return @ret;
 	}
 
@@ -116,6 +148,7 @@ sub get_cnfr_rights {
 	while(my @tmp = $sth->fetchrow_array()) {
 		push @ret, $tmp[0] if(defined $tmp[0]);
 	}
+	$dbh->rollback(); 
 	return @ret;
 }
 
@@ -138,7 +171,8 @@ sub set_priority {
 	if($@) {
 		$error = "Ошибка снятия приоритета пользователя в конференции";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return 0;
 	}
@@ -157,7 +191,8 @@ sub set_priority {
 	if($@) {
 		$error = "Ошибка установки приоритета пользователя в конференции";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return 0;
 	}
@@ -189,6 +224,7 @@ sub get_user_by_phone {
 		$u{'phone_id'} = $tmp[0];
 		$u{'user_id'} = $tmp[1];
 	}
+  $dbh->rollback(); 
 
 	return %u;
 }
@@ -207,6 +243,7 @@ sub is_admin {
 	$self->_connect();
 	my $q = "SELECT is_admin FROM admins WHERE login=?";
 	my @tmp = $dbh->selectrow_array($q, undef, $user);
+	$dbh->rollback();
 
 	return $tmp[0] if(defined $tmp[0]);
 	return 0;
@@ -274,6 +311,7 @@ sub get_oper_list {
 	}
 	$row{'cnfrs'} = \%ooc;
 	push @oper, \%row;
+	$dbh->rollback();
 	return @oper;
 }
 
@@ -304,7 +342,8 @@ sub get_user_list {
 					"adm.passwd_hash FROM users as u left outer join organizations as o on ".
 					"(u.org_id=o.org_id) left outer join positions as p on (u.position_id=p.position_id) ".
 					"left outer join phones as ph on (u.user_id=ph.user_id) left outer join admins as adm ".
-					"on(u.user_id=adm.user_id) ORDER BY p.position_order, u.user_id, ph.order_nmb";
+					"on(u.user_id=adm.user_id) ORDER BY u.full_name ASC";
+#					"on(u.user_id=adm.user_id) ORDER BY p.position_order, u.user_id, ph.order_nmb";
 	$self->_connect();
 	my $sth = $dbh->prepare($q);
 	$sth->execute();
@@ -312,8 +351,10 @@ sub get_user_list {
 	my @phs = ();
 	my @phs_id = ();
 	my %row = ();
+	my $cnt = 0;
 	while(my @tmp = $sth->fetchrow_array()) {
-		if($#users < 0 and $#phs < 0) {
+		if($cnt eq 0) {
+			$cnt++;
 			$uid = $tmp[0];
 			$row{'id'} = $tmp[0];
 			$row{'name'} = (defined $tmp[1])? $tmp[1] : "";
@@ -383,9 +424,11 @@ sub add_participant_to_conference {
 	my $login = shift;
 
 	return undef unless(defined $login);
+
 	$self->_connect();
 	my $q = "SELECT max(participant_order) FROM users_on_conference WHERE cnfr_id=?";
 	my @tmp = $dbh->selectrow_array($q, undef, $cid);
+	$dbh->rollback(); 
 	my $po = 0;
 	$po = $tmp[0]+1 if(defined $tmp[0]);
 
@@ -399,7 +442,8 @@ sub add_participant_to_conference {
 	if($@) {
 		$error = "Ошибка добавления пользователя в совещание. Обратитесь к администратору";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return undef;
 	}
@@ -440,7 +484,9 @@ sub get_user_by_id {
 					"WHERE u.user_id=?";
 	$self->_connect();
 	my @tmp = $dbh->selectrow_array($q, undef, $id);
+	$dbh->rollback(); 
 	return () unless(defined $tmp[0]);
+
 	$res{'user_id'} = $tmp[0];
 	$res{'full_name'} = (defined $tmp[1])? $tmp[1] : "" ;
 	$res{'department'} = (defined $tmp[2])? $tmp[2] : "";
@@ -459,6 +505,7 @@ sub get_user_by_id {
 		push @phs, $tmp[0];
 	}
 	$res{'phones'} = \@phs;
+	$dbh->rollback(); 
 	return %res;
 }
 
@@ -492,7 +539,8 @@ sub remove_oper {
 	if($@) {
 		$error = "Ошибка удаления оператора. Обратитесь к администратору.";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return ();
 	}
@@ -501,26 +549,27 @@ sub remove_oper {
 	return 1;
 }
 
-=item %orgs = get_org_list();
-
-Возвращает список организаций. Индекс массива -- id организации, элемент массива
--- ее название.
+=item @orgs = get_org_list();
 
 =cut
 
 sub get_org_list {
 	my $self = shift;
-	my %orgs = ();
+	my @orgs = ();
 
-	my $q = "SELECT org_id, org_name FROM organizations ORDER BY org_id";
+	my $q = "SELECT org_id, org_name FROM organizations ORDER BY org_name";
 	$self->_connect();
 	my $sth = $dbh->prepare($q);
 	$sth->execute();
 	while(my @tmp = $sth->fetchrow_array()) {
-		$orgs{$tmp[0]} = $tmp[1];
+		my %st = ();
+		$st{'id'} = $tmp[0];
+		$st{'name'} = $tmp[1];
+		push @orgs, \%st;
 	}
+  $dbh->rollback();
 
-	return %orgs;
+	return @orgs;
 }
 
 =item $res = del_org($login, $org_id)
@@ -550,7 +599,8 @@ sub del_org {
 	if($@) {
 		$error = "Ошибка удаления организации. Возможно существуют пользователи, принадлежащие этой организации";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return 0;
 	}
@@ -586,7 +636,8 @@ sub del_pos {
 	if($@) {
 		$error = "Ошибка удаления должности. Возмсжно существует пользователь, занимающий эту должность.";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return 0;
 	}
@@ -622,7 +673,8 @@ sub del_user {
 	if($@) {
 		$error = "Ошибка удаления пользователя. Возможно он участник одной из конференций или является администратором";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return 0;
 	}
@@ -653,8 +705,41 @@ sub get_pos_list {
 		$row{'order'} = $tmp[2];
 		push  @pos, \%row;
 	}
+	$dbh->rollback();
 	return @pos;
 }
+
+=item $res = stop_cnfr($login, $cid);
+$login -- логин оператора, остановившего конференцию
+$cid -- id конференции
+
+=cut
+
+sub stop_cnfr {
+	my $self = shift;
+	my $login = shift;
+	my $cid = shift;
+
+	$self->_connect();
+	my $q = "UPDATE conferences SET cnfr_state='stop' WHERE cnfr_id=?";
+	eval {
+		$dbh->do($q, undef, $cid);
+	};
+
+	if($@) {
+		$error = "Ошибка остановки конференции. Обратитесь к разработчику";
+		$dbh->rollback();
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
+		warn $warn;
+		return undef;
+	}
+
+	$dbh->commit();
+	$self->write_to_log($login, $q, $cid);
+	return 1;
+}
+
 
 =item %cnfr = get_cnfr($cid)
 
@@ -665,9 +750,6 @@ $cid -- id конференции
 id -- id конференции
 name -- название конференции
 cnfr_state -- состояние конференции
-schedule_date -- планируемые дни конференции
-schedule_time -- планируемое время конференции
-schedule_duration -- планируемая продолжительность конференции
 next_start -- дата/время ближайшего запуска
 next_duration -- продолжительность ближайшей конференции
 auth_type -- тип аутентификации
@@ -694,26 +776,28 @@ sub get_cnfr {
 	my %cnfr = ();
 
 	$self->_connect();
-	my $q = "SELECT cnfr_id, cnfr_name, cnfr_state, schedule_date, to_char(schedule_time, ".
-					"'HH24:MI'), schedule_duration, to_char(next_start, 'YYYY-MM-DD HH24:MI'), ".
+	my $q = "SELECT cnfr_id, cnfr_name, cnfr_state, to_char(next_start, 'YYYY-MM-DD HH24:MI'), ".
 					"next_duration, auth_type, auth_string, auto_assemble, lost_control, need_record, ".
-					"number_b, audio_lang FROM conferences WHERE cnfr_id=?";
+					"number_b, audio_lang, voice_remind, email_remind, to_char(remind_ahead, ".
+					"'DD HH24:MI:SS'), au_id FROM conferences ".
+					"WHERE cnfr_id=?";
 	my @tmp = $dbh->selectrow_array($q, undef, $id);
 	$cnfr{'id'} = $tmp[0];
 	$cnfr{'name'} = (defined $tmp[1])? $tmp[1] : "";
 	$cnfr{'cnfr_state'} = (defined $tmp[2])? $tmp[2] : "";
-	$cnfr{'schedule_date'} = (defined $tmp[3])? $tmp[3] : "";
-	$cnfr{'schedule_time'} = (defined $tmp[4])? $tmp[4] : "";
-	$cnfr{'schedule_duration'} = (defined $tmp[5])? $tmp[5] : "";
-	$cnfr{'next_start'} = (defined $tmp[6])? $tmp[6] : "";
-	$cnfr{'next_duration'} = (defined $tmp[7])? $tmp[7] : "";
-	$cnfr{'auth_type'} = (defined $tmp[8])? $tmp[8] : "";
-	$cnfr{'auth_string'} = (defined $tmp[9])? $tmp[9] : "";
-	$cnfr{'auto_assemble'} = (defined $tmp[10])? $tmp[10] : "";
-	$cnfr{'lost_control'} = (defined $tmp[11])? $tmp[11] : "";
-	$cnfr{'need_record'} = (defined $tmp[12])? $tmp[12] : "";
-	$cnfr{'number_b'} = (defined $tmp[13])? $tmp[13] : "";
-	$cnfr{'audio_lang'} = (defined $tmp[14])? $tmp[14] : "";
+	$cnfr{'next_start'} = (defined $tmp[3])? $tmp[3] : "";
+	$cnfr{'next_duration'} = (defined $tmp[4])? $tmp[4] : "";
+	$cnfr{'auth_type'} = (defined $tmp[5])? $tmp[5] : "";
+	$cnfr{'auth_string'} = (defined $tmp[6])? $tmp[6] : "";
+	$cnfr{'auto_assemble'} = (defined $tmp[7])? $tmp[7] : "";
+	$cnfr{'lost_control'} = (defined $tmp[8])? $tmp[8] : "";
+	$cnfr{'need_record'} = (defined $tmp[9])? $tmp[9] : "";
+	$cnfr{'number_b'} = (defined $tmp[10])? $tmp[10] : "";
+	$cnfr{'audio_lang'} = (defined $tmp[11])? $tmp[11] : "";
+	$cnfr{'ph_remind'} = (defined $tmp[12])? $tmp[12] : "";
+	$cnfr{'em_remind'} = (defined $tmp[13])? $tmp[13] : "";
+	$cnfr{'remind_time'} = (defined $tmp[14])? $tmp[14] : "";
+	$cnfr{'au_id'} = (defined $tmp[15])? $tmp[15] : "";
 
 	$q = "SELECT u.full_name, a.admin_id FROM operators_of_conferences ooc, admins a, ".
 			 "users u WHERE ooc.cnfr_id=? AND ooc.admin_id=a.admin_id AND ".
@@ -741,6 +825,21 @@ sub get_cnfr {
 	}
 
 	$cnfr{'users'} = \@conf_users;
+
+	$q = "SELECT schedule_date, schedule_time, schedule_duration FROM schedule WHERE ".
+			 "cnfr_id=? ORDER BY sched_id";
+	$sth = $dbh->prepare($q);
+	$sth->execute($id);
+	my @schedules = ();
+	while(@tmp = $sth->fetchrow_array()) {
+		my %sch_str = ();
+		$sch_str{'day'} = $tmp[0];
+		$sch_str{'begin'} = $tmp[1];
+		$sch_str{'duration'} = $tmp[2];
+		push @schedules, \%sch_str;
+	}
+
+	$cnfr{'schedules'} = \@schedules;
 	return %cnfr;
 }
 
@@ -772,6 +871,7 @@ sub get_cnfr_participants {
 		$u_to_ph{$tmp[1]}{'number'} = $tmp[2];
 		$u_to_ph{$tmp[1]}{'name'} = $tmp[3];
 	}
+	$dbh->rollback();
 	return %u_to_ph;
 }
 
@@ -789,41 +889,47 @@ sub save_cnfr {
 	$next_start = undef unless(length $next_start);
 	my $next_duration = shift;
 	$next_duration = undef unless(length $next_duration);
-	my $schedule_day = shift;
-	$schedule_day = undef unless(length $schedule_day);
-	my $schedule_time = shift;
-	$schedule_time = undef unless(length $schedule_time);
-	my $schedule_duration = shift;
-	$schedule_duration = undef unless(length $schedule_duration);
 	my $auth_type = shift;
 	$auth_type = undef unless(length $auth_type);
 	my $auth_string = shift;
 	$auth_string = undef unless(length $auth_string);
 	my $auto_assemble = shift;
+	my $ph_remind = shift;
+	my $em_remind = shift;
+	my $remind_time = shift;
+	$remind_time = undef unless(defined $remind_time and length $remind_time);
 	my $lost_control = shift;
 	my $need_record = shift;
 	my $audio_lang = shift;
 	$audio_lang = undef unless(length $audio_lang);
+	my $au_id = shift;
+	$au_id = undef unless(length $au_id);
 	my $p = shift;
+	my $s = shift;
 
 	my @phs_id = ();
 	@phs_id = (@{$p}) if(defined $p);
+	my @schedules = ();
+	@schedules = (@{$s}) if(defined $s);
 
 	my $q = "UPDATE conferences SET cnfr_name=?, next_start=to_timestamp(?, 'YYYY-MM-DD HH24:MI'), ".
-					"next_duration=?, schedule_date=?, schedule_time=?, schedule_duration=?, auth_type=?, ".
-					"auth_string=?, auto_assemble=?, lost_control=?, need_record=?, audio_lang=? WHERE ".
-					"cnfr_id=?";
-	my @bind = ($ce_name, $next_start, $next_duration, $schedule_day, $schedule_time, $schedule_duration,
-						  $auth_type, $auth_string, $auto_assemble, $lost_control, $need_record,
-							$audio_lang, $id);
+					"next_duration=?, auth_type=?, auth_string=?, auto_assemble=?, lost_control=?, ".
+					"need_record=?, audio_lang=?, voice_remind=?, email_remind=?, remind_ahead=?, ".
+					"au_id=? WHERE cnfr_id=?";
+	my @bind = ($ce_name, $next_start, $next_duration, $auth_type, $auth_string, 
+							$auto_assemble, $lost_control, $need_record, $audio_lang, $ph_remind, $em_remind,
+							$remind_time, $au_id, $id);
+
+	$self->_connect();
 	eval {
 		$dbh->do($q, undef, @bind);
 	};
 
 	if($@) {
+		my ($package, $filename, $line) = caller;
 		$error = "Ошибка обновления данных конференции. Обратитесь к администратору";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		warn join('" "', @bind);
 		return undef;
@@ -855,11 +961,147 @@ sub save_cnfr {
 	if($@) {
 		$error = "Ошибка сохранения списка участников. Обратитесь к администратору";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return undef;
 	}
 
+	$dbh->commit();
+
+	eval {
+		$dbh->do("DELETE FROM schedule WHERE cnfr_id=?", undef, $id);
+	};
+
+	if($@) {
+		$error = "Ошибка удаления запланированных конференций. Обратитесь к разрабочику.";
+		$dbh->rollback();
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
+		warn $warn;
+		return undef;
+	};
+	$dbh->commit();
+	$self->write_to_log($login, "DELETE FROM schedule WHERE cnfr_id=?", $id);
+
+	if(@schedules) {
+		$q = "INSERT INTO schedule (cnfr_id, schedule_date, schedule_time, schedule_duration) ".
+				 "VALUES (?, ?, ?, ?)";
+		$sth = $dbh->prepare($q);
+		eval {
+			while(my $i = shift @schedules) {
+				$sth->execute($id, $$i{'day'}, $$i{'begin'}, $$i{'duration'});
+				$bind_str = join(' ', map {$dbh->quote($_)} ($id, $$i{'day'}, $$i{'begin'}, $$i{'duration'}));
+				$sth1->execute($login, $q, $bind_str);
+			}
+		};
+
+		if($@) {
+			$error = "Ошибка сохранения планируемых конференций. Обратитесь к разрабочику.";
+			$dbh->rollback();
+			my ($package, $filename, $line) = caller;
+			my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
+			warn $warn;
+			return undef;
+		}
+
+		$dbh->commit();
+	}
+
+	return 1;
+}
+
+=item $res = load_audio($descr, $data_file)
+$descr -- описание файла, которым он будет показываться в интерфейсах
+$data_file -- содержимое аудиофайла
+=cut
+
+no strict;
+
+sub load_audio {
+	my $self = shift;
+	my $descr = shift;
+	my $file_data = shift;
+
+	$self->_connect();	
+	my $q = "INSERT INTO audio (description, audio_data) VALUES (?, ?)";
+	my $sth=$dbh->prepare($q);
+	my $rc=$sth->bind_param(1, $descr);
+	$rc=$sth->bind_param(2, $self->escape_bytea($file_data), { pg_type => PG_BYTEA });
+	eval {
+		$sth->execute();
+	};
+
+	if($@) {
+		$error = "Ошибка сохранения звукового файла.";
+		$dbh->rollback();
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
+		warn $warn;
+		return undef;
+	}
+	$dbh->commit();
+	return 1;
+}
+
+use strict;
+
+=item $data = escape_bytea
+Служебная программа для подготовки данных для загрузки в тип bytea
+
+=cut 
+
+sub escape_bytea {
+	my $self = shift;
+  my ($instring)=@_;
+  my $returnstring=join ('',map {
+    my $tmp=ord($_);
+    ($tmp >= 32 and $tmp <= 126 and $tmp != 92) ? $_ : sprintf('\%03o',$tmp);} split (//,$instring));
+  return $returnstring;
+}
+
+=item %lst = get_audio_list()
+Возвращает hash загруженных аудио файлов. Индексом hash'а является id файла в базе данных
+
+=cut
+
+sub get_audio_list {
+	my $self = shift;
+	my %list = ();
+
+	$self->_connect();
+	my $q = "SELECT au_id, description FROM audio ORDER BY description";
+	my $sth = $dbh->prepare($q);
+	$sth->execute();
+	while(my @tmp = $sth->fetchrow_array()) {
+		$list{$tmp[0]} = $tmp[1];
+	}
+	$dbh->rollback();
+	return %list;
+}
+
+=item $res = remove_audio($au_id)
+Удаляет выбранный аудио файл
+=cut
+
+sub remove_audio {
+	my $self = shift;
+	my $auid = shift;
+
+	$self->_connect();
+	my $q = "DELETE FROM audio WHERE au_id=?";
+	eval {
+		$dbh->do($q, undef, $auid);
+	};
+
+	if($@) {
+		$error = "Ошибка удаления звукового файла.";
+		$dbh->rollback();
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
+		warn $warn;
+		return undef;
+	}
 	$dbh->commit();
 	return 1;
 }
@@ -898,7 +1140,8 @@ sub set_number_b {
 	if($@) {
 		$error = "Ошибка задания номера конференции";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return undef;
 	}
@@ -908,7 +1151,7 @@ sub set_number_b {
 	return 1;
 }
 
-=item %orgs = update_orgs($id, $name, $user)
+=item @orgs = update_orgs($id, $name, $user)
 
 Добавляет или обновляет название организации. Входные параметры:
 $id - Если число, то обновляет название организации с таким id. Если строка new,
@@ -916,7 +1159,7 @@ $id - Если число, то обновляет название органи
 $name - название организации
 $user - пользователь, от которого это делается
 
-Возвращает обновленный hash аналогично функции get_org_list()
+Возвращает обновленный array аналогично функции get_org_list()
 
 =cut 
 
@@ -948,7 +1191,8 @@ sub update_orgs {
 	if($@) {
 		$error = "Внутренняя ошибка базы. Обратитесь к администратору";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return ();
 	}
@@ -1001,7 +1245,8 @@ sub update_posns {
 	if($@) {
 		$error = "Внутренняя ошибка базы. Обратитесь к администратору";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return ();
 	}
@@ -1072,7 +1317,8 @@ sub update_user {
 			$error = "Ошибка обновления пользователя. Обратитесь к администратору";
 		}
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return ();
 	}
@@ -1090,7 +1336,8 @@ sub update_user {
 			if($@) {
 				$error = "Один из удалямых телефонов используется в совещании. Сначала нужно проверить, что удаляемый телефон нигде не используется";
 				$dbh->rollback();
-				my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+				my ($package, $filename, $line) = caller;
+				my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 				warn $warn;
 				return ();
 			}
@@ -1127,7 +1374,8 @@ sub update_user {
 				if($@) {
 					$error = "Такой номер уже существует в базе у другого пользователя. Повторение одного номера у разных пользователей невозможно";
 					$dbh->rollback();
-					my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+					my ($package, $filename, $line) = caller;
+					my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 					warn $warn;
 					return ();
 				}
@@ -1165,7 +1413,8 @@ sub update_user {
 			if($@) {
 				$error = "Один из удалямых телефонов используется в совещании. Сначала нужно проверить, что удаляемый телефон нигде не используется";
 				$dbh->rollback();
-				my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+				my ($package, $filename, $line) = caller;
+				my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 				warn $warn;
 				return ();
 			}
@@ -1194,7 +1443,8 @@ sub update_user {
 			if($@) {
 				$error = "Ошибка обновления телефонов. Обратитесь к администратору.";
 				$dbh->rollback();
-				my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+				my ($package, $filename, $line) = caller;
+				my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 				warn $warn;
 				return ();
 			}
@@ -1222,7 +1472,8 @@ sub update_user {
 				if($@) {
 					$error = "Такое имя для входа уже используется. Выберите другое.";
 					$dbh->rollback();
-					my $warn = $0 . " " . scalar(localtime (time)) . " " . $sth->errstr;
+					my ($package, $filename, $line) = caller;
+					my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 					warn $warn;
 					return ();
 				}
@@ -1269,7 +1520,8 @@ sub update_user {
 				if($@) {
 					$error = "Ошибка сохранения прав администратора. Обратитесь к администратору.";
 					$dbh->rollback();
-					my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+					my ($package, $filename, $line) = caller;
+					my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 					warn $warn;
 					return ();
 				}
@@ -1308,6 +1560,7 @@ sub get_conference_operators {
 		$ops{$tmp[0]}{'name'} = $tmp[1];
 		$ops{$tmp[0]}{'login'} = $tmp[2];
 	}
+	$dbh->rollback();
 	return %ops;
 }
 
@@ -1342,7 +1595,8 @@ sub set_cnfr_operators {
 	if($@) {
 		$error = "Ошибка базы данных, обратитесь к администратору.";
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return undef;
 	}
@@ -1360,7 +1614,8 @@ sub set_cnfr_operators {
 		if($@) {
 			$error = "Ошибка задания оператора конференции, обратитесь к администратору.";
 			$dbh->rollback();
-			my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+			my ($package, $filename, $line) = caller;
+			my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 			warn $warn;
 			return undef;
 		}
@@ -1401,6 +1656,8 @@ sub get_user_phones {
 
 	$phones{'id'} = \@ph_ids;
 	$phones{'number'} = \@phs;
+
+	$dbh->rollback();
 	return %phones;
 }
 
@@ -1434,6 +1691,8 @@ sub write_to_log {
 	if($@) {
 		$dbh->rollback();
 		warn "Error writing log: $0 $user $query $bind_str";
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		return undef;
 	}
 
@@ -1468,13 +1727,15 @@ sub cnfr_update {
 
 	my $query = sprintf("update conferences set %s where cnfr_id=%d", 
 		$update_string, $cnfr_id);
+
 	my $sth = $dbh->prepare($query);
 	eval {
 		$sth->execute();
 	};
 	if($@) {
 		$dbh->rollback();
-		my $warn = $0 . " " . scalar(localtime (time)) . " " . $dbh->errstr;
+		my ($package, $filename, $line) = caller;
+		my $warn = $filename . " " . scalar(localtime (time)) . " " . $@;
 		warn $warn;
 		return undef;
 	}
@@ -1511,15 +1772,15 @@ sub cnfr_get {
 	my $query = "SELECT cnfr_id, cnfr_name, cnfr_state, to_char(last_start, ".
 							"'YYYY-MM-DD HH24:MI'), to_char(last_end, 'YYYY-MM-DD HH24:MI'), ".
 							"to_char(next_start, 'YYYY-MM-DD HH24:MI'), next_duration, ".
-							"schedule_date, to_char(schedule_time, 'HH24:MI'), ".
-							"schedule_duration, auth_type, auth_string, auto_assemble, ".
+							"auth_type, auth_string, auto_assemble, ".
 							"lost_control, need_record, number_b, audio_lang FROM ".
 							"conferences where cnfr_id=$conf";
 	$self->_connect();
 	my $sth = $dbh->prepare($query);
 	$sth->execute();
 
-	my $res = $sth->fetchrow_hashref(); 
+	my $res = $sth->fetchrow_hashref();
+	$dbh->rollback();
 	return $res;
 }
 
@@ -1540,7 +1801,8 @@ sub is_operator {
 	my $res = $sth->fetchrow_hashref(); 
 	unless (defined ($res)) { 
 		return undef; 
-	} 
+	}
+	$dbh->rollback();
 	return $res->{'c1'}; 
 }
 
@@ -1560,6 +1822,7 @@ sub get_cnfr_operator_by_callerid {
 	my $sth = $dbh->prepare($q);
 	$sth->execute($callerid,$cnfr_id);
 	my $res = $sth->fetchrow_hashref(); 
+	$dbh->rollback();
 	unless (defined ($res)) { 
 		return undef; 
 	} 
@@ -1600,7 +1863,7 @@ sub conflog {
 		return undef; 
 	}
 
-        my $q = "insert into conflog ( cnfr_id, event_type, userfield ) values ( ? , ? , ? );"; 
+  my $q = "insert into conflog ( cnfr_id, event_type, userfield ) values ( ? , ? , ? );"; 
 	$self->_connect(); 
 	my $sth =  $dbh->prepare($q); 
 	$sth->execute($cnfr_id,$event_type,$userfield);
@@ -1608,7 +1871,29 @@ sub conflog {
 
  	return 1; 
 }
-	
+
+
+=item B<cnfr_find_4_start> 
+
+Seaches non-active and next_start <= -300second to now() 
+
+=cut 
+
+sub cnfr_find_4_start {
+	my $self = shift;
+
+	my @res; 
+
+	my $query = "SELECT * FROM conferences WHERE next_start between now() - '300 seconds'::interval and now() ".
+							"and cnfr_state = 'inactive';";
+
+	$self->_connect();
+	my $sth = $dbh->prepare($query);
+	$sth->execute();
+	my $res = $sth->fetchall_hashref('cnfr_id');
+        $dbh->rollback();  
+	return $res; 
+}	
 sub get_priority { 
         my ($self, $cnfr_id) = @_; 
 
