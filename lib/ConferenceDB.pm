@@ -84,6 +84,39 @@ sub cnfr_list {
 	return @res;
 }
 
+=item @log_list = get_log($cnfr_if, $from, $to)
+Функция получения логов.
+$cnfr_if -- id конференции
+$from -- с даты
+$to - по дату
+
+=cut
+
+sub get_log {
+	my $self = shift;
+	my $cnfr_if = shift;
+	my $from = shift;
+	my $to = shift;
+	my @log_list = ();
+
+	$self->_connect();
+	my $q = "SELECT to_char(event_time, 'YYYY-MM-DD HH24:MI'), event_type, userfield FROM conflog ".
+					"WHERE cnfr_id=? AND event_time > ? AND event_time < ? ORDER BY event_time DESC";
+	my $sth = $dbh->prepare($q);
+	$sth->execute($cnfr_if, $from, $to);
+	while(my @tmp = $sth->fetchrow_array()) {
+		my %st = ();
+		$st{'time'} = $tmp[0];
+		$st{'type'} = $tmp[1];
+		$st{'field'} = "";
+		$st{'field'} = $tmp[2] if(defined $tmp[2]);
+		push @log_list, \%st;
+	}
+
+	$dbh->rollback();
+	return @log_list;
+}
+
 =item @cnfr_list = get_cnfr_rights($login)
 
 Возвращает список номеров конференций, доступных оператору с
@@ -309,7 +342,8 @@ sub get_user_list {
 					"adm.passwd_hash FROM users as u left outer join organizations as o on ".
 					"(u.org_id=o.org_id) left outer join positions as p on (u.position_id=p.position_id) ".
 					"left outer join phones as ph on (u.user_id=ph.user_id) left outer join admins as adm ".
-					"on(u.user_id=adm.user_id) ORDER BY p.position_order, u.user_id, ph.order_nmb";
+					"on(u.user_id=adm.user_id) ORDER BY u.full_name ASC";
+#					"on(u.user_id=adm.user_id) ORDER BY p.position_order, u.user_id, ph.order_nmb";
 	$self->_connect();
 	my $sth = $dbh->prepare($q);
 	$sth->execute();
@@ -317,8 +351,10 @@ sub get_user_list {
 	my @phs = ();
 	my @phs_id = ();
 	my %row = ();
+	my $cnt = 0;
 	while(my @tmp = $sth->fetchrow_array()) {
-		if($#users < 0 and $#phs < 0) {
+		if($cnt eq 0) {
+			$cnt++;
 			$uid = $tmp[0];
 			$row{'id'} = $tmp[0];
 			$row{'name'} = (defined $tmp[1])? $tmp[1] : "";
@@ -513,27 +549,27 @@ sub remove_oper {
 	return 1;
 }
 
-=item %orgs = get_org_list();
-
-Возвращает список организаций. Индекс массива -- id организации, элемент массива
--- ее название.
+=item @orgs = get_org_list();
 
 =cut
 
 sub get_org_list {
 	my $self = shift;
-	my %orgs = ();
+	my @orgs = ();
 
-	my $q = "SELECT org_id, org_name FROM organizations ORDER BY org_id";
+	my $q = "SELECT org_id, org_name FROM organizations ORDER BY org_name";
 	$self->_connect();
 	my $sth = $dbh->prepare($q);
 	$sth->execute();
 	while(my @tmp = $sth->fetchrow_array()) {
-		$orgs{$tmp[0]} = $tmp[1];
+		my %st = ();
+		$st{'id'} = $tmp[0];
+		$st{'name'} = $tmp[1];
+		push @orgs, \%st;
 	}
   $dbh->rollback();
 
-	return %orgs;
+	return @orgs;
 }
 
 =item $res = del_org($login, $org_id)
@@ -1115,7 +1151,7 @@ sub set_number_b {
 	return 1;
 }
 
-=item %orgs = update_orgs($id, $name, $user)
+=item @orgs = update_orgs($id, $name, $user)
 
 Добавляет или обновляет название организации. Входные параметры:
 $id - Если число, то обновляет название организации с таким id. Если строка new,
@@ -1123,7 +1159,7 @@ $id - Если число, то обновляет название органи
 $name - название организации
 $user - пользователь, от которого это делается
 
-Возвращает обновленный hash аналогично функции get_org_list()
+Возвращает обновленный array аналогично функции get_org_list()
 
 =cut 
 
