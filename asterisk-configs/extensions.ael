@@ -1,0 +1,11 @@
+#include "dialplan/conference.ael"; 
+
+
+context softswitch-context {
+	0445930143 => {
+       		Answer();
+       		Konference(0445930143,RaM);
+       		Hangup();
+	};
+};
+

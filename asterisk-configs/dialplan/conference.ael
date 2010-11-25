@@ -1,0 +1,226 @@
+//
+// This is main dialplan for NetSDS-Conference v.1.0.
+//
+// (C) 2010 NetStyle
+//
+
+// 0445930143 
+
+context NetSDS-Conference-Incoming { 
+   _X. => { 
+	// Declaration of channel variables;
+	Set(CHANNEL(language)=ru);  
+        INCOMING_EXTEN = ${EXTEN}; 
+        USER_CALLERID  = ${CALLERID(num)}; 
+        Set(NETSDS_CONFNUM=-1);
+	
+//	FILENAME="${STRFTIME(${EPOCH},,%Y%m%d-%H%M)}-${CALLERID(num)}";
+//      MixMonitor(${FILENAME}.wav);
+
+	Answer();
+	Wait(1);
+
+	Playback(netsds-welcome-to-conference); 
+
+	// Найти по номеру Б (на который позвонили) конференцию.
+        // IN:  INCOMING_EXTEN - Номер телефона конференции 
+        // OUT: NETSDS_CONFNUM - Номер конференции (1..50) или -1, если не найдена. 
+
+	AGI(netsds_find_conference_by_exten,${INCOMING_EXTEN});
+	if (${NETSDS_CONFNUM} == -1) { 
+		// Не нашли. Просим ввести номер конференции.
+		// Ожидаем ввод двух цифр на протяжении 10 секунд.
+		Read(NETSDS_CONFNUM,netsds-please-enter-confnum,2,,1,10); 
+		NoOp(User enter: '${NETSDS_CONFNUM}');
+		if (${LEN(${NETSDS_CONFNUM})} == 2) { 
+			if (${NETSDS_CONFNUM} < 10) { 
+				NETSDS_CONFNUM=${NETSDS_CONFNUM:1:1}; 
+					
+			}
+		}
+		NoOp(NETSDS_CONFNUM='${NETSDS_CONFNUM}'); 
+	}
+	
+	// Пользователь ввел номер конференции. 
+        // Или мы сами его нашли по номеру Б.  
+
+	// Устанавливаем язык конференции из БД 
+	AGI(netsds_get_conflang,${USER_CALLERID},${NETSDS_CONFNUM});
+	Set(CHANNEL(language)=${CONFLANG});
+
+	// Проверяем активна ли эта конференция? 
+	// IN:  NETSDS_CONFNUM - Номер конференции (1..50)
+	// OUT: IS_CONF_ACTIVE - 0 не активна или не существует. 1 - если активна.
+
+	IS_CONF_ACTIVE=0; 
+	AGI(netsds_is_active_conference,${NETSDS_CONFNUM});
+	if (${IS_CONF_ACTIVE} == 0) { 
+		// Конференция не активна, но Оператор способен свои звонков запустить ее. 
+                IS_OPERATOR=0; 
+		AGI(netsds_is_operator,${USER_CALLERID},${NETSDS_CONFNUM}); 
+		if ( ${IS_OPERATOR} > 0) { 
+			AGI(netsds_start_conference,${USER_CALLERID},${NETSDS_CONFNUM});
+			Wait(1); 
+			goto check_auth; 
+		} 
+
+		// Конференция не активна. О чем сообщаем и прощаемся. 
+		Playback(netsds-conference-is-not-active); 
+		Hangup(); 
+	}
+	
+
+check_auth: 
+
+	// Считаем, что конференция ${NETSDS_CONFNUM} активна. 
+        // Проверяем метод аутентификации.
+	// IN:  NETSDS_CONFNUM - Номер конференции (1..50)
+        // OUT: AUTH_CALLERNUM - 0 (если не проверяем по номеру А), 1 - если проверяем
+        // OUT: AUTH_PIN       - 0 (если не проверяем по ПИНу), 1 - если проверяем.
+
+ 
+	AUTH_CALLERNUM = 0; 
+	AUTH_PIN = 0; 
+	AGI(netsds_get_auth_methods,${NETSDS_CONFNUM}); 
+
+	// Проверяем по номеру А, если выставлен соответствующий метод.
+	if (${AUTH_CALLERNUM} > 0) { 
+		// Проверяем по номеру А.
+		// IN: NETSDS_CONFNUM - Номер конференции (1..50)
+		// IN: USER_CALLERID  - Номер А абонента 
+                // OUT: AUTHENTICATED - 0 ( если не прошел проверку ), 1 - если прошел. 
+
+		AUTHENTICATED = 0;
+		AGI(netsds_authenticate_callernum,${NETSDS_CONFNUM},${USER_CALLERID});
+		if (${AUTHENTICATED} == 0) { 
+			// 
+			// Может быть это оператор конференции ? 
+                        //
+			IS_OPERATOR=0;
+			AGI(netsds_is_operator,${USER_CALLERID},${NETSDS_CONFNUM});
+			if (${IS_OPERATOR} > 0) { 
+				goto check_pin; 
+			}				
+
+ 			// Клиент не прошел аутентификацию по номеру А. 
+			Playback(netsds-not-authenticated-callernum); 
+			Hangup(); 
+		} 
+	}
+
+check_pin: 
+
+	// Проверяем по ПИН-коду, если выставлен соответствующий метод.
+        USER_PIN="";
+	if (${AUTH_PIN} > 0) { 
+		// Ждем от пользователя PIN-code
+		Read(USER_PIN,netsds-please-enter-pin-code,4,,1,10); 
+		NoOp(User enter: '${USER_PIN}' ); 
+		
+		// Проверяем по ПИН-коду
+		// IN:  NETSDS_CONFNUM - Номер конференции (1..50)
+                // IN:  USER_PIN       - Чего ввел пользователь
+                // OUT: AUTHENTICATED - 0 ( если не прошел проверку ), 1 - если прошел. 
+
+		AUTHENTICATED_PIN=0;
+	        AGI(netsds_authenticate_pin,${NETSDS_CONFNUM},${USER_PIN}); 
+		if(${AUTHENTICATED_PIN} == 0) { 
+			// Клиент не прошел аутентификацию по ПИНу. 
+			Playback(netsds-not-authenticated-pin); 
+			Hangup(); 
+		}
+	}
+
+
+	// Проверяем, администратор ли это ? 
+	// IN: NETSDS_CONFNUM - Номер конференции (1..50) 
+        // IN: USER_CALLERID  - Номер А абонента 
+        // IN: USER_PIN       - Что ввел пользователь или пустая строка.
+        // OUT: IS_ADMIN      - 0 ( Не администратор ), 1 - клиент является админом этой конференции 
+
+	IS_ADMIN=0;
+	//AGI(netsds_is_admin,${NETSDS_CONFNUM},${USER_CALLERID},${USER_PIN}); 
+	if (${IS_ADMIN} > 0) { 
+		// Пускать в конференцию с администраторскими правами
+		Konference(${NETSDS_CONFNUM}, CcRHMa);
+		Hangup(); 
+	} 
+        
+	// Клиент успешно прошел все проверки, пускаем в конференцию. 
+	Konference(${NETSDS_CONFNUM}, CcRHa); 
+
+	Hangup();
+   }; 
+};
+
+context NetSDS-Conference-Outgoing { 
+  _X! => { 
+	Set(CHANNEL(language)=ru);
+	Set(CALLERID(num)=${EXTEN});  
+	Answer();
+	Wait(1); 
+	Playback(netsds-welcome-to-conference); 
+	NETSDS_CONFNUM=${KONFNUM}; 
+
+check_pin:
+	AUTH_PIN = 0; 
+	AGI(netsds_get_auth_methods,${NETSDS_CONFNUM}); 
+
+	// Проверяем по ПИН-коду, если выставлен соответствующий метод.
+        USER_PIN="";
+
+	if (${AUTH_PIN} > 0) { 
+		// Ждем от пользователя PIN-code
+		Read(USER_PIN,netsds-please-enter-pin-code,4,,1,10); 
+		NoOp(User enter: '${USER_PIN}' ); 
+		
+		// Проверяем по ПИН-коду
+		// IN:  NETSDS_CONFNUM - Номер конференции (1..50)
+                // IN:  USER_PIN       - Чего ввел пользователь
+                // OUT: AUTHENTICATED - 0 ( если не прошел проверку ), 1 - если прошел. 
+
+		AUTHENTICATED_PIN=0;
+	        AGI(netsds_authenticate_pin,${NETSDS_CONFNUM},${USER_PIN}); 
+		if(${AUTHENTICATED_PIN} == 0) { 
+			// Клиент не прошел аутентификацию по ПИНу. 
+			Playback(netsds-not-authenticated-pin); 
+			Hangup(); 
+		}
+	}
+
+	Konference(${NETSDS_CONFNUM},CcRH);
+	Hangup();
+  }; 
+
+};
+
+context NetSDS-Conference-Outgoing-Record { 
+  _X! => { 
+	Set(CHANNEL(language)=ru);
+	Set(CALLERID(num)=${EXTEN});  
+	Answer();
+	//Wait(1); 
+	//Playback(netsds-welcome-to-conference); 
+	NETSDS_CONFNUM=${KONFNUM}; 
+	Konference(${NETSDS_CONFNUM},CcRH);
+	Hangup();
+  }; 
+
+};
+
+
+context NetSDS-Conference-Record { 
+  _X! => {  
+	FILENAME="${STRFTIME(${EPOCH},,%Y%m%d-%H%M)}-${EXTEN}";
+        MixMonitor(${FILENAME}.wav,a);
+	AGI(netsds_conflog,${EXTEN},record,${FILENAME}); 
+	Answer(); 
+	
+W1:
+	Wait(60); 
+
+	goto W1; 
+   }; 
+};
+
+
