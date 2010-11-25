@@ -337,7 +337,7 @@ sub process {
 			$this->members->{$unique_channel} = $callerid; 
 			
 			# Logging 
-		    	$this->speak("[$$] $callerid has joined the conference #".$event->{'ConferenceName'});
+    	$this->speak("[$$] $callerid has joined the conference #".$event->{'ConferenceName'});
 			$this->mydb->conflog($this->{'konf'}->{'cnfr_id'}, 'joined', $callerid); 
 
 			# Check for blocking
@@ -390,10 +390,21 @@ sub process {
 
  
 # Определить стоп конференции / Застопать конференцию.
+check_stop:
+
+#
+# проверяем нажатие кнопки "Стоп" на веб-интерфейсе. 
+# 
+		    my $state = $this->_check_button_stop(); 
+				unless ( defined ($state )) { 
+					goto check_stop_0;  
+				} else {
+					return 1; 
+				}
+
+check_stop_0: 
 # Способ номер 0 - если указан next_duration ( != 00:00:00  != '' )
 # Посчитать с last_started по длине next_duration и сравнить с ним
-
-check_stop:
 
         my $duration = $this->{'konf'}->{'next_duration'};
         if ( defined($duration) ) {
@@ -415,6 +426,7 @@ check_stop:
                     $this->speak(
                         "[$$] Stop the conference because duration time exceed."
                     );
+										$this->log("info","Stop the conference #".$this->{'konf'}->{'cnfr_id'}."  because duration time exceed.");
                     return 1;
                 }
                 next;
@@ -455,6 +467,7 @@ check_stop:
                 $this->speak(
                     "[$$] Stop the conference because conference is empty.");
                 return 1;
+								$this->log("info","Stop the conference #".$this->{'konf'}->{'cnfr_id'}." because it is empty."); 
             }
 	    next; 
         }
@@ -480,6 +493,7 @@ check_stop:
                         $this->speak(
 "[$$] Stop the conference because conference is empty."
                         );
+												$this->log("info","Stop the conference #".$this->{'konf'}->{'cnfr_id'}." because it is empty.");
                         return 1;
                     }
                 }
@@ -504,6 +518,7 @@ sub stop {
         {
             cnfr_state => '\'inactive\'',
             last_end   => 'now()',
+						next_start => $this->_calculate_next(),
         }
     );
 
@@ -832,6 +847,66 @@ sub _unmute_nonpriority_channels {
 			$this->konference->konference_unmutechannel($channel); 
 		}
 	}
+
+}
+
+sub _check_button_stop { 
+	my ($this) = @_; 
+	my $cnfr_id = $this->{'konf'}->{'cnfr_id'};
+  my %conf = $this->mydb->get_cnfr($cnfr_id);
+
+  if ($conf{'cnfr_state'} =~ /stop/i) { 
+		return 1; 
+  }
+
+  return undef; 
+
+} 
+
+sub _calculate_next { 
+  my ($this) = @_;
+
+	my $cnfr_id = $this->{'konf'}->{'cnfr_id'};
+  my %conf = $this->mydb->get_cnfr($cnfr_id);
+  my $base = ParseDate("today");
+  my $err;
+  my $start = $base; 
+  my $stop = DateCalc("today","+ 2 month",\$err);
+  my %d_ord = ("Mon"=>1, "Tue"=>2, "Wed"=>3, "Thu"=>4, "Fri"=>5, "Sat"=>6, "Sun"=>7);
+  my $schedules = $conf{'schedules'};
+  my @deltas;
+  my @nexts; 
+
+	my $count = @$schedules; 
+	if ($count == 0) { 
+		return 'NULL';  #It's not planned conference 
+	} 
+
+  foreach my $sch (@$schedules) {
+		my $format; 
+		my $day = $sch->{'day'}; 
+		if($day =~ /^[\d]+$/) {
+			$format = sprintf "0:1*0:%s:%s", $day, $sch->{'begin'}; # It's a mday
+		} else {
+			$format = sprintf "0:0:1*%s:%s", $d_ord{$day}, $sch->{'begin'}; # It's a wday 
+		}
+		my @recur = ParseRecur($format,$base,$start,$stop);
+		my $diff = DateCalc("today", $recur[0], $err, 1);
+		push @deltas, $diff;
+		push @nexts, $recur[0];
+	}
+	my $min = &ParseDateDelta($deltas[0]);
+	my $ind = 0;
+	for(my $j=1; $j<=$#deltas; $j++) {
+		next if(&Date_Cmp(&ParseDateDelta($deltas[$j]), $min) >= 0);
+		$ind = $j;
+		$min = &ParseDateDelta($deltas[$j]);
+	}
+	my $next_start = &UnixDate($nexts[$ind], "%Y-%m-%d %H:%M");
+	my $next_sch = @$schedules[$ind];
+	my $next_duration = $next_sch->{'duration'};
+
+	return "'$next_start'"; 
 
 }
 

@@ -14,7 +14,14 @@ function send_user() {
 		$("#error_text").empty();
 		$("#error_text").append('Пароль и подтверждение пароля должны совпадать!');
 		$("#error").dialog('open');
-		return;
+		return false;
+	}
+
+	if($('#uname').val() == '') {
+		$("#error_text").empty();
+		$("#error_text").append('У пользователя должно быть какое-то имя');
+		$("#error").dialog('open');
+		return false;
 	}
 
 	var u_qry = 'save_user.pl?'+$("#modify_user").serialize();

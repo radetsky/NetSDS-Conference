@@ -44,8 +44,10 @@ table.tab-table {
 			}
 			
 			.tab-table .center-icon {margin-left: 50%; margin-right: 50%;}
+
 			#day-selectable .ui-selecting { background: #FECA40; }
 			#day-selectable .ui-selected { background: #F39814; color: white; }
+			#date-selectable span { margin: 3px; }
 			#date-selectable .ui-selecting { background: #FECA40; }
 			#date-selectable .ui-selected { background: #F39814; color: white; }
 			#day-selectable { list-style-type: none; margin: 0; padding: 0; }

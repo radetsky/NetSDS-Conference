@@ -49,6 +49,8 @@ use Data::Dumper;
 use Date::Manip;
 use NetSDS::App::ConferenceMan;
 
+use Time::HiRes qw/usleep/;
+
 # Массив для запоминания списков
 # Детей, что  им можно было  послать сигналы.
 my @CHILDREN = array();
@@ -94,12 +96,11 @@ sub process {
 		{
 				# find non-active next starting conferences 
         my $cnfrs = $this->mydb->cnfr_find_4_start();
-				warn Dumper ($cnfrs); 
-				
 				foreach my $cnfr_id (keys %$cnfrs) {
 					$this->_conference_start($cnfrs->{$cnfr_id});
 				}
-				sleep(1); 
+
+				usleep(250); 
 
     }
 }
@@ -116,7 +117,8 @@ sub _conference_start {
         {
             cnfr_state => '\'active\'',
             next_start => 'NULL',
-            last_start => 'now()'
+            last_start => 'now()',
+						last_end   => 'NULL',
         }
     );
     unless ( defined($res) ) {

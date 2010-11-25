@@ -211,6 +211,21 @@ function send_cnfr() {
 			oprs += '+'+$(this).text();
 		}
 	});
+	if($('#ce_name').val() == '') {
+		$("#error_text").empty();
+		$("#error_text").append('Конференция не может быть без названия.');
+		$("#error").dialog('open');
+		return false;
+	}
+	if(sched_strings.length == 0 && 
+		 ($('#next_date').val() == '' || 
+		  $('#hours_begin').val() == '' || 
+			$('#min_begin').val() == '')) {
+		$("#error_text").empty();
+		$("#error_text").append('Для сохранения конференции должна быть задана либо дата следующей конференции, либо расписание планируемых конференций.');
+		$("#error").dialog('open');
+		return false;
+	}
 	var scheds = '';
 	for(var x=0; x<sched_strings.length; x++) {
 		if(sched_strings[x].valid) {

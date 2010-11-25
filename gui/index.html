@@ -17,6 +17,7 @@
 		<script type="text/javascript" src="js/position.js"></script>
 		<script type="text/javascript" src="js/user.js"></script>
 		<script type="text/javascript" src="js/audio.js"></script>
+		<script type="text/javascript" src="js/logs.js"></script>
 		<style type="text/css">
 			table.tab-table {font-family:Arial,Helvetica,sans-serif; font-size:50%;}
 			.tab-table td {vertical-align:top; 
@@ -34,6 +35,7 @@
 			#date-selectable { list-style-type: none; margin: 0; padding: 0; }
 			.active { background: #dee104; }
 			.stop { background: #dee104; }
+			.odd { background: #b4b9ab; }
 
 		</style>
 		<script type="text/javascript">
@@ -45,12 +47,30 @@
 				$("#posns").load('/posns.pl');
 				$("#orgs").load('/orgs.pl');
 				$('#audio').load('/audio.pl');
-				$('#logs').load('/logs.pl');
+				$("#log_from").datepicker({ dateFormat: 'yy-mm-dd' });
+				$("#log_to").datepicker({ dateFormat: 'yy-mm-dd' });
+				$.getJSON('/get_json_lc.pl', function(data){
+					if(data.length == 0) {
+						$('#log_list').empty();
+						$('#log_list').append('<tr><td style="color: red;">У вас нету прав доступа к конференциям.</td></tr>');
+					}
+					for(var x=0; x<data.length; x++) {
+						var y = '<option value="'+data[x].id+'">';
+						y += data[x].name+'</option>';
+						$('#cnfr_log').append(y);
+					}
+				});
 
 				$('#add_org').dialog({ autoOpen: false });
 				$('#add_pos').dialog({ autoOpen: false });
 				$('#edit_user').dialog({ autoOpen: false });
-				$('#show_active').dialog({ autoOpen: false, width: 800 });
+				$('#show_active').dialog({ autoOpen: false, width: 800,
+					close: function(event, ui) {
+						$("#cnfrs").empty();
+						$("#cnfrs").load('/cnfrs.pl');
+					}
+
+				});
 				$('#new_participant').dialog({ autoOpen: false, minWidth: 550, modal: true });
 				$('#new_oper').dialog({ autoOpen: false, modal: true });
 				$('#edit_cnfr').dialog({ autoOpen: false, minWidth: 700 });
@@ -104,6 +124,16 @@
 			<div id="audio">
 			</div>
 			<div id="logs">
+				<form>
+					Протоколы конференции
+					<select id="cnfr_log" name="cnfr_log">
+					</select>
+					с<input type="text" name="log_from" id="log_from" value=""/>
+					по<input type="text" name="log_to" id="log_to" value=""/>
+					<button onclick="select_logs(); return false;">Показать</button>
+				</form>
+				<table id="log_list" style="width: 100%;">
+				</table>
 			</div>
 		</div>
 		<div id="add_org" style="display: none;">
@@ -264,6 +294,7 @@
 			<option value=""></option>
 			<option value="ru">Русский</option>
 			<option value="ua">Украинский</option>
+			<option value='en'>English</option>
 		</select>
 	</td>
 </tr>

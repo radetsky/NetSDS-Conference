@@ -48,7 +48,7 @@ my @cnfrs = $cnfr->cnfr_list();
 my @rights = $cnfr->get_cnfr_rights($login);
 
 my $row =<<EOR;
-<tr class="%s" onclick="%s(%s, '%s'); return false;">
+<tr class="%s %s" onclick="%s(%s, '%s'); return false;">
 <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td>
 <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td>
 </tr>
@@ -59,9 +59,18 @@ my $out = "<table id=\"cnfr-list\" class=\"tab-table\">" . $thead;
 my $check = '<span class="ui-icon ui-icon-check center-icon"></span>';
 my $minus = '<span class="ui-icon ui-icon-minus center-icon"></span>';
 
+my $evenodd = 'gray'; 
+
 while(my $i = shift @rights) {
 	my @args = ();
 	push @args, $cnfrs[$i]{'cnfr_state'};
+  push @args, $evenodd; 
+	if ($evenodd eq 'gray') { 
+		$evenodd = 'white'; 
+	} else {
+	  $evenodd = 'gray'; 
+	} 
+
 	push @args, $funct{$cnfrs[$i]{'cnfr_state'}};
 	push @args, $i;
 	push @args, $cnfrs[$i]{'cnfr_name'};

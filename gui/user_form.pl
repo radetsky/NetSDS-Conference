@@ -83,7 +83,7 @@ if($cnfr->is_admin($login)) {
 }
 
 # Получили список организаций и должностей, чтобы сделать select'ы и сразу их сделали.
-my %orgs = $cnfr->get_org_list();
+my @orgs = $cnfr->get_org_list();
 my @posns = $cnfr->get_pos_list();
 
 my $pos_options = "";
@@ -105,16 +105,16 @@ if(defined $user{'position_id'} and length $user{'position_id'}) {
 my $org_options = "";
 # Если для пользователя определена организация, то она должна быть selected в списке select
 if(defined $user{'org_id'} and length $user{'org_id'}) {
-	foreach my $i (sort keys %orgs) {
-		if($user{'org_id'} eq $i) {
-			$org_options .= sprintf sprintf "<option value=\"%s\" selected=\"selected\">%s</option>\n", $i, $orgs{$i};
+	while(my $i = shift @orgs) {
+		if($user{'org_id'} eq $$i{'id'}) {
+			$org_options .= sprintf sprintf "<option value=\"%s\" selected=\"selected\">%s</option>\n", $$i{'id'}, $$i{'name'};
 		} else {
-			$org_options .= sprintf sprintf "<option value=\"%s\">%s</option>\n", $i, $orgs{$i};
+			$org_options .= sprintf sprintf "<option value=\"%s\">%s</option>\n", $$i{'id'}, $$i{'name'};
 		}
 	}
 } else {
-	foreach my $i (sort keys %orgs) {
-  	$org_options .= sprintf sprintf "<option value=\"%s\">%s</option>\n", $i, $orgs{$i};
+	while(my $i = shift @orgs) {
+  	$org_options .= sprintf sprintf "<option value=\"%s\">%s</option>\n", $$i{'id'}, $$i{'name'};
 	}
 }
 
