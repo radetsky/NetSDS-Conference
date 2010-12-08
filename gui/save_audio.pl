@@ -27,7 +27,8 @@ if(defined $filename) {
 	}
 	close(OUTFILE);
 	my $convert = "/tmp/" . $base . "_1.wav";
-	my $res = system(@SOX, $output, $convert);
+#	my $res = system(@SOX, $output, $convert);
+	my $res = system("/usr/bin/sox",$output,"-t","wav","-c","1","-r","8000",$convert); 
 
 	if($res == 0) {
 		open(CNVT, "<$convert");

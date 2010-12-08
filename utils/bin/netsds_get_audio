@@ -1,0 +1,30 @@
+#!/usr/bin/perl 
+
+use warnings; 
+use strict; 
+
+use lib '/home/rad/NetSDS-Conference/lib'; 
+
+use ConferenceDB; 
+use Asterisk::AGI;
+
+my $au_id = $ARGV[0]; 
+
+unless ( defined ( $au_id ) ) {
+	exit 255; 
+}
+
+my $AGI = new Asterisk::AGI; 
+my $cdb = ConferenceDB->new(); 
+my $audio = $cdb->get_audio($au_id); 
+my $filedata = $audio->{'audio_data'}; 
+my $filename = "/var/lib/asterisk/sounds/NetSDS/$au_id.wav"; 
+if (-e $filename) {
+	exit 255;
+}
+
+open (WAV, ">",$filename) or die "Can't open $filename"; 
+print WAV $filedata; 
+close WAV; 
+
+
