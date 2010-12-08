@@ -223,4 +223,16 @@ W1:
    }; 
 };
 
+context NetSDS-Conference-VoiceReminder { 
+  _X! => { 
+	Answer();
+	NoOp(PLAYFILE=${PLAYFILE}); 
+	AGI(netsds_get_audio,${PLAYFILE}); 
+	Wait(1); 
+	Playback(NetSDS/${PLAYFILE}); 
+	NETSDS_CONFNUM=${KONFNUM}; 
+	Hangup();
+	}; 
+}; 
+
 
