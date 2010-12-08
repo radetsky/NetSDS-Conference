@@ -48,6 +48,8 @@ use ConferenceDB;
 use Data::Dumper;
 use Date::Manip;
 use NetSDS::App::ConferenceMan;
+use NetSDS::App::ConfEmailReminder;
+use NetSDS::App::ConfVoiceReminder; 
 use Time::HiRes qw/usleep/;
 
 use Time::HiRes qw/usleep/;
@@ -56,11 +58,13 @@ use Time::HiRes qw/usleep/;
 # Детей, что  им можно было  послать сигналы.
 my @CHILDREN = array();
 my %ACTIVE;
+my $REMINDED; 
+my $VOICE_REMINDED;
 
 sub start {
     my ($this) = @_;
 
-#    warn Dumper ($this->conf); 
+    #    warn Dumper ($this->conf);
 
     $this->_add_signal_handlers();
 
@@ -73,20 +77,20 @@ sub start {
 sub _add_signal_handlers {
     my $this = @_;
 
-	# FIXME: в детях проверить обработку сигналов! 
+  # FIXME: в детях проверить обработку сигналов!
 
     $SIG{INT} = sub {
         warn "[$$] SIGINT caught";
         my $perm = kill "TERM" => @CHILDREN;
         warn "Sent TERM to $perm processes";
-		exit(1);
+        exit(1);
     };
 
     $SIG{TERM} = sub {
         warn "[$$] SIGTERM caught";
         my $perm = kill "TERM" => @CHILDREN;
         warn "Sent TERM to $perm processes";
-		exit(1);
+        exit(1);
     };
 }
 
@@ -94,14 +98,97 @@ sub process {
     my ($this) = @_;
     $this->speak("[$$] Start processing.");
     while (1) {
-	# find non-active next starting conferences 
+        # find non-active next starting conferences
         my $cnfrs = $this->mydb->cnfr_find_4_start();
-	foreach my $cnfr_id (keys %$cnfrs) {
-		$this->_conference_start($cnfrs->{$cnfr_id});
-	}
-	usleep(250); 
+        foreach my $cnfr_id ( keys %$cnfrs ) {
+            $this->_conference_start( $cnfrs->{$cnfr_id} );
+        }
+
+		# Find email reminders
+		$cnfrs = $this->mydb->cnfr_find_email_reminders(); 
+		foreach my $cnfr_id ( keys %$cnfrs ) {
+            my $c = $this->_check_reminded($cnfr_id,1);
+            if ( defined ($c) ) {
+                next;
+            }
+			$this->_conference_email_reminder_start($cnfr_id); 
+			$this->_add_reminded($cnfr_id,1);
+		}
+		$this->_clear_reminded($cnfrs,1);
+
+		# Find voice reminders
+		$cnfrs = $this->mydb->cnfr_find_voice_reminders();
+		foreach my $cnfr_id ( keys %$cnfrs ) { 
+			my $c = $this->_check_reminded($cnfr_id,2);
+			if ( defined ($c) ) { 
+				next;
+			}
+			$this->_conference_voice_reminder_start($cnfr_id);
+			$this->_add_reminded($cnfr_id,2);
+		}
+		$this->_clear_reminded($cnfrs,2);
+        usleep(250);
     }
 }
+
+sub _conference_email_reminder_start { 
+	my $this = shift; 
+	my $cnfr_id = shift; 
+
+	$this->mydb->_disconnect();
+    $this->speak( "[$$] Starting (fork) E-Mail reminder for Conference ID: " . $cnfr_id );
+    my $pid = fork();
+    unless ( defined($pid) ) {
+        die "[$$] Fork() for E-mail Reminder Conference ID "
+          . $cnfr_id . " failed: $!";
+    }
+
+    if ( $pid == 0 ) {
+        $this->speak( "[$$] Running NetSDS::App::ConfEmailReminder ("
+              . $cnfr_id . ")" );
+	        my $cm = NetSDS::App::ConfEmailReminder->run(
+            infinite  => undef,
+            verbose   => 1,
+            has_conf  => 1,
+            conf_file => '/etc/netstyle/conference.conf',
+            debug     => 1,
+			cnfr_id   => $cnfr_id,
+
+        );
+        die "[$$] NetSDS::App::ConfEmailReminder died.";
+    }
+    push @CHILDREN, $pid;
+}
+
+sub _conference_voice_reminder_start { 
+	my $this = shift; 
+	my $cnfr_id = shift; 
+
+	$this->mydb->_disconnect();
+    $this->speak( "[$$] Starting (fork) Voice reminder for Conference ID: " . $cnfr_id );
+    my $pid = fork();
+    unless ( defined($pid) ) {
+        die "[$$] Fork() for Voice Reminder Conference ID "
+          . $cnfr_id . " failed: $!";
+    }
+
+    if ( $pid == 0 ) {
+        $this->speak( "[$$] Running NetSDS::App::ConfVoiceReminder ("
+              . $cnfr_id . ")" );
+	        my $cm = NetSDS::App::ConfVoiceReminder->run(
+            infinite  => undef,
+            verbose   => 1,
+            has_conf  => 1,
+            conf_file => '/etc/netstyle/conference.conf',
+            debug     => 1,
+			cnfr_id   => $cnfr_id,
+
+        );
+        die "[$$] NetSDS::App::ConfVoiceReminder died.";
+    }
+    push @CHILDREN, $pid;
+}
+
 
 sub _conference_start {
     my $this = shift;
@@ -143,12 +230,12 @@ sub _conference_start {
               . $conf->{'cnfr_id'}
               . ")" );
         my $cm = NetSDS::App::ConferenceMan->run(
-            konf        => $conf,
-            infinite    => undef,
-            verbose     => 1,
-            has_conf    => 1,
-            conf_file   => '/etc/netstyle/conference.conf',
-            debug       => 1,
+            konf      => $conf,
+            infinite  => undef,
+            verbose   => 1,
+            has_conf  => 1,
+            conf_file => '/etc/netstyle/conference.conf',
+            debug     => 1,
 
         );
         die "[$$] NetSDS::App::ConferenceMan died.";
@@ -176,19 +263,83 @@ sub _conference_restore {
               . $conf->{'cnfr_id'}
               . ")" );
         my $cm = NetSDS::App::ConferenceMan->run(
-            konf        => $conf,
-            restore     => 1,
-            infinite    => undef,
-            verbose     => 1,
-            has_conf    => 1,
+            konf      => $conf,
+            restore   => 1,
+            infinite  => undef,
+            verbose   => 1,
+            has_conf  => 1,
             conf_file => '/etc/netstyle/conference.conf',
-            debug       => 1,
+            debug     => 1,
 
         );
         die "[$$] NetSDS::App::ConferenceMan died.";
     }
     push @CHILDREN, $pid;
-	$ACTIVE{ $conf->{'cnfr_id'} } = $pid;
+    $ACTIVE{ $conf->{'cnfr_id'} } = $pid;
+}
+
+
+sub _add_reminded { 
+	my $this = shift; 
+	my $cnfr_id = shift; 
+	my $reminded = shift;
+
+	if ($reminded == 1) { 
+		$REMINDED->{$cnfr_id} = 1;
+	} else { 
+		$VOICE_REMINDED->{$cnfr_id} = 1; 
+	} 
+
+	$this->speak("[$$] Added # $cnfr_id to reminded list.");
+	$this->log("info","Added # $cnfr_id to reminded list.");
+} 
+
+sub _check_reminded { 
+	my $this = shift; 
+	my $cnfr_id = shift; 
+	my $reminded = shift; 
+
+	if ($reminded == 1) { 
+		$reminded = $REMINDED;
+	} else {
+		$reminded = $VOICE_REMINDED;
+	} 
+	foreach my $cnfr_done_id (keys %$reminded) { 
+		if ($cnfr_done_id == $cnfr_id) {
+			$this->log("info"," # $cnfr_id already in reminded list");
+			return 1; 
+		} 
+	} 
+
+	return undef; 
+}
+sub _clear_reminded { 
+	my ($this,$cnfrs,$reminded) = @_;
+    my $rem;
+
+	if ($reminded == 1) {
+		$rem = $REMINDED; 
+	} else { 
+		$rem = $VOICE_REMINDED;
+	}
+	foreach my $cnfr_done_id (keys %$rem) { 
+		my $found = undef; 
+		foreach my $cnfr_id (keys %$cnfrs) { 
+			if ($cnfr_done_id == $cnfr_id) { 
+				$found = 1; 
+			}
+		}
+		unless ( defined ( $found ) ) { 
+			if ($reminded == 1) { 
+				delete $REMINDED->{$cnfr_done_id};
+			} else {
+				delete $VOICE_REMINDED->{$cnfr_done_id};
+			}
+
+			$this->speak("[$$] Removing # $cnfr_done_id from already reminded list.");
+			$this->log("info","Removing # $cnfr_done_id from already reminded list.");
+		}
+	}
 }
 
 1;
