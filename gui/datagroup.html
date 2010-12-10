@@ -540,6 +540,17 @@
 		}
 	});
 </script>
+<script type="text/javascript">
+	function conference_quit() {
+		var current_url = document.location.href; 
+		var new_url = current_url.replace("http://","http://logout:byebye@"); 
+		window.location = new_url;
+	} 
+</script>		 
+<div id='bottom_menu'>
+	 <button onclick='conference_quit()'>Выход</button>
+ </div>
+
 <div id="footer">
 		<div style="float:left;text-align:left;"><a href="http://www.datagroup.ua" target="_blank">www.datagroup.ua</a></div>
 		<div style="float:right;text-align:right;"><a href="http://www.datagroup.ua" target="_blank">&copy; ЧАО &laquo;Датагруп&raquo; 2000-2010</a></div>
