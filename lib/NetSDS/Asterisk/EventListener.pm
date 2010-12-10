@@ -105,7 +105,7 @@ sub _connect {
     $this->manager( $manager );
     my $res = $this->manager->connect();
     unless ( defined ( $res ) ) { 
-	return undef; 
+		return undef; 
     }
     $this->connected(1);
 
@@ -115,7 +115,7 @@ sub _connect {
 sub _getEvent {
     my $this = shift;
 
-    unless ( $this->connected ) {
+    unless ( defined ( $this->connected ) )  {
         $this->connected( $this->_connect() );
     }
 
@@ -136,7 +136,7 @@ No support is available
 
 =head1 AUTHOR
 
-Copyright 2009 Anonymous.
+Copyright 2009-2010 Alex Radetsky <rad@rad.kiev.ua> 
 
 =cut
 

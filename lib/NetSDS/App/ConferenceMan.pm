@@ -60,6 +60,7 @@ sub start {
         warn "[$$] SIGTERM caught";
         exit(1);
     };
+	$SIG{CHLD} = 'IGNORE'; 
 
     setproctitle( "ConferenceMan (" . $this->{'konf'}->{'cnfr_id'} . ")" );
 

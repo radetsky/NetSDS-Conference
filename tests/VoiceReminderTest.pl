@@ -61,20 +61,13 @@ sub process {
 	my $cnfr_id = $ARGV[0]; 
 
 	$this->_conference_email_reminder_start($cnfr_id); 
+
 }
 
 sub _conference_email_reminder_start { 
 	my $this = shift; 
 	my $cnfr_id = shift; 
 
-    $this->speak( "[$$] Starting (fork) Voice reminder for Conference ID: " . $cnfr_id );
-    my $pid = fork();
-    unless ( defined($pid) ) {
-        die "[$$] Fork() for E-mail Reminder Conference ID "
-          . $cnfr_id . " failed: $!";
-    }
-
-    if ( $pid == 0 ) {
         $this->speak( "[$$] Running NetSDS::App::ConfVoiceReminder ("
               . $cnfr_id . ")" );
 	        my $cm = NetSDS::App::ConfVoiceReminder->run(
@@ -86,8 +79,6 @@ sub _conference_email_reminder_start {
 			cnfr_id   => $cnfr_id,
 
         );
-        die "[$$] NetSDS::App::ConfEmailReminder died.";
-    }
 }
 
 1;

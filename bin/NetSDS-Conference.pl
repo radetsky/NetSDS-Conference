@@ -52,7 +52,7 @@ use NetSDS::App::ConfEmailReminder;
 use NetSDS::App::ConfVoiceReminder; 
 use Time::HiRes qw/usleep/;
 
-use Time::HiRes qw/usleep/;
+use POSIX ":sys_wait_h";
 
 # Массив для запоминания списков
 # Детей, что  им можно было  послать сигналы.
@@ -92,6 +92,15 @@ sub _add_signal_handlers {
         warn "Sent TERM to $perm processes";
         exit(1);
     };
+	$SIG{CHLD} = sub { 
+		warn "[$$] SIGCHLD caught"; 
+		while ( ( my $child = waitpid(-1,WNOHANG )) > 0) { 
+			# delete from CHILDREN
+			warn "Process $child dead."; 
+		}
+
+	};
+
 }
 
 sub process {
