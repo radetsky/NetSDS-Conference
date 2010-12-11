@@ -265,13 +265,20 @@ sub process {
                 goto check_stop;
             }
             $prev_time = $time;
-            usleep(500);
-            next;
+            usleep(250);
+            goto check_stop; 
         }
 
         # Работаем с приоритетом
+	unless ( defined ( $event->{'Event'} ) ) {
+	   warn Dumper ($event);
+	   $this->log("warning",Dumper($event));
+	   goto check_stop;
+	
+	}
 
         if ( $event->{'Event'} =~ /ConferenceState/i ) {
+
             my $channel = $event->{'Channel'};
             my $state   = $event->{'State'};
 
@@ -293,6 +300,7 @@ sub process {
                 }
             }
         }
+
         if ( $event->{'Event'} =~ /ConferenceDTMF/i ) {
 
             # ConferenceName: 4
@@ -428,6 +436,8 @@ sub process {
             goto check_stop_0;
         }
         else {
+	    $this->speak("[$$] Button stop pressed. ");
+	    $this->log("info","Button stop pressed. "); 
             return 1;
         }
 
@@ -914,15 +924,14 @@ sub _unmute_nonpriority_channels {
 
 sub _check_button_stop {
     my ($this)  = @_;
+
     my $cnfr_id = $this->{'konf'}->{'cnfr_id'};
     my %conf    = $this->mydb->get_cnfr($cnfr_id);
 
     if ( $conf{'cnfr_state'} =~ /stop/i ) {
         return 1;
     }
-
     return undef;
-
 }
 
 sub _calculate_next {

@@ -47,8 +47,8 @@
 				registerView('logs','');
 				
 				whenViewsDone(function(){
-					$('table.tab-table tbody tr:even').addClass('gray');
-					$('table.tab-table tbody tr:odd').addClass('white'); 
+					//$('table.tab-table tbody tr:even').addClass('gray');
+					//$('table.tab-table tbody tr:odd').addClass('white'); 
 
 					$('#cnfrs').append('<table class="zlph"><tr><td align="left"><img src="css/images/tableft_shadow.png" alt="" /></td><td align="right"><img src="css/images/tabright_shadow.png" alt="" /></td></tr></table>');
 				});
@@ -71,7 +71,7 @@
 
 				$('#add_org').dialog({ autoOpen: false });
 				$('#add_pos').dialog({ autoOpen: false });
-				$('#edit_user').dialog({ autoOpen: false });
+				$('#edit_user').dialog({ autoOpen: false, width: 600  });
 				$('#show_active').dialog({ autoOpen: false, width: 800 });
 
 				$('#show_active').dialog({ autoOpen: false, width: 800,

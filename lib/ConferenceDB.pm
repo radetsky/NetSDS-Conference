@@ -738,6 +738,22 @@ sub stop_cnfr {
     my $cid   = shift;
 
     $self->_connect();
+    my $state = $dbh->selectrow_hashref("select cnfr_state from conferences where cnfr_id=$cid"); 
+    unless ( defined ( $state ) ) { 
+	return undef; 
+    } 
+
+    if ($state->{'cnfr_state'} =~ /stop/i ) { 
+	# It's done.
+	return 1; 
+    }
+
+    if ($state->{'cnfr_state'} =~ /inactive/i ) { 
+	# it's not active. Why ?
+	return 1;
+    }
+ 
+
     my $q = "UPDATE conferences SET cnfr_state='stop' WHERE cnfr_id=?";
     eval { $dbh->do( $q, undef, $cid ); };
 

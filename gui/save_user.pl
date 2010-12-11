@@ -21,7 +21,7 @@ my $admin = $cnfr->is_admin($login);
 
 my %params = $cgi->Vars();
 my %user = ();
-my %admin = ();
+my %adm = ();
 print $cgi->header(-type=>'application/json',-charset=>'utf-8');
 
 $user{'id'} = $cgi->param("uid");
@@ -44,7 +44,7 @@ while(exists($params{("phone".$j)})) {
 	$j++;
 }
 
-$admin{'oper'} = 0;
+$adm{'oper'} = 0;
 
 if(exists $params{'op_rights'} and $params{'op_rights'} eq "on") {
 	unless($admin) {
@@ -52,13 +52,13 @@ if(exists $params{'op_rights'} and $params{'op_rights'} eq "on") {
 		print $out,"\n";
 		exit(0);
 	}
-	$admin{'oper'} = 1;
-	$admin{'login'} = $cgi->param("op_login");
-	$admin{'passwd'} = $cgi->param("op_pass");
+	$adm{'oper'} = 1;
+	$adm{'login'} = $cgi->param("op_login");
+	$adm{'passwd'} = $cgi->param("op_pass");
 	if(exists $params{"is_admin"} and $params{"is_admin"} eq "on") {
-		$admin{'admin'} = 1;
+		$adm{'admin'} = 1;
 	} else {
-		$admin{'admin'} = 0;
+		$adm{'admin'} = 0;
 	}
 }
 
@@ -69,12 +69,12 @@ if($user{'id'} ne 'new') {
 
 my @users = undef;
 if($admin) {
-	if(@users = $cnfr->update_user($login, \%user, \@phones, \%admin)) {
-		if(defined $admin{'passwd'} and length $admin{'passwd'}) {
-			my $cmd = $htpasswd . " -b ./.htpasswd ". $admin{'login'} . " " . $admin{'passwd'};
+	if(@users = $cnfr->update_user($login, \%user, \@phones, \%adm)) {
+		if(defined $adm{'passwd'} and length $adm{'passwd'}) {
+			my $cmd = $htpasswd . " -b ./.htpasswd ". $adm{'login'} . " " . $adm{'passwd'};
 			system($cmd);
 		}
-		if(length $old{'login'} and $admin{'oper'} eq 0) {
+		if(length $old{'login'} and $adm{'oper'} eq 0) {
 			my $cmd = $htpasswd . " -D ./.htpasswd " . $old{'login'};
 			system($cmd);
 			$cnfr->remove_oper($login, $user{'id'});

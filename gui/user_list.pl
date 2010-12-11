@@ -41,8 +41,8 @@ my @users = ();
 @users = $cnfr->get_user_list();
 
 my $row =<<EOR;
-<tr>
-<td  onclick="edit_user('%s')"valign="top" align="left">%s</td> 
+<tr class='%s' >
+<td onclick="edit_user('%s')"valign="top" align="left">%s</td> 
 <td valign="top" align="left">%s</td> 
 <td valign="top" align="left">%s</td> <td valign="top" align="left">%s</td> 
 <td valign="top" align="left">%s</td> <td valign="top" align="left">%s</td>
@@ -51,8 +51,8 @@ my $row =<<EOR;
 EOR
 
 my $adm_row =<<EOR;
-<tr id="user%s">
-<td  onclick="edit_user('%s')"valign="top" align="left">%s</td> 
+<tr class='%s' id="user%s">
+<td onclick="edit_user('%s')"valign="top" align="left">%s</td> 
 <td valign="top" align="left">%s</td> 
 <td valign="top" align="left">%s</td> <td valign="top" align="left">%s</td> 
 <td valign="top" align="left">%s</td> <td valign="top" align="left">%s</td>
@@ -63,15 +63,28 @@ EOR
 
 my $out = "<table id=\"user-list\" class=\"tab-table\">" . $thead;
 
+my $evenodd = 'gray'; 
+
 if($admin) {
 	while(my $i = shift @users) {
-		$out .= sprintf $adm_row, $$i{'id'}, $$i{'id'}, $$i{'name'}, join('<br/>',@{$$i{'phones'}}), 
-			$$i{'organization'}, $$i{'department'}, $$i{'position'}, $$i{'email'}, $$i{'login'}, $$i{'id'};
+		$out .= sprintf $adm_row,$evenodd, $$i{'id'}, $$i{'id'}, $$i{'name'}, join('<br/>',@{$$i{'phones'}}), 
+		$$i{'organization'}, $$i{'department'}, $$i{'position'}, $$i{'email'}, $$i{'login'}, $$i{'id'};
+		if ($evenodd eq 'gray') { 
+			$evenodd = 'white'; 
+		} else { 
+			$evenodd = 'gray'; 
+		}
+		
 	}
 } else {
 	while(my $i = shift @users) {
-		$out .= sprintf $row, $$i{'id'}, $$i{'name'}, join('<br/>',@{$$i{'phones'}}), 
-									$$i{'organization'}, $$i{'department'}, $$i{'position'}, $$i{'email'}, $$i{'login'};
+		$out .= sprintf $row, $evenodd ,$$i{'id'}, $$i{'name'}, join('<br/>',@{$$i{'phones'}}),
+		$$i{'organization'}, $$i{'department'}, $$i{'position'}, $$i{'email'}, $$i{'login'};
+		if ($evenodd eq 'gray') { 
+			$evenodd = 'white'; 
+		} else { 
+			$evenodd = 'gray'; 
+		}
 	}
 }
 

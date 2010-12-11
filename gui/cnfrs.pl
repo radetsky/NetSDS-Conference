@@ -64,7 +64,7 @@ my $evenodd = 'gray';
 while(my $i = shift @rights) {
 	my @args = ();
 	push @args, $cnfrs[$i]{'cnfr_state'};
-  push @args, $evenodd; 
+        push @args, $evenodd; 
 	if ($evenodd eq 'gray') { 
 		$evenodd = 'white'; 
 	} else {

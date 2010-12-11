@@ -40,13 +40,13 @@ if(defined $id and length $id and defined $org_name and length $org_name) {
 my @orgs = $cnfr->get_org_list();
 
 my $row =<<EOR;
-<tr>
+<tr class='%s'>
 <td onclick="edit_org('%s','%s');return false;">%s</td>
 </tr>
 EOR
 
 my $adm_row =<<EOAR;
-<tr id="org%s">
+<tr class='%s' id="org%s">
 <td onclick="edit_org('%s','%s');return false;">%s</td>
 <td onclick="remove_org('%s'); return false;"><span class="ui-icon ui-icon-close"></span></td>
 </tr>
@@ -54,13 +54,25 @@ EOAR
 
 my $out = "<table id=\"orgs-list\" class=\"tab-table\">" . $thead;
 
+my $evenodd = 'gray'; 
+
 if($admin) {
 	while(my $i = shift @orgs) {
-		$out .= sprintf $adm_row, $$i{'id'}, $$i{'id'}, $$i{'name'}, $$i{'name'}, $$i{'id'};
+		$out .= sprintf $adm_row, $evenodd, $$i{'id'}, $$i{'id'}, $$i{'name'}, $$i{'name'}, $$i{'id'};
+		if ($evenodd eq 'gray') { 
+			$evenodd = 'white'; 
+		} else { 
+			$evenodd = 'gray'; 
+		}
 	}
 } else {
 	while(my $i = shift @orgs) {
-		$out .= sprintf $row, $$i{'id'}, $$i{'name'}, $$i{'name'};
+		$out .= sprintf $row, $evenodd, $$i{'id'}, $$i{'name'}, $$i{'name'};
+		if ($evenodd eq 'gray') { 
+			$evenodd = 'white'; 
+		} else { 
+			$evenodd = 'gray'; 
+		}
 	}
 }
 

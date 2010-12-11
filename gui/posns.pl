@@ -39,7 +39,7 @@ if(defined $id and length $id and defined $pos_name and length $pos_name) {
 my @posns = $cnfr->get_pos_list();
 
 my $adm_row =<<EOR;
-<tr id="pos%s">
+<tr class='%s' id="pos%s">
 <td onclick="edit_pos('%s','%s');return false;">%s</td>
 <td onclick="del_pos('%s'); return false;">
 <span class="ui-icon ui-icon-close"></span>
@@ -48,20 +48,32 @@ my $adm_row =<<EOR;
 EOR
 
 my $row =<<EOR;
-<tr onclick="edit_pos('%s','%s');return false;">
+<tr class='%s' onclick="edit_pos('%s','%s');return false;">
 <td>%s</td>
 </tr>
 EOR
 
 my $out = "<table id=\"user-list\" class=\"tab-table\">" . $thead;
 
+my $evenodd = 'gray';
+ 
 if($admin) {
 	while(my $i = shift @posns) {
-		$out .= sprintf $adm_row, $$i{'id'}, $$i{'id'}, $$i{'name'}, $$i{'name'}, $$i{'id'};
+		$out .= sprintf $adm_row, $evenodd, $$i{'id'}, $$i{'id'}, $$i{'name'}, $$i{'name'}, $$i{'id'};
+		if ($evenodd eq 'gray') { 
+			$evenodd = 'white'; 
+		} else { 
+			$evenodd = 'gray'; 
+		}
 	}
 } else {
 	while(my $i = shift @posns) {
-		$out .= sprintf $row, $$i{'id'}, $$i{'name'}, $$i{'name'};
+		$out .= sprintf $row, $evenodd, $$i{'id'}, $$i{'name'}, $$i{'name'};
+		if ($evenodd eq 'gray') { 
+			$evenodd = 'white'; 
+		} else { 
+			$evenodd = 'gray'; 
+		}
 	}
 }
 
