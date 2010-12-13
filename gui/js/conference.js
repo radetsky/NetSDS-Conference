@@ -21,6 +21,7 @@ function edit_cnfr(confid, confname) {
 		$("#dur_hours").val(data.dur_hours);
 		$("#dur_min").val('');
 		$("#dur_min").val(data.dur_min);
+		$('#add_sched').attr('disabled','disabled');
 		if(data.schedules.length > 0) {
 			$("#next_date").attr('disabled','disabled');
 			$("#hours_begin").attr('disabled','disabled');
@@ -28,7 +29,7 @@ function edit_cnfr(confid, confname) {
 			$("#dur_hours").attr('disabled','disabled');
 			$("#dur_min").attr('disabled','disabled');
 			$("#sched").attr('checked','checked');
-			$("#add_sched").button( "option", "disabled", false );
+			$("#add_sched").removeAttr('disabled');
 			sched_strings = data.schedules;
 			for(x=0; x<data.schedules.length; x++) {
 				var y = '<tr id="sched_str'+x+'"><td>'+data.schedules[x].day+'</td>';
@@ -40,7 +41,7 @@ function edit_cnfr(confid, confname) {
 				$('#schedules').append(y);
 			}
 		} else {
-			$("#add_sched").button( "option", "disabled", true );
+			$("#add_sched").attr('disabled','disabled');
 			$("#next_date").removeAttr("disabled");
 			$("#hours_begin").removeAttr("disabled");
 			$("#min_begin").removeAttr("disabled");

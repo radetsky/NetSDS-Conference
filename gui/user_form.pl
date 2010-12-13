@@ -6,51 +6,74 @@ use CGI;
 use lib './lib';
 use ConferenceDB;
 
+
+# About form styling:
+# unfortunately the only way to settle labels and inputs into nice two-column rows
+# without hassle and form trashing because of "element does not fit" is a table.
+# DIV Nazi will kill me some day but if your layout have simple grid of rows and columns -
+# this is a table anyway, even if you produced it with floating block-elements.
+#      -- zmeuka
+
 my $form=<<EOH;
 <form id="modify_user">
 <fieldset>
 	<legend id="userlegend">%s</legend>
 	<input type="hidden" name="uid" id="uid" value="%s"/>
-	<label for="uname">ФИО</label>
-	<input type="text" id="uname" name="fio" value="%s"/><br/>
-	<label for="phone0">Номер телефона</label>
-	<input type="text" id="phone0" name="phone0" value="%s"/>
-	<div id="more_phones">
+	<table class="form-layout">
+	
+	<tr><td><label for="uname">ФИО</label></td><td><input type="text" class="fit-column" id="uname" name="fio" value="%s"/></td></tr>
+	<tr><td><label for="phone0">Номер телефона</label></td>
+	    <td>
+		<input type="text" class="fit-column" id="phone0" name="phone0" value="%s"/>
+		<div id="more_phones">
+		%s
+		</div>
+	    </td>
+	</tr>
+	<tr>
+	    <td colspan="2" align="right">
+		<button onclick="add_phone_field(); return false;">Добавить телефон</button>
+	    </td>
+	</tr>
+	<tr><td><label for="user_org">Организация</label></td><td><select name="user_org" class="fit-column" id="user_org">%s</select></td></tr>
+	<tr><td><label for="user_dept">Отдел</label></td><td><input type="text" class="fit-column" id="user_dept" name="user_dept" value="%s"/></td></tr>
+	<tr><td><label for="user_pos">Должность</label></td><td><select name="user_pos" class="fit-column" id="user_pos">%s</select></td></tr>
+	<tr><td><label for="user_email">E-mail</label></td><td><input type="text" class="fit-column" id="user_email" name="user_email" value="%s"/></td></tr>
 	%s
-	</div>
-	<div onclick="add_phone_field(); return false;">
-	Добавить телефон >>>
-	</div>
-	<label for="user_org">Организация</label>
-	<select name="user_org" id="user_org">%s
-	</select><br/>
-	<label for="user_dept">Отдел</label>
-	<input type="text" id="user_dept" name="user_dept" value="%s"/><br/>
-	<label for="user_pos">Должность</label>
-	<select name="user_pos" id="user_pos">%s
-	</select><br/>
-	<label for="user_email">E-mail</label>
-	<input type="text" id="user_email" name="user_email" value="%s"/><br/>
-	%s
-	<input id="posbutton" type="button" onclick="send_user();return false;" value="%s"/>
-	<input type="button" onclick="close_user_dialog();return false;" value="Отменить"/>
+	<tr><td align="left">
+	    <button id="posbutton" onclick="send_user();return false;">%s</button>
+	</td><td align="right">
+	    <button onclick="close_user_dialog();return false;">Отменить</button>
+	</td></tr>
+	
+	</table>
 </fieldset>
 </form>
 EOH
 
 my $admin_add=<<EOA;
-	<label for="op_rights">Оператор</label>
-	<input type="checkbox" name="op_rights" id="op_rights"%s/><br>
-	<div id="ad_op"%s>
-		<label for="op_login">Имя для входа</label>
-		<input type="text" name="op_login" id="op_login" value="%s"/><br/>
-		<label for="op_pass">Пароль</label>
-		<input type="password" name="op_pass" id="op_pass" value=""/><br/>
-		<label for="op_repass">Повторите пароль</label>
-		<input type="password" name="op_repass" id="op_repass" value=""/><br/>
-		<label for="is_admin">Администратор</label>
-	  <input type="checkbox" name="is_admin" id="is_admin"%s/>
-	</div>
+	<tr><td><label for="op_rights">Оператор</label></td><td><input type="checkbox" name="op_rights" id="op_rights"%s/></td></tr>
+	<tr><td colspan="2">
+	    <div id="ad_op"  style="margin:4px;border:1px solid #666;padding:4px;background-color:#9c9;%s">
+		<table class="form-layout">
+		    <tr>
+			<td><label for="op_login">Имя для входа</label></td>
+			<td><input type="text" class="fit-column" name="op_login" id="op_login" value="%s"/></td>
+		    </tr>
+		    <tr>
+			<td><label for="op_pass">Пароль</label></td>
+			<td><input class="fit-column" type="password" name="op_pass" id="op_pass" value=""/></td>
+		    </tr>
+		    <tr>
+			<td><label for="op_repass">Повторите пароль</label></td>
+			<td><input class="fit-column" type="password" name="op_repass" id="op_repass" value=""/></td>
+		    <tr>
+			<td><label for="is_admin">Администратор</label></td>
+			<td><input type="checkbox" name="is_admin" id="is_admin"%s/></td>
+		    </tr>
+		</table>
+	    </div>
+	</td></tr>
 EOA
 
 my $cgi = CGI->new;
@@ -78,7 +101,7 @@ if($cnfr->is_admin($login)) {
 #		$adm = sprintf $admin_add, " checked=\"checked\"", "", $user{'login'}, "";
 		$adm = sprintf $admin_add, " checked", "", $user{'login'}, "";
 	} else {
-		$adm = sprintf $admin_add, "", " style=\"display: none;\"", $user{'login'}, "";
+		$adm = sprintf $admin_add, "", "display: none;", $user{'login'}, "";
 	}
 }
 
@@ -121,7 +144,7 @@ if(defined $user{'org_id'} and length $user{'org_id'}) {
 my $more_phones = "";
 my $k = 1;
 while(defined $user{'phones'}[$k]) {
-	$more_phones .= "<input type=\"text\" id=\"phone$k\" name=\"phone$k\" value=\"" .
+	$more_phones .= "<input type=\"text\" id=\"phone$k\" name=\"phone$k\" class=\"fit-column\" value=\"" .
 									$user{'phones'}[$k] . "\"/><br/>";
 	$k++;
 }

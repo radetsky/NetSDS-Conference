@@ -23,7 +23,7 @@ my $admin = $cnfr->is_admin($login);
 
 my %a_list = $cnfr->get_audio_list();
 
-my $table = "<table>\n";
+my $table = "<table class=\"tab-table\">\n";
 foreach my $k (keys %a_list) {
 	$table .= "<tr id=\"audio$k\"><td>";
 	$table .= $a_list{$k} . "</td>";

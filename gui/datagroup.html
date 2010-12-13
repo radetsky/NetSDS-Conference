@@ -47,10 +47,15 @@
 				registerView('logs','');
 				
 				whenViewsDone(function(){
-					//$('table.tab-table tbody tr:even').addClass('gray');
-					//$('table.tab-table tbody tr:odd').addClass('white'); 
+//					$('table.tab-table tbody tr:even').addClass('gray');
+//					$('table.tab-table tbody tr:odd').addClass('white'); 
 
 					$('#cnfrs').append('<table class="zlph"><tr><td align="left"><img src="css/images/tableft_shadow.png" alt="" /></td><td align="right"><img src="css/images/tabright_shadow.png" alt="" /></td></tr></table>');
+					$('#users').append('<table class="zlph"><tr><td align="left"><img src="css/images/tableft_shadow.png" alt="" /></td><td align="right"><img src="css/images/tabright_shadow.png" alt="" /></td></tr></table>');
+					$('#posns').append('<table class="zlph"><tr><td align="left"><img src="css/images/tableft_shadow.png" alt="" /></td><td align="right"><img src="css/images/tabright_shadow.png" alt="" /></td></tr></table>');
+					$('#orgs').append('<table class="zlph"><tr><td align="left"><img src="css/images/tableft_shadow.png" alt="" /></td><td align="right"><img src="css/images/tabright_shadow.png" alt="" /></td></tr></table>');
+					// $('#audio').append('<table class="zlph"><tr><td align="left"><img src="css/images/tableft_shadow.png" alt="" /></td><td align="right"><img src="css/images/tabright_shadow.png" alt="" /></td></tr></table>');
+					// $('#logs').append('<table class="zlph"><tr><td align="left"><img src="css/images/tableft_shadow.png" alt="" /></td><td align="right"><img src="css/images/tabright_shadow.png" alt="" /></td></tr></table>');
 				});
 
 				
@@ -69,24 +74,24 @@
 				});
 
 
-				$('#add_org').dialog({ autoOpen: false });
-				$('#add_pos').dialog({ autoOpen: false });
-				$('#edit_user').dialog({ autoOpen: false, width: 600  });
-				$('#show_active').dialog({ autoOpen: false, width: 800 });
+				$('#add_org').dialog({ autoOpen: false, width: 'auto', title: 'Добавление организации' });
+				$('#add_pos').dialog({ autoOpen: false, width: 'auto', title: 'Добавление должности' });
+				$('#edit_user').dialog({ autoOpen: false, width: 'auto', title: 'Редактирование пользователя:' });
+				// $('#show_active').dialog({ autoOpen: false, width: 800 });
 
-				$('#show_active').dialog({ autoOpen: false, width: 800,
+				$('#show_active').dialog({ autoOpen: false, width: 'auto', title: 'Активные совещания',
 					close: function(event, ui) {
 						$("#cnfrs").empty();
   					$("#cnfrs").load('/cnfrs.pl');
 				}
 			  }); 
 
-				$('#new_participant').dialog({ autoOpen: false, minWidth: 550, modal: true });
-				$('#new_oper').dialog({ autoOpen: false, modal: true });
-				$('#edit_cnfr').dialog({ autoOpen: false, minWidth: 700 });
-				$('#schedule_select').dialog({ autoOpen: false, modal: true, minWidth: 500  });
+				$('#new_participant').dialog({ autoOpen: false, width: 'auto', modal: true, title: 'Новый участник совещания' });
+				$('#new_oper').dialog({ autoOpen: false, modal: true, width: 'auto', title: 'Новый оператор совещания' });
+				$('#edit_cnfr').dialog({ autoOpen: false, width: 'auto', title: 'Редактирование совещания' });
+				$('#schedule_select').dialog({ autoOpen: false, modal: true, width: 'auto', title: 'Планирование совещания' });
 
-        $('#add_sched').button();
+        // $('#add_sched').button();
         $('#add_sched').click( function () {
           add_schedule();
           return false;
@@ -137,10 +142,10 @@
 							<td>&nbsp;</td>
 							<td class="shadowy"><a href="#" id="handle-users">Пользователи</a></td>
 							<td>&nbsp;</td>
-							<td class="shadowy"><a href="#" id="handle-posns">Должности</a></td>
+							<!-- td class="shadowy"><a href="#" id="handle-posns">Должности</a></td>
 							<td>&nbsp;</td>
 							<td class="shadowy"><a href="#" id="handle-orgs">Организации</a></td>
-							<td>&nbsp;</td>
+							<td>&nbsp;</td -->
 							<td class="shadowy"><a href="#" id="handle-audio">АудиоФайлы</a></td>
 							<td>&nbsp;</td>
 							<td class="shadowy"><a href="#" id="handle-logs">Протоколы</a></td>
@@ -150,7 +155,10 @@
 			</tr>
 			<tr>
 				<td align="right" valign="top"><img src="css/images/top_logo_shadow.png" alt="" /><br /><br /></td>
-				<td>&nbsp;</td>
+				<td align="right" class="tdsubmenu">
+				    <button id="handle-posns">Должности</button>
+				    <button id="handle-orgs">Организации</button>
+				</td>
 			</tr>
 		</table>
 <!--		<div id="tabs">
@@ -187,10 +195,17 @@
 			<form>
 				<fieldset>
 					<legend id="orglegend">Добавить организацию:</legend>
-					<input type="text" name="orgname" id="orgname" value=""/>
-					<input type="hidden" name="orgid" id="orgid" value="new"/>
-					<input id="orgbutton" type="button" onclick="send_org();return false;" value="Создать"/>
-					<input type="button" onclick="close_org_dialog();return false;" value="Отменить"/>
+					<table class="form-layout">
+					<tr><td colspan="2" align="center">
+					    <input class="fit-column" type="text" name="orgname" id="orgname" value=""/>
+    					    <input type="hidden" name="orgid" id="orgid" value="new"/>
+    					</td></tr>
+    					<tr><td>
+					<button id="orgbutton" onclick="send_org();return false;">Создать</button>
+					</td><td align="right">
+					<button onclick="close_org_dialog();return false;">Отменить</button>
+					</td>
+					</table>
 				</fieldset>
 			</form>
 		</div>
@@ -199,10 +214,17 @@
 			<form>
 				<fieldset>
 					<legend id="poslegend">Добавить должность:</legend>
-					<input type="text" name="posname" id="posname" value=""/>
-					<input type="hidden" name="posid" id="posid" value="new"/>
-					<input id="posbutton" type="button" onclick="send_pos();return false;" value="Создать"/>
-					<input type="button" onclick="close_pos_dialog();return false;" value="Отменить"/>
+					<table class="form-layout">
+					<tr><td colspan="2" align="center">
+					    <input class="fit-column" type="text" name="posname" id="posname" value=""/>
+					    <input type="hidden" name="posid" id="posid" value="new"/>
+					</td></tr>
+					<tr><td>
+					    <button id="posbutton" onclick="send_pos();return false;">Создать</button>
+					</td><td align="right">
+					    <button onclick="close_pos_dialog();return false;">Отменить</button>
+					</td></tr>
+					</table>
 				</fieldset>
 			</form>
 		</div>
@@ -222,22 +244,26 @@
 			</form>
 		</div>
 		<div id="edit_cnfr" style="display: none;">
+
+<form id="modify_cnfr">
 <fieldset>
       <legend>Редактирование конференции</legend>
 
-<form id="modify_cnfr">
 <input type="hidden" name="ce_id" value="" id="ce_id" />
-<input type="button" onclick="start_now();return false;" value="Начать сейчас"/>
-<table class="tab-tale" id="conference_table">
+
+<table class="form-layout" id="conference_table">
+<tr>
+	<td colspan="4"><button onclick="start_now();return false;">Начать сейчас</button></td>
+</tr>
 <tr>
 	<td colspan="3">Название</td>
-	<td><input type="text" name="ce_name" id="ce_name" value=""/></td>
+	<td><input class="fit-column" type="text" name="ce_name" id="ce_name" value=""/></td>
 </tr>
 <tr>
 	<td rowspan="3"><input type="radio" name="next_sched" id="next" value="next"/></td>
 	<td rowspan="3">Следующее</td>
 	<td>дата</td>
-	<td><input type="text" name="next_date" id="next_date" value=""/></td>
+	<td><input type="text" class="fit-column" name="next_date" id="next_date" value=""/></td>
 </tr>
 <tr>
 	<td>время</td>
@@ -263,15 +289,10 @@
 </tr>
 <tr>
 	<td><input type="radio" name="next_sched" id="sched" value="sched"/></td>
-	<td>Планировщик</td>
-	<td colspan="2">
-		<button id="add_sched">Запланировать совещание &gt;&gt;&gt;</button>
-	</td>
-</tr>
-<tr>
-	<td colspan="2">&nbsp;</td>
-	<td colspan="2">
-		<table id="schedules" style="width: 100%;">
+	<td colspan="2">Планировщик</td>
+	<td>
+		<button id="add_sched" style="width:200px" title="Запланировать совещание">Запланировать совещание</button><br/><br/>
+		<table id="schedules" style="border: 1px solid #666;background:#ccc;" width="100%">
 		</table>
 	</td>
 </tr>
@@ -289,7 +310,7 @@
 </tr>
 <tr>
 	<td>PIN код</td>
-	<td><input type="text" name="auth_string" id="auth_string" value="" /></td>
+	<td><input type="text" class="fit-column" name="auth_string" id="auth_string" value="" /></td>
 </tr>
 <tr>
 	<td colspan="3">Автосбор участников</td>
@@ -303,7 +324,7 @@
 <tr>
 	<td colspan="3" disabled="disabled">Файл оповещения по телефону</td>
 	<td>
-		<select name="audio_id" id="audio_id">
+		<select name="audio_id" id="audio_id" class="fit-column">
 		</select>
 	</td>
 </tr>
@@ -336,7 +357,7 @@
 </tr>
 <tr id="number_b_block">
 	<td colspan="3">Номер конференции</td>
-	<td><input type="text" name="number_b" id="number_b" value=""/></td>
+	<td><input type="text" name="number_b" id="number_b" value="" class="fit-column"/></td>
 </tr>
 <tr>
 	<td colspan="3">Автоязык</td>
@@ -349,61 +370,76 @@
 		</select>
 	</td>
 </tr>
-</table>
-<table id="participant_list">
-</table>
-<div onclick="add_participant(); return  false;">
-Добавить участника &gt;&gt;&gt;
-</div>
-<div id="operator_block">
-	<table id="operator_list">
-	</table>
-	<div onclick="add_operator(); return false;">
-		Добавить оператора &gt;&gt;&gt;
+<tr>
+    <td colspan="3">Участники совещания</td>
+    <td>
+	<button style="width:200px;" onclick="add_participant(); return  false;">Добавить участника</button><br/><br/>
+	<table style="border: 1px solid #666;background:#ccc;" width="100%" id="participant_list"></table>
+    </td>
+</tr>
+<tr>
+    <td colspan="3">Операторы</td>
+    <td>
+	<div id="operator_block">
+	    <button style="width:200px;" onclick="add_operator(); return false;">Добавить оператора</button><br/><br/>
+	    <table style="border: 1px solid #666;background:#ccc;" width="100%" id="operator_list"></table>
 	</div>
-</div>
-<input type="button" onclick="send_cnfr();return false;" value="Сохранить"/>
-<input type="button" onclick="close_cnfr_dialog();return false;" value="Отменить"/>
-</form>
+    </td>
+</tr>
+<tr><td colspan="2">
+<button onclick="send_cnfr();return false;">Сохранить</button>
+</td><td colspan="2" align="right">
+<button onclick="close_cnfr_dialog();return false;">Отменить</button>
+</td></tr>
+</table>
 </fieldset>
+</form>
 		</div>
 
 <div style="display: none;" id="new_participant">
 	<form>
+	    <fieldset>
 		<input type="hidden" name="confid" value="" id="part_of_conf"/>
-		Новый участник совещания
-		<table>
-		<tr><td>ФИО</td><td>Телефон</td></tr>
+		<table class="form-layout">
+		<tr>
+		    <td>ФИО</td>
+		    <td>
+			<select class="fit-column" name="participant" id="participant" onchange="select_phones();return false;"></select>
+		    </td>
+		</tr>
+		    <td>Телефон</td>
+		    <td>
+			<select class="fit-column" name="part_phone" id="part_phone"></select>
+		    </td>
+		</tr>
 		<tr><td>
-		<select name="participant" id="participant" onchange="select_phones();return false;">
-		</select>
-		</td>
-		<td>
-		<select name="part_phone" id="part_phone">
-		</select>
-		</td></tr>
-		<tr><td>
-		<input type="button" onclick="send_part();return false;" value="Сохранить"/>
-		</td><td>
-		<input type="button" onclick="close_part_dialog();return false;" value="Отменить"/>
+		    <button onclick="send_part();return false;">Сохранить</button>
+		</td><td align="right">
+		    <button onclick="close_part_dialog();return false;">Отменить</button>
 		</td></tr>
 		</table>
+	    </fieldset>
 	</form>
 </div>
 
 <div style="display: none;" id="new_oper">
-	<form>
+	<form><fieldset>
 		<input type="hidden" name="confid" value="" id="conf_oper"/>
-		Новый оператор конференции
-		<select name="oper_item" id="oper_item">
-		</select>
-		<input type="button" onclick="send_oper();return false;" value="Сохранить"/>
-		<input type="button" onclick="close_oper_dialog();return false;" value="Отменить"/>
-	</form>
+		<table class="form-layout">
+		<tr><td colspan="2" align="center"><select name="oper_item" id="oper_item" class="fit-column">
+		</select></td></tr>
+		<tr><td>
+		<button onclick="send_oper();return false;">Сохранить</button>
+		</td><td align="right">
+		<button onclick="close_oper_dialog();return false;">Отменить</button>
+		</td></tr>
+		</table>
+	</fieldset></form>
 </div>
 
 <div style="display: none;" id="schedule_select">
-	<table>
+    <form><fieldset>
+	<table class="form-layout">
 		<tr>
 			<td colspan="2">Дни недели</td>
 		</tr>
@@ -422,9 +458,6 @@
             <span>Вс</span>
         </div>
       </td>
-		</tr>
-		<tr>
-			<td colspan="2">Дни месяца</td>
 		</tr>
 		<tr>
 			<td colspan="2">Дни месяца</td>
@@ -465,20 +498,21 @@
 </tr>
 		<tr>
 			<td>
-				<input type="button" onclick="fill_sched();return false;" value="Сохранить"/>
+				<button onclick="fill_sched();return false;">Сохранить</button>
 			</td>
-			<td>
-				<input type="button" onclick="close_sched_dialog();return false;" value="Отменить"/>
+			<td align="right">
+				<button onclick="close_sched_dialog();return false;">Отменить</button>
 			</td>
 		</tr>
 	</table>
+	</fieldset></form>
 </div>
 <div id="loading" style="display: none;">
 	<em>Loading&#8230;</em>
 </div>
 <div id="error" style="display: none;">
 	<p id="error_text" style="color:red;">
-	<p>
+	</p>
 </div>
 <script>
 	$("#pin_auth").change(function() {
@@ -491,8 +525,8 @@
 	});
 
 	$("input[name='next_sched']").change(function() {
-		if($(this).val() == 'sched') {
-			$("#add_sched").button( "option", "disabled", false );
+	    if($(this).val() == 'sched') {
+			$("#add_sched").removeAttr('disabled');
 			$("#next_date").attr('disabled','disabled');
 			$("#next_date").val('');
 			$("#hours_begin").attr('disabled','disabled');
@@ -510,7 +544,7 @@
 			$("#schedule_min_begin").val('');
 			$("#sched_dur_hours").val('');
 			$("#sched_dur_min").val('');
-			$("#add_sched").button( "option", "disabled", true );
+			$("#add_sched").attr('disabled','disabled');
 			$("#next_date").removeAttr("disabled");
 			$("#hours_begin").removeAttr("disabled");
 			$("#min_begin").removeAttr("disabled");

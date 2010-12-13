@@ -3,6 +3,11 @@ function edit_user(uid) {
 		$("#op_rights").change(function(){
 			$("#ad_op").slideToggle();
 		});
+		if(uid == 'new') {
+		    $("#edit_user").dialog('option','title','Добавить пользователя:');
+		} else {
+		    $("#edit_user").dialog('option','title','Редактировать пользователя:');
+		}
 		$("#edit_user").dialog("open");
 	});
 }
@@ -44,7 +49,7 @@ function close_user_dialog() {
 
 function add_phone_field() {
 	var newid = $("#more_phones input").length + 1;
-	var infield = '<input type="text" name="phone'+newid+'" id="phone'+newid+'" value=""/><br/>';
+	var infield = '<input type="text" class="fit-column" name="phone'+newid+'" id="phone'+newid+'" value=""/><br/>';
 	$("#more_phones").append(infield);
 }
 

@@ -61,7 +61,8 @@ my $adm_row =<<EOR;
 </tr>
 EOR
 
-my $out = "<table id=\"user-list\" class=\"tab-table\">" . $thead;
+my $out = "<p><button onclick=\"edit_user('new');return false;\" id=\"add\">Добавить</button></p>\n";
+$out .= "<table id=\"user-list\" class=\"tab-table\">" . $thead;
 
 my $evenodd = 'gray'; 
 
@@ -89,7 +90,6 @@ if($admin) {
 }
 
 $out .= "</table>";
-$out .= "<p onclick=\"edit_user('new');return false;\" id=\"add\">Добавить >>>>>>></p>\n";
 
 print $cgi->header(-type=>'text/html',-charset=>'utf-8');
 print $out;

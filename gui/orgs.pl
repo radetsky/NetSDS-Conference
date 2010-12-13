@@ -52,7 +52,8 @@ my $adm_row =<<EOAR;
 </tr>
 EOAR
 
-my $out = "<table id=\"orgs-list\" class=\"tab-table\">" . $thead;
+my $out = "<p><button onclick=\"edit_org('new','');return false;\" id=\"add\">Добавить</button></p>";
+$out .= "<table id=\"orgs-list\" class=\"tab-table\">" . $thead;
 
 my $evenodd = 'gray'; 
 
@@ -77,7 +78,6 @@ if($admin) {
 }
 
 $out .= "</table>";
-$out .= "<p onclick=\"edit_org('new','');return false;\" id=\"add\">Добавить >>>>>>></p>";
 
 print $cgi->header(-type=>'text/html',-charset=>'utf-8');
 print $out;
