@@ -694,7 +694,7 @@ sub _DTMF {
             return undef;
         }
         unless ($is_operator) {
-            $this->speak("{$$] $callerid is not operator for $conf_id");
+            $this->speak("[$$] $callerid is not operator for $conf_id");
             return 0;
         }
 
@@ -784,6 +784,7 @@ sub _DTMF {
         $this->{'BLOCK'} = 1;
         $this->speak("[$$] $conf_id blocked to accept new connections.");
     }
+
     if ( $key eq '6' ) {
 
         my $res = $konf->konference_listenvolume( $channel, 'up' );
