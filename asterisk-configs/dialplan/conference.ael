@@ -43,10 +43,10 @@ context NetSDS-Conference-Incoming {
 	
 	// Пользователь ввел номер конференции. 
         // Или мы сами его нашли по номеру Б.  
-
 	// Устанавливаем язык конференции из БД 
-	AGI(netsds_get_conflang,${USER_CALLERID},${NETSDS_CONFNUM});
-	Set(CHANNEL(language)=${CONFLANG});
+
+	AGI(netsds_get_conf_lang,${NETSDS_CONFNUM});
+	Set(CHANNEL(language)=${LANG});
 
 	// Проверяем активна ли эта конференция? 
 	// IN:  NETSDS_CONFNUM - Номер конференции (1..50)
