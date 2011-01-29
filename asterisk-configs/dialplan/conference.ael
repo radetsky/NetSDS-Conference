@@ -14,18 +14,16 @@ context NetSDS-Conference-Incoming {
         USER_CALLERID  = ${CALLERID(num)}; 
         Set(NETSDS_CONFNUM=-1);
 	
-//	FILENAME="${STRFTIME(${EPOCH},,%Y%m%d-%H%M)}-${CALLERID(num)}";
-//      MixMonitor(${FILENAME}.wav);
-
+	// Answering 
 	Answer();
 	Wait(1);
 
+	// Playback general welcome message 
 	Playback(netsds-welcome-to-conference); 
 
 	// Найти по номеру Б (на который позвонили) конференцию.
         // IN:  INCOMING_EXTEN - Номер телефона конференции 
         // OUT: NETSDS_CONFNUM - Номер конференции (1..50) или -1, если не найдена. 
-
 	AGI(netsds_find_conference_by_exten,${INCOMING_EXTEN});
 	if (${NETSDS_CONFNUM} == -1) { 
 		// Не нашли. Просим ввести номер конференции.
@@ -48,6 +46,8 @@ context NetSDS-Conference-Incoming {
 	AGI(netsds_get_conf_lang,${NETSDS_CONFNUM});
 	Set(CHANNEL(language)=${LANG});
 
+	&auth(); 
+
 	// Проверяем активна ли эта конференция? 
 	// IN:  NETSDS_CONFNUM - Номер конференции (1..50)
 	// OUT: IS_CONF_ACTIVE - 0 не активна или не существует. 1 - если активна.
@@ -56,81 +56,20 @@ context NetSDS-Conference-Incoming {
 	AGI(netsds_is_active_conference,${NETSDS_CONFNUM});
 	if (${IS_CONF_ACTIVE} == 0) { 
 		// Конференция не активна, но Оператор способен свои звонков запустить ее. 
-                IS_OPERATOR=0; 
-		AGI(netsds_is_operator,${USER_CALLERID},${NETSDS_CONFNUM}); 
-		if ( ${IS_OPERATOR} > 0) { 
+		// Изменения на 30.01.11: любой аутентифицированный пользователь. 
+		if (${AUTH_STATUS}>0) { 
 			AGI(netsds_start_conference,${USER_CALLERID},${NETSDS_CONFNUM});
 			Wait(1); 
-			goto check_auth; 
-		} 
+			goto konference_ready; 
+		}
 
 		// Конференция не активна. О чем сообщаем и прощаемся. 
-		Playback(netsds-conference-is-not-active); 
-		Hangup(); 
+		// Playback(netsds-conference-is-not-active); 
+		// Hangup(); 
 	}
 	
 
-check_auth: 
-
-	// Считаем, что конференция ${NETSDS_CONFNUM} активна. 
-        // Проверяем метод аутентификации.
-	// IN:  NETSDS_CONFNUM - Номер конференции (1..50)
-        // OUT: AUTH_CALLERNUM - 0 (если не проверяем по номеру А), 1 - если проверяем
-        // OUT: AUTH_PIN       - 0 (если не проверяем по ПИНу), 1 - если проверяем.
-
- 
-	AUTH_CALLERNUM = 0; 
-	AUTH_PIN = 0; 
-	AGI(netsds_get_auth_methods,${NETSDS_CONFNUM}); 
-
-	// Проверяем по номеру А, если выставлен соответствующий метод.
-	if (${AUTH_CALLERNUM} > 0) { 
-		// Проверяем по номеру А.
-		// IN: NETSDS_CONFNUM - Номер конференции (1..50)
-		// IN: USER_CALLERID  - Номер А абонента 
-                // OUT: AUTHENTICATED - 0 ( если не прошел проверку ), 1 - если прошел. 
-
-		AUTHENTICATED = 0;
-		AGI(netsds_authenticate_callernum,${NETSDS_CONFNUM},${USER_CALLERID});
-		if (${AUTHENTICATED} == 0) { 
-			// 
-			// Может быть это оператор конференции ? 
-                        //
-			IS_OPERATOR=0;
-			AGI(netsds_is_operator,${USER_CALLERID},${NETSDS_CONFNUM});
-			if (${IS_OPERATOR} > 0) { 
-				goto check_pin; 
-			}				
-
- 			// Клиент не прошел аутентификацию по номеру А. 
-			Playback(netsds-not-authenticated-callernum); 
-			Hangup(); 
-		} 
-	}
-
-check_pin: 
-
-	// Проверяем по ПИН-коду, если выставлен соответствующий метод.
-        USER_PIN="";
-	if (${AUTH_PIN} > 0) { 
-		// Ждем от пользователя PIN-code
-		Read(USER_PIN,netsds-please-enter-pin-code,4,,1,10); 
-		NoOp(User enter: '${USER_PIN}' ); 
-		
-		// Проверяем по ПИН-коду
-		// IN:  NETSDS_CONFNUM - Номер конференции (1..50)
-                // IN:  USER_PIN       - Чего ввел пользователь
-                // OUT: AUTHENTICATED - 0 ( если не прошел проверку ), 1 - если прошел. 
-
-		AUTHENTICATED_PIN=0;
-	        AGI(netsds_authenticate_pin,${NETSDS_CONFNUM},${USER_PIN}); 
-		if(${AUTHENTICATED_PIN} == 0) { 
-			// Клиент не прошел аутентификацию по ПИНу. 
-			Playback(netsds-not-authenticated-pin); 
-			Hangup(); 
-		}
-	}
-
+konference_ready: 
 
 	// Проверяем, администратор ли это ? 
 	// IN: NETSDS_CONFNUM - Номер конференции (1..50) 
@@ -152,6 +91,84 @@ check_pin:
 	Hangup();
    }; 
 };
+
+// Macto auth: Authentication.
+// IN - переменные канала 
+// OUT -  если дошел до выхода, то аутентифицирован. Иначе бросим трубку где-то в середине.
+// Может быть не задано никаких проверок, тогда аутентифицируем только оператора. 
+// ТО есть: AUTH_STATUS=1, если прошли все проверки. 
+// Или : Hangup (Неправильный пин-код, неправильный номер А) 
+// Или : AUTH_STATUS=0, если проверок никаких не задано и это не оператор.  
+ 
+macro auth() { 
+
+	AUTH_STATUS=0; 
+	
+        // Проверяем метод аутентификации.
+	// IN:  NETSDS_CONFNUM - Номер конференции (1..50)
+        // OUT: AUTH_CALLERNUM - 0 (если не проверяем по номеру А), 1 - если проверяем
+        // OUT: AUTH_PIN       - 0 (если не проверяем по ПИНу), 1 - если проверяем.
+
+	// Проверяем не оператор ли это ?
+ 
+	IS_OPERATOR=0;
+	AGI(netsds_is_operator,${USER_CALLERID},${NETSDS_CONFNUM});
+	if (${IS_OPERATOR} > 0) {
+		// Это таки Оператор этой конференции. 
+		// Возвращаем удачную аутентификацию. 
+		AUTH_STATUS=1; 
+		return; 
+	}	
+
+	AUTH_CALLERNUM = 0; 
+	AUTH_PIN = 0; 
+	AGI(netsds_get_auth_methods,${NETSDS_CONFNUM}); 
+
+	// Проверяем по номеру А, если выставлен соответствующий метод.
+	if (${AUTH_CALLERNUM} > 0) { 
+		// Проверяем по номеру А.
+		// IN: NETSDS_CONFNUM - Номер конференции (1..50)
+		// IN: USER_CALLERID  - Номер А абонента 
+                // OUT: AUTHENTICATED - 0 ( если не прошел проверку ), 1 - если прошел. 
+
+		AUTHENTICATED = 0;
+		AGI(netsds_authenticate_callernum,${NETSDS_CONFNUM},${USER_CALLERID});
+		if (${AUTHENTICATED} == 0) { 
+ 			// Клиент не прошел аутентификацию по номеру А. 
+			Playback(netsds-not-authenticated-callernum); 
+			Hangup(); 
+		}
+		AUTH_STATUS=1;  
+	}
+
+check_pin: 
+
+	// Проверяем по ПИН-коду, если выставлен соответствующий метод.
+        USER_PIN="";
+	if (${AUTH_PIN} > 0) {
+		AUTH_STATUS=0; 	
+		// Ждем от пользователя PIN-code
+		Read(USER_PIN,netsds-please-enter-pin-code,4,,1,10); 
+		NoOp(User enter: '${USER_PIN}' ); 
+		
+		// Проверяем по ПИН-коду
+		// IN:  NETSDS_CONFNUM - Номер конференции (1..50)
+                // IN:  USER_PIN       - Чего ввел пользователь
+                // OUT: AUTHENTICATED - 0 ( если не прошел проверку ), 1 - если прошел. 
+
+		AUTHENTICATED_PIN=0;
+	        AGI(netsds_authenticate_pin,${NETSDS_CONFNUM},${USER_PIN}); 
+		if(${AUTHENTICATED_PIN} == 0) { 
+			// Клиент не прошел аутентификацию по ПИНу. 
+			Playback(netsds-not-authenticated-pin); 
+			Hangup(); 
+		}
+		AUTH_STATUS=1; 
+	}
+
+	return; 
+} 
+
 
 context NetSDS-Conference-Outgoing { 
   _X! => { 
