@@ -63,9 +63,9 @@ context NetSDS-Conference-Incoming {
 			goto konference_ready; 
 		}
 
-		// Конференция не активна. О чем сообщаем и прощаемся. 
-		// Playback(netsds-conference-is-not-active); 
-		// Hangup(); 
+		 // Конференция не активна. О чем сообщаем и прощаемся. 
+		 Playback(netsds-conference-is-not-active); 
+		 Hangup(); 
 	}
 	
 
