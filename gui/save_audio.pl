@@ -12,6 +12,12 @@ my $cgi = CGI->new;
 
 my $cnfr = ConferenceDB->new;
 
+my $login = $cgi->remote_user();
+my $oper_id = $cnfr->operator($login);
+my $admin = $cnfr->{oper_admin};
+my $ab = $cnfr->addressbook;
+
+
 my $msg = "ok";
 
 my $filename = $cgi->param('fbody');

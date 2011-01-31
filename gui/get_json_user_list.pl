@@ -14,6 +14,8 @@ my $cnfr = ConferenceDB->new;
 
 my $login = $cgi->remote_user();
 
+my $oper_id = $cnfr->operator($login);
+
 my @users = $cnfr->get_user_list();
 
 my %u_to_ph = ();

@@ -28,9 +28,13 @@ my $login = $cgi->remote_user();
 
 my $cnfr = ConferenceDB->new;
 
-my $admin = $cnfr->is_admin($login);
+my $oper_id = $cnfr->operator($login);
+my $admin = $cnfr->{oper_admin};
+my $ab = $cnfr->addressbook;
 
 if($admin) {
+	$thead = sprintf $th, '<th>Ответственный</th><th>Удалить</th>';
+} elsif($ab) {
 	$thead = sprintf $th, '<th>Удалить</th>';
 } else {
 	$thead = sprintf $th, '';
@@ -40,7 +44,7 @@ my @users = ();
 
 @users = $cnfr->get_user_list();
 
-my $row =<<EOR;
+my $glob_row =<<EOR;
 <tr class='%s' >
 <td onclick="edit_user('%s')"valign="top" align="left">%s</td> 
 <td valign="top" align="left">%s</td> 
@@ -50,12 +54,24 @@ my $row =<<EOR;
 </tr>
 EOR
 
+my $oper_row =<<EOR;
+<tr class='%s' id="user%s">
+<td onclick="edit_user('%s')"valign="top" align="left">%s</td> 
+<td valign="top" align="left">%s</td> 
+<td valign="top" align="left">%s</td> <td valign="top" align="left">%s</td> 
+<td valign="top" align="left">%s</td> <td valign="top" align="left">%s</td>
+<td valign="top" align="left">%s</td> 
+<td onclick="remove_user('%s'); return false;"><span class="ui-icon ui-icon-close"></span></td>
+</tr>
+EOR
+
 my $adm_row =<<EOR;
 <tr class='%s' id="user%s">
 <td onclick="edit_user('%s')"valign="top" align="left">%s</td> 
 <td valign="top" align="left">%s</td> 
 <td valign="top" align="left">%s</td> <td valign="top" align="left">%s</td> 
 <td valign="top" align="left">%s</td> <td valign="top" align="left">%s</td>
+<td valign="top" align="left">%s</td> 
 <td valign="top" align="left">%s</td> 
 <td onclick="remove_user('%s'); return false;"><span class="ui-icon ui-icon-close"></span></td>
 </tr>
@@ -69,6 +85,18 @@ my $evenodd = 'gray';
 if($admin) {
 	while(my $i = shift @users) {
 		$out .= sprintf $adm_row,$evenodd, $$i{'id'}, $$i{'id'}, $$i{'name'}, join('<br/>',@{$$i{'phones'}}), 
+		$$i{'organization'}, $$i{'department'}, $$i{'position'}, $$i{'email'}, $$i{'login'}, 
+		$$i{'operator'}, $$i{'id'};
+		if ($evenodd eq 'gray') { 
+			$evenodd = 'white'; 
+		} else { 
+			$evenodd = 'gray'; 
+		}
+		
+	}
+} elsif($ab) {
+	while(my $i = shift @users) {
+		$out .= sprintf $oper_row,$evenodd, $$i{'id'}, $$i{'id'}, $$i{'name'}, join('<br/>',@{$$i{'phones'}}), 
 		$$i{'organization'}, $$i{'department'}, $$i{'position'}, $$i{'email'}, $$i{'login'}, $$i{'id'};
 		if ($evenodd eq 'gray') { 
 			$evenodd = 'white'; 
@@ -79,7 +107,7 @@ if($admin) {
 	}
 } else {
 	while(my $i = shift @users) {
-		$out .= sprintf $row, $evenodd ,$$i{'id'}, $$i{'name'}, join('<br/>',@{$$i{'phones'}}),
+		$out .= sprintf $glob_row, $evenodd ,$$i{'id'}, $$i{'name'}, join('<br/>',@{$$i{'phones'}}),
 		$$i{'organization'}, $$i{'department'}, $$i{'position'}, $$i{'email'}, $$i{'login'};
 		if ($evenodd eq 'gray') { 
 			$evenodd = 'white'; 

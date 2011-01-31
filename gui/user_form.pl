@@ -6,7 +6,6 @@ use CGI;
 use lib './lib';
 use ConferenceDB;
 
-
 # About form styling:
 # unfortunately the only way to settle labels and inputs into nice two-column rows
 # without hassle and form trashing because of "element does not fit" is a table.
@@ -81,6 +80,10 @@ my $cgi = CGI->new;
 my $cnfr = ConferenceDB->new;
 
 my $login = $cgi->remote_user();
+
+my $oper_id = $cnfr->operator($login);
+my $admin = $cnfr->{oper_admin};
+my $ab = $cnfr->addressbook;
 
 my $id = $cgi->param("id");
 

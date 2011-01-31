@@ -15,11 +15,14 @@ function edit_user(uid) {
 function send_user() {
 	var upass = $("#op_pass").val();
 	var urepass = $("#op_repass").val();
-	if(upass.length > 0 && upass != urepass) {
-		$("#error_text").empty();
-		$("#error_text").append('Пароль и подтверждение пароля должны совпадать!');
-		$("#error").dialog('open');
-		return false;
+	
+	if(typeof(upass)!=='undefined') {
+		if(upass.length > 0 && upass != urepass) {
+			$("#error_text").empty();
+			$("#error_text").append('Пароль и подтверждение пароля должны совпадать!');
+			$("#error").dialog('open');
+			return false;
+		}
 	}
 
 	if($('#uname').val() == '') {
@@ -30,6 +33,7 @@ function send_user() {
 	}
 
 	var u_qry = 'save_user.pl?'+$("#modify_user").serialize();
+	
 	$.getJSON(u_qry, function (data) {
 		if(data.status == 'error') {
 			$("#error_text").empty();

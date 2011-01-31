@@ -1,12 +1,11 @@
 function edit_org(oid, oname) {
-	if(oid == 'new') {
+	if('new' == oid + '') {
 		$("#orglegend").text('Добавить организацию:');
-		$("#orgbutton").attr("value", 'Создать');
-//		$("#add_org").attr("title", 'Добавить имя организации');
+		$("#orgbutton").text('Добавить');
 	} else {
 		$("#orglegend").text('Редактировать организацию:');
-		$("#orgbutton").attr("value", 'Сохранить');
-//		$("#add_org").attr("title", 'Редактировать имя организации');
+		$("#orgbutton").text('Сохранить');
+//		$("#add_org").dialog("option", "title", 'Редактировать имя организации');
 	}
 	$("#orgid").attr("value", oid);
 	$("#orgname").attr("value", oname);

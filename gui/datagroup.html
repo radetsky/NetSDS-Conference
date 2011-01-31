@@ -23,6 +23,11 @@
 		<script type="text/javascript" src="js/simple_views.js"></script>
 
 		<script type="text/javascript">
+			function getSysTime() {
+				$("#systime").load('/systime.pl');
+				setTimeout(getSysTime,1000);
+			}
+		
 			$(document).ready(function(){
 				/* 
 				
@@ -38,6 +43,8 @@
 				Views used instead:
 				
 				*/
+				
+				getSysTime();
 				
 				registerView('cnfrs','/cnfrs.pl');
 				registerView('users','/user_list.pl');
@@ -74,8 +81,8 @@
 				});
 
 
-				$('#add_org').dialog({ autoOpen: false, width: 'auto', title: 'Добавление организации' });
-				$('#add_pos').dialog({ autoOpen: false, width: 'auto', title: 'Добавление должности' });
+				$('#add_org').dialog({ autoOpen: false, width: 'auto', title: 'Название организации' });
+				$('#add_pos').dialog({ autoOpen: false, width: 'auto', title: 'Название должности' });
 				$('#edit_user').dialog({ autoOpen: false, width: 'auto', title: 'Редактирование пользователя:' });
 				// $('#show_active').dialog({ autoOpen: false, width: 800 });
 
@@ -156,6 +163,7 @@
 			<tr>
 				<td align="right" valign="top"><img src="css/images/top_logo_shadow.png" alt="" /><br /><br /></td>
 				<td align="right" class="tdsubmenu">
+					<span style="color:#999;padding:0px 2em;">Системное время: <span id="systime">XXI век</span></span>
 				    <button id="handle-posns">Должности</button>
 				    <button id="handle-orgs">Организации</button>
 				</td>

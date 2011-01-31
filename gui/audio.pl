@@ -18,8 +18,9 @@ my $cgi = CGI->new;
 my $login = $cgi->remote_user();
 
 my $cnfr = ConferenceDB->new;
-
-my $admin = $cnfr->is_admin($login);
+my $oper_id = $cnfr->operator($login);
+my $admin = $cnfr->{oper_admin};
+my $ab = $cnfr->addressbook;
 
 my %a_list = $cnfr->get_audio_list();
 
@@ -27,7 +28,7 @@ my $table = "<table class=\"tab-table\">\n";
 foreach my $k (keys %a_list) {
 	$table .= "<tr id=\"audio$k\"><td>";
 	$table .= $a_list{$k} . "</td>";
-	if($admin) {
+	if($admin or $ab) {
 		$table .= "<td onclick=\"remove_audio($k); return false;\">";
 		$table .= "<span class=\"ui-icon ui-icon-close\"></span></td>";
 	}

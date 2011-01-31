@@ -11,7 +11,9 @@ my $error = '{ "status": "error", "message": "%s" }';
 my $cgi = CGI->new;
 my $cnfr = ConferenceDB->new;
 my $login = $cgi->remote_user();
-my $admin = $cnfr->is_admin($login);
+my $oper_id = $cnfr->operator($login);
+my $admin = $cnfr->{oper_admin};
+my $ab = $cnfr->addressbook;
 my $user_id = $cgi->param("user_id");
 
 if($user_id eq 1) {
@@ -21,7 +23,7 @@ if($user_id eq 1) {
 	exit;
 }
 
-unless($admin) {
+unless($admin or $ab) {
 	my $out = sprintf $error, "У вас нет прав удалять пользователей";
 	print $cgi->header(-type=>'application/json',-charset=>'utf-8');
 	print $out,"\n";

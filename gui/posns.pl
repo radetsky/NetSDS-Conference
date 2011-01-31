@@ -6,6 +6,15 @@ use CGI;
 use lib './lib';
 use ConferenceDB;
 
+sub htmlsafe {
+	# <zmeuka> Странно; я пробовал применить CGI::escapeHTML, 
+	#          но оно портит руссую букву "ы" независимо от наличия 'use utf8'.
+	#          Так что делаем тупенькое, но рабочее:
+	local $_ = shift;
+	s/\&/\&amp;/g;s/\"/\&quot;/g;s/\</\&lt;/g;s/\>/\&gt;/g;
+	return $_;
+}
+
 my $thead;
 my $th=<<EOH;
 <thead>
@@ -24,9 +33,14 @@ my $cnfr = ConferenceDB->new;
 
 my $id = $cgi->param('id');
 my $pos_name = $cgi->param('name');
-my $admin = $cnfr->is_admin($login);
+my $oper_id = $cnfr->operator($login);
+my $admin = $cnfr->{oper_admin};
+my $ab = $cnfr->addressbook;
+
 
 if($admin) {
+	$thead = sprintf $th, '<th>Оператор</th><th>Удалить</th>';
+} elsif($ab) {
 	$thead = sprintf $th, '<th>Удалить</th>';
 } else {
 	$thead = sprintf $th, '';
@@ -41,13 +55,23 @@ my @posns = $cnfr->get_pos_list();
 my $adm_row =<<EOR;
 <tr class='%s' id="pos%s">
 <td onclick="edit_pos('%s','%s');return false;">%s</td>
+<td>%s</td>
 <td onclick="del_pos('%s'); return false;">
 <span class="ui-icon ui-icon-close"></span>
 </td>
 </tr>
 EOR
 
-my $row =<<EOR;
+my $oper_row =<<EOR;
+<tr class='%s' id="pos%s">
+<td onclick="edit_pos('%s','%s');return false;">%s</td>
+<td onclick="del_pos('%s'); return false;">
+<span class="ui-icon ui-icon-close"></span>
+</td>
+</tr>
+EOR
+
+my $glob_row =<<EOR;
 <tr class='%s' onclick="edit_pos('%s','%s');return false;">
 <td>%s</td>
 </tr>
@@ -60,7 +84,16 @@ my $evenodd = 'gray';
  
 if($admin) {
 	while(my $i = shift @posns) {
-		$out .= sprintf $adm_row, $evenodd, $$i{'id'}, $$i{'id'}, $$i{'name'}, $$i{'name'}, $$i{'id'};
+		$out .= sprintf $adm_row, $evenodd, $$i{'id'}, $$i{'id'}, $$i{'name'}, $$i{'name'}, $$i{'operator'}, $$i{'id'};
+		if ($evenodd eq 'gray') { 
+			$evenodd = 'white'; 
+		} else { 
+			$evenodd = 'gray'; 
+		}
+	}
+} elsif($ab) {
+	while(my $i = shift @posns) {
+		$out .= sprintf $oper_row, $evenodd, $$i{'id'}, $$i{'id'}, $$i{'name'}, $$i{'name'}, $$i{'id'};
 		if ($evenodd eq 'gray') { 
 			$evenodd = 'white'; 
 		} else { 
@@ -69,7 +102,7 @@ if($admin) {
 	}
 } else {
 	while(my $i = shift @posns) {
-		$out .= sprintf $row, $evenodd, $$i{'id'}, $$i{'name'}, $$i{'name'};
+		$out .= sprintf $glob_row, $evenodd, $$i{'id'}, $$i{'name'}, $$i{'name'};
 		if ($evenodd eq 'gray') { 
 			$evenodd = 'white'; 
 		} else { 

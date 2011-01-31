@@ -11,10 +11,13 @@ my $error = '{ "status": "error", "message": "%s" }';
 my $cgi = CGI->new;
 my $cnfr = ConferenceDB->new;
 my $login = $cgi->remote_user();
-my $admin = $cnfr->is_admin($login);
+
+my $oper_id = $cnfr->operator($login);
+my $admin = $cnfr->{oper_admin};
+my $ab = $cnfr->addressbook;
 my $org_id = $cgi->param("org_id");
 
-unless($admin) {
+unless($admin or $ab) {
 	my $out = sprintf $error, "У вас нет прав удалять организации";
 	print $cgi->header(-type=>'application/json',-charset=>'utf-8');
 	print $out,"\n";

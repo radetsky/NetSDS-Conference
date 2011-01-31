@@ -1,12 +1,10 @@
 function edit_pos(pid, pname) {
 	if(pid == 'new') {
 		$("#poslegend").text('Добавить должность:');
-		$("#posbutton").attr("value", 'Создать');
-		$("#add_pos").attr("title", 'Добавить название должности');
+		$("#posbutton").text('Добавить');
 	} else {
 		$("#poslegend").text('Редактировать должность:');
-		$("#posbutton").attr("value", 'Сохранить');
-		$("#add_pos").attr("title", 'Редактировать название должности');
+		$("#posbutton").text('Сохранить');
 	}
 	$("#posid").attr("value", pid);
 	$("#posname").attr("value", pname);

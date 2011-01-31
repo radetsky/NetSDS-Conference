@@ -17,7 +17,9 @@ my $cnfr = ConferenceDB->new;
 
 my $htpasswd = $cnfr->get_htpasswd();
 
-my $admin = $cnfr->is_admin($login);
+my $oper_id = $cnfr->operator($login);
+my $admin = $cnfr->{oper_admin};
+my $ab = $cnfr->addressbook;
 
 my %params = $cgi->Vars();
 my %user = ();

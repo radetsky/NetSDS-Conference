@@ -38,6 +38,19 @@ sub new {
     return $self;
 }
 
+=item servertime()
+
+Текущее время сервера БД с точностью до минут в текстовом виде
+
+=cut
+
+sub servertime {
+	my $self = shift;
+	$self->_connect();
+	my @tmp = $dbh->selectrow_array("select to_char(now(),'YYYY-mm-dd hh24:mi')");
+	return $tmp[0];
+}
+
 =item cnfr_list()
 
 Возвращает array of hashes. Индекс array'я -- номер конференции в списке. Индекс
@@ -251,6 +264,97 @@ sub is_admin {
     return 0;
 }
 
+=item $id = operator($login);
+
+Возвращает id оператора $login; инициализирует $self->{config}
+
+=cut
+
+sub operator {
+    my $self = shift;
+    my $user = shift;
+
+    return 0 unless defined $user;
+    $self->_connect();
+    my $q = "SELECT admin_id,is_admin FROM admins WHERE login=?";
+    my @tmp = $dbh->selectrow_array( $q, undef, $user );
+    $dbh->rollback();
+    	
+    if ( defined $tmp[0] ) {
+		$self->{oper_id} = $tmp[0];
+		$self->{oper_admin} = $tmp[1];
+#		warn "Operator: $user, ".$self->{oper_id}.", ".($self->{oper_admin} ? 'admin' : 'oper');
+		return $tmp[0];
+	}
+    return 0;
+}
+
+=item $value = config($key);
+
+Возвращает значение по ключу $key из конфига
+
+=cut
+
+sub config {
+	my $self = shift;
+	my $key = shift;
+	
+	unless ( defined $self->{config} ) {
+		$self->_connect();
+		my $q = "SELECT key,value FROM config";
+		my $conf = $dbh->selectall_hashref($q,'key');
+		if ( defined $conf ) {
+			$self->{config} = {};
+			foreach my $k (keys %$conf)	{
+				$self->{config}{$k} = $conf->{$k}{value};
+			}
+		}
+		$dbh->rollback;
+	}
+
+	if ( defined $self->{config} ) {
+		return $self->{config}{$key}; # может быть и undef
+	}
+
+	return undef;
+}
+
+=item $id = addressbook();
+
+Определяет, является ли адресная книга глобальной или операторской
+Определяет, является ли текущий оператор администратором
+Возвращает 0 для глобальной адресной книги или администратора
+Также возвращает 0, если оператор не инициализирован
+Возвращает id оператора для операторской книги
+
+=cut
+
+sub addressbook {
+	my $self = shift;
+	
+	my $pass = 'Passed: ';
+
+	if ( $self->{oper_id} ) {
+		$pass .= 'oper ';
+		unless ( $self->{oper_admin} ) {
+			$pass .= 'no_admin ';
+			my $ab = $self->config('addressbook');
+			$pass .= "ab=[$ab] ";
+			if ( defined $ab ) {
+				$pass .= 'addressbook ';
+				if ( $ab eq 'operator' ) {
+					$pass .= 'local';
+					return $self->{oper_id};
+				}
+			}
+		}
+	}
+
+#	warn $pass;
+
+	return 0;
+}
+
 =item @oper = get_oper_list()
 
 Возвращает массив операторов, определенных в базе. Каждый элемент массива
@@ -343,25 +447,38 @@ $users[0]{'email'}         -- e-mail адрес
 sub get_user_list {
     my $self  = shift;
     my @users = ();
+	$self->_connect();
 
-    my $q =
-        "select u.user_id, u.full_name, u.department, u.email, o.org_name, "
-      . "p.position_name, ph.phone_number, ph.phone_id, adm.login, adm.is_admin, "
-      . "adm.passwd_hash FROM users as u left outer join organizations as o on "
-      . "(u.org_id=o.org_id) left outer join positions as p on (u.position_id=p.position_id) "
-      . "left outer join phones as ph on (u.user_id=ph.user_id) left outer join admins as adm "
-      . "on(u.user_id=adm.user_id) ORDER BY u.full_name ASC";
+	my $ab = $self->addressbook;
+
+    my $q = $ab 
+		? "select u.user_id, u.full_name, u.department, u.email, o.org_name, "
+			. "p.position_name, ph.phone_number, ph.phone_id, adm.login, adm.is_admin, "
+			. "adm.passwd_hash FROM users as u left outer join organizations as o on "
+			. "(u.org_id=o.org_id) left outer join positions as p on (u.position_id=p.position_id) "
+			. "left outer join phones as ph on (u.user_id=ph.user_id) left outer join admins as adm "
+			. "on(u.user_id=adm.user_id) WHERE u.oper_id=$ab ORDER BY u.full_name ASC"
+		: "select u.user_id, u.full_name, u.department, u.email, o.org_name, "
+			. "p.position_name, ph.phone_number, ph.phone_id, adm.login, adm.is_admin, "
+			. "adm.passwd_hash, oper.login as operator FROM users as u left outer join organizations as o on "
+			. "(u.org_id=o.org_id) left outer join positions as p on (u.position_id=p.position_id) "
+			. "left outer join phones as ph on (u.user_id=ph.user_id) left outer join admins as adm "
+			. "on(u.user_id=adm.user_id) left outer join admins as oper on(u.oper_id=oper.admin_id) "
+			. "ORDER BY u.full_name ASC";
 
 #					"on(u.user_id=adm.user_id) ORDER BY p.position_order, u.user_id, ph.order_nmb";
-    $self->_connect();
+    
     my $sth = $dbh->prepare($q);
+    warn $q;
     $sth->execute();
     my $uid;
     my @phs    = ();
     my @phs_id = ();
     my %row    = ();
     my $cnt    = 0;
+    my $isout  = 0;
     while ( my @tmp = $sth->fetchrow_array() ) {
+		$isout = 1;
 
         if ( $cnt eq 0 ) {
             $cnt++;
@@ -375,6 +492,7 @@ sub get_user_list {
             $row{'login'}        = ( defined $tmp[8] )  ? $tmp[8]  : "";
             $row{'admin'}        = ( defined $tmp[9] )  ? $tmp[9]  : 0;
             $row{'passwd'}       = ( defined $tmp[10] ) ? $tmp[10] : "";
+            $row{'operator'}     = ( defined $tmp[11] ) ? $tmp[11] : "";
             if ( defined $tmp[6] ) {
                 push @phs,    $tmp[6];
                 push @phs_id, $tmp[7];
@@ -400,6 +518,7 @@ sub get_user_list {
             $row{'login'}        = ( defined $tmp[8] )  ? $tmp[8]  : "";
             $row{'admin'}        = ( defined $tmp[9] )  ? $tmp[9]  : 0;
             $row{'passwd'}       = ( defined $tmp[10] ) ? $tmp[10] : "";
+			$row{'operator'}     = ( defined $tmp[11] ) ? $tmp[11] : "";
 
             if ( defined $tmp[6] ) {
                 push @phs,    $tmp[6];
@@ -413,9 +532,11 @@ sub get_user_list {
             }
         }
     }
-    $row{'phones'}    = \@phs;
-    $row{'phones_id'} = \@phs_id;
-    push @users, \%row;
+    if ( $isout ) {
+		$row{'phones'}    = \@phs;
+		$row{'phones_id'} = \@phs_id;
+		push @users, \%row;
+	}
     return @users;
 }
 
@@ -573,14 +694,20 @@ sub get_org_list {
     my $self = shift;
     my @orgs = ();
 
-    my $q = "SELECT org_id, org_name FROM organizations ORDER BY org_name";
     $self->_connect();
+	my $ab = $self->addressbook;
+	
+    my $q = $ab 
+		? "SELECT org_id, org_name FROM organizations WHERE oper_id=$ab ORDER BY org_name"
+		: "SELECT org_id, org_name, login FROM organizations LEFT OUTER JOIN admins on admin_id=oper_id ORDER BY org_name";
+
     my $sth = $dbh->prepare($q);
     $sth->execute();
     while ( my @tmp = $sth->fetchrow_array() ) {
         my %st = ();
         $st{'id'}   = $tmp[0];
         $st{'name'} = $tmp[1];
+        $st{'operator'} = $tmp[2];
         push @orgs, \%st;
     }
     $dbh->rollback();
@@ -602,13 +729,16 @@ sub del_org {
     my $org_id = shift;
 
     unless ( defined $org_id ) {
-        $error =
-"Не определена организация к удалению";
+        $error = "Не определена организация к удалению";
         return 0;
     }
 
     $self->_connect();
-    my $q = "DELETE FROM organizations WHERE org_id=?";
+    my $ab = $self->addressbook;
+    
+    my $q = $ab 
+		? "DELETE FROM organizations WHERE org_id=? AND oper_id=$ab"
+		: "DELETE FROM organizations WHERE org_id=?";
     eval { $dbh->do( $q, undef, $org_id ); };
 
     if ($@) {
@@ -645,7 +775,10 @@ sub del_pos {
     }
 
     $self->_connect();
-    my $q = "DELETE FROM positions WHERE position_id=?";
+    my $ab = $self->addressbook;
+    my $q = $ab 
+		? "DELETE FROM positions WHERE position_id=? AND oper_id=$ab"
+		: "DELETE FROM positions WHERE position_id=?";
     eval { $dbh->do( $q, undef, $pos_id ); };
 
     if ($@) {
@@ -682,7 +815,10 @@ sub del_user {
     }
 
     $self->_connect();
-    my $q = "DELETE FROM users WHERE user_id=?";
+    my $ab = $self->addressbook;
+    my $q = $ab
+		? "DELETE FROM users WHERE user_id=? AND oper_id=$ab"
+		: "DELETE FROM users WHERE user_id=?";
     eval { $dbh->do( $q, undef, $user_id ); };
 
     if ($@) {
@@ -710,9 +846,11 @@ sub get_pos_list {
     my $self = shift;
     my @pos  = ();
 
-    my $q =
-"SELECT position_id, position_name, position_order FROM positions ORDER BY position_order";
     $self->_connect();
+    my $ab = $self->addressbook;
+    my $q = $ab 
+		? "SELECT position_id, position_name, position_order FROM positions WHERE oper_id=$ab ORDER BY position_order"
+		: "SELECT position_id, position_name, position_order, login FROM positions LEFT OUTER JOIN admins on admin_id=oper_id ORDER BY position_order";
     my $sth = $dbh->prepare($q);
     $sth->execute();
     while ( my @tmp = $sth->fetchrow_array() ) {
@@ -720,6 +858,7 @@ sub get_pos_list {
         $row{'id'}    = $tmp[0];
         $row{'name'}  = $tmp[1];
         $row{'order'} = $tmp[2];
+        $row{'operator'} = $tmp[3];
         push @pos, \%row;
     }
     $dbh->rollback();
@@ -1073,7 +1212,7 @@ sub load_audio {
     my $file_data = shift;
 
     $self->_connect();
-    my $q   = "INSERT INTO audio (description, audio_data) VALUES (?, ?)";
+    my $q   = "INSERT INTO audio (description, audio_data, oper_id) VALUES (?, ?, ?)";
     my $sth = $dbh->prepare($q);
     my $rc  = $sth->bind_param( 1, $descr );
     $rc = $sth->bind_param(
@@ -1081,6 +1220,7 @@ sub load_audio {
         $self->escape_bytea($file_data),
         { pg_type => PG_BYTEA }
     );
+    $rc = $sth->bind_param( 3, $self->{oper_id} );
     eval { $sth->execute(); };
 
     if ($@) {
@@ -1128,7 +1268,10 @@ sub get_audio_list {
     my %list = ();
 
     $self->_connect();
-    my $q   = "SELECT au_id, description FROM audio ORDER BY description";
+    my $ab = $self->addressbook;
+    my $q = $ab
+		? "SELECT au_id, description FROM audio WHERE oper_id=$ab ORDER BY description"
+		: "SELECT au_id, description FROM audio ORDER BY description";
     my $sth = $dbh->prepare($q);
     $sth->execute();
     while ( my @tmp = $sth->fetchrow_array() ) {
@@ -1147,7 +1290,10 @@ sub remove_audio {
     my $auid = shift;
 
     $self->_connect();
-    my $q = "DELETE FROM audio WHERE au_id=?";
+    my $ab = $self->addressbook;
+    my $q = $ab
+		? "DELETE FROM audio WHERE au_id=? AND oper_id=$ab"
+		: "DELETE FROM audio WHERE au_id=?";
     eval { $dbh->do( $q, undef, $auid ); };
 
     if ($@) {
@@ -1225,6 +1371,8 @@ sub update_orgs {
     my $name = shift;
     my $user = shift;
 
+	my $oper_id = defined $self->{oper_id} ? $self->{oper_id} : 1;
+
     my $q    = "";
     my @bind = ();
     return () unless ( defined $user );
@@ -1232,11 +1380,14 @@ sub update_orgs {
     $self->_connect();
 
     if ( $id eq "new" ) {
-        $q    = "INSERT INTO organizations (org_name) VALUES (?)";
-        @bind = ($name);
+        $q    = "INSERT INTO organizations (org_name,oper_id) VALUES (?,?)";
+        @bind = ( $name, $oper_id );
     }
     else {
-        $q = "UPDATE organizations SET org_name=? WHERE org_id=?";
+		my $ab = $self->addressbook;
+        $q = $ab
+			? "UPDATE organizations SET org_name=? WHERE org_id=? AND oper_id=$ab"
+			: "UPDATE organizations SET org_name=? WHERE org_id=?";
         @bind = ( $name, $id );
     }
 
@@ -1278,6 +1429,8 @@ sub update_posns {
     my $name = shift;
     my $user = shift;
 
+	my $oper_id = defined $self->{oper_id} ? $self->{oper_id} : 1;
+
     my $q    = "";
     my @bind = ();
     return () unless ( defined $user );
@@ -1289,11 +1442,14 @@ sub update_posns {
         $tmp[0] = 0 unless ( defined $tmp[0] );
         my $ord = $tmp[0] + 5;
         $q =
-          "INSERT INTO positions (position_name, position_order) VALUES (?, ?)";
-        @bind = ( $name, $ord );
+          "INSERT INTO positions (position_name, position_order, oper_id) VALUES (?, ?, ?)";
+        @bind = ( $name, $ord, $oper_id );
     }
     else {
-        $q = "UPDATE positions SET position_name=? WHERE position_id=?";
+		my $ab = $self->addressbook;
+        $q = $ab
+			? "UPDATE positions SET position_name=? WHERE position_id=? AND oper_id=$ab"
+			: "UPDATE positions SET position_name=? WHERE position_id=?";
         @bind = ( $name, $id );
     }
 
@@ -1355,19 +1511,24 @@ sub update_user {
     return () unless ( defined $loggedin );
     $self->_connect();
     my $sth;
+    
+    my $oper_id = defined $self->{oper_id} ? $self->{oper_id} : 1;
 
     if ( $user{'id'} eq "new" ) {
         $q =
-"INSERT INTO users (full_name, position_id, org_id, department, email) VALUES "
-          . "(?, ?, ?, ?, ?)";
+"INSERT INTO users (full_name, position_id, org_id, department, email, oper_id) VALUES "
+          . "(?, ?, ?, ?, ?, ?)";
         @bind = (
             $user{'name'}, $user{'posid'}, $user{'orgid'},
-            $user{'dept'}, $user{'email'}
+            $user{'dept'}, $user{'email'}, $oper_id
         );
     }
     else {
-        $q =
-"UPDATE users SET full_name=?, position_id=?, org_id=?, department=?, email=? "
+		my $ab = $self->addressbook;
+        $q = $ab
+			? "UPDATE users SET full_name=?, position_id=?, org_id=?, department=?, email=? "
+          . "WHERE user_id=? AND oper_id=$ab"
+			: "UPDATE users SET full_name=?, position_id=?, org_id=?, department=?, email=? "
           . "WHERE user_id=?";
         @bind = (
             $user{'name'}, $user{'posid'}, $user{'orgid'},
@@ -1407,7 +1568,7 @@ sub update_user {
             eval { $dbh->do( $q, undef, $user{'id'} ); };
             if ($@) {
                 $error =
-"Один из удалямых телефонов используется в совещании. Сначала нужно проверить, что удаляемый телефон нигде не используется";
+"Один из удаляемых телефонов используется в совещании. Сначала нужно проверить, что удаляемый телефон нигде не используется";
                 $dbh->rollback();
                 my ( $package, $filename, $line ) = caller;
                 my $warn =
@@ -1540,7 +1701,7 @@ sub update_user {
         }
     }
 
-    if ( $self->is_admin($loggedin) ) {
+    if ( $self->{oper_admin} ) {
         if ( $admin{'oper'} ) {
             my $hashed = undef;
             if ( defined $admin{'passwd'} and length $admin{'passwd'} ) {

@@ -229,8 +229,8 @@ sub main_loop {
 
 	$self->start();
 
-	$SIG{TERM} = undef;
-	$SIG{INT}  = undef;
+#	$SIG{TERM} = undef;
+#	$SIG{INT}  = undef;
 
 	# Switch of verbosity
 	$self->{verbose} = undef;
