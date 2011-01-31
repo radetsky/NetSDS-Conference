@@ -20,18 +20,10 @@ unless ( defined ( $konf_id ) ) {
 }
 my $AGI = new Asterisk::AGI; 
 my $cdb = ConferenceDB->new();
-my %cnfr = $cdb->get_cnfr($konf_id);
-if ( $cnfr{'cnfr_state'} ne 'active') { 
-	my $login = $cdb->get_cnfr_operator_by_callerid($konf_id,$callerid);
- 	$cdb->cnfr_update($konf_id,
-		{ cnfr_state => '\'state\'',
-		  next_start => 'now()'	}
-	); 
-}
-
-#cdb->save_cnfr($login, $id, $ce_name, $next_start, $next_duration, $schedule_day, $schedule_time, $schedule_duration,
-#                                   $auth_type, $auth_string, $auto_assemble, $lost_control, $need_record, $audio_lang,
-#                                  \@partic);
-
- 
+$cdb->cnfr_update($konf_id,
+	{ 
+	cnfr_state => '\'inactive\'',
+	next_start => 'now()'
+	}
+); 
 
