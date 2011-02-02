@@ -9,7 +9,8 @@
 context NetSDS-Conference-Incoming { 
    _X. => { 
 	// Declaration of channel variables;
-	Set(CHANNEL(language)=ru);  
+	Set(CHANNEL(language)=ru);
+	&set_global_lang(${EXTEN}); 
         INCOMING_EXTEN = ${EXTEN}; 
         USER_CALLERID  = ${CALLERID(num)}; 
         Set(NETSDS_CONFNUM=-1);
@@ -18,13 +19,20 @@ context NetSDS-Conference-Incoming {
 	Answer();
 	Wait(1);
 
-	// Playback general welcome message 
-	Playback(netsds-welcome-to-conference); 
-
 	// Найти по номеру Б (на который позвонили) конференцию.
         // IN:  INCOMING_EXTEN - Номер телефона конференции 
         // OUT: NETSDS_CONFNUM - Номер конференции (1..50) или -1, если не найдена. 
 	AGI(netsds_find_conference_by_exten,${INCOMING_EXTEN});
+
+	// Пробуем установить язык конференции из БД
+	if (${NETSDS_CONFNUM} >= 0) { 
+		AGI(netsds_get_conf_lang,${NETSDS_CONFNUM});
+		Set(CHANNEL(language)=${LANG});
+	}
+
+	// Playback general welcome message 
+	Playback(netsds-welcome-to-conference); 
+
 	if (${NETSDS_CONFNUM} == -1) { 
 		// Не нашли. Просим ввести номер конференции.
 		// Ожидаем ввод двух цифр на протяжении 10 секунд.
@@ -92,7 +100,7 @@ konference_ready:
    }; 
 };
 
-// Macto auth: Authentication.
+// Macro auth: Authentication.
 // IN - переменные канала 
 // OUT -  если дошел до выхода, то аутентифицирован. Иначе бросим трубку где-то в середине.
 // Может быть не задано никаких проверок, тогда аутентифицируем только оператора. 
@@ -252,4 +260,17 @@ context NetSDS-Conference-VoiceReminder {
 	}; 
 }; 
 
+macro set_global_lang(exten)  { 
+	NoOp(Set global language to ${exten}); 
+	if (${exten}==0445938546) { 
+		Set(CHANNEL(language)=ua); 
+	}
+	if (${exten}==0445938547) { 
+		Set(CHANNEL(language)=ru); 
+	}
+	if (${exten}==0445938548) { 
+		Set(CHANNEL(language)=en); 
+	}
+	return; 
+};
 

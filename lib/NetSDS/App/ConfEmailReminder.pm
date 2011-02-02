@@ -129,30 +129,23 @@ sub _sendmail_reminder {
 	} 
 
     $subject =~ s/\n//g;
-	utf8::encode($template);
+    utf8::encode($template);
     my $email_body = $this->_find_n_replace_macros($template);
-	#warn Dumper( $email_body ); 
+    my $data = encode_base64($email_body);
 
-	my $data = encode_base64($email_body);
-
-    my $boundary = 'simple boundary';
     open( MAIL, "| $sendmail -t -oi" ) or die("$!");
 
     print MAIL <<EOF;
 To: $email 
 From: $from
 Subject: =?UTF-8?B?$subject?= 
-Content-Type: multipart/mixed; boundary="$boundary" 
- 
-This is a multi-part message in MIME format. 
---$boundary 
 Content-Type: text/html; charset=UTF-8 
 Content-Transfer-Encoding: base64 
  
 $data 
 EOF
 
-    close MAIL;
+close MAIL;
 
 }
 
