@@ -10,6 +10,7 @@ context NetSDS-Conference-Incoming {
    _X. => { 
 	// Declaration of channel variables;
 	Set(CHANNEL(language)=ru);
+	Set(NETSDS_GLOBAL_LANG=0);
 	&set_global_lang(${EXTEN}); 
         INCOMING_EXTEN = ${EXTEN}; 
         USER_CALLERID  = ${CALLERID(num)}; 
@@ -25,7 +26,7 @@ context NetSDS-Conference-Incoming {
 	AGI(netsds_find_conference_by_exten,${INCOMING_EXTEN});
 
 	// Пробуем установить язык конференции из БД
-	if (${NETSDS_CONFNUM} >= 0) { 
+	if ( (${NETSDS_CONFNUM} >= 0) && (${NETSDS_GLOBAL_LANG} == 0) ) { 
 		AGI(netsds_get_conf_lang,${NETSDS_CONFNUM});
 		Set(CHANNEL(language)=${LANG});
 	}
@@ -51,8 +52,10 @@ context NetSDS-Conference-Incoming {
         // Или мы сами его нашли по номеру Б.  
 	// Устанавливаем язык конференции из БД 
 
-	AGI(netsds_get_conf_lang,${NETSDS_CONFNUM});
-	Set(CHANNEL(language)=${LANG});
+	if (${NETSDS_GLOBAL_LANG} == 0) { 
+		AGI(netsds_get_conf_lang,${NETSDS_CONFNUM});
+		Set(CHANNEL(language)=${LANG});
+	}
 
 	&auth(); 
 
@@ -264,12 +267,15 @@ macro set_global_lang(exten)  {
 	NoOp(Set global language to ${exten}); 
 	if (${exten}==0445938546) { 
 		Set(CHANNEL(language)=ua); 
+		Set(NETSDS_GLOBAL_LANG=1);
 	}
 	if (${exten}==0445938547) { 
-		Set(CHANNEL(language)=ru); 
+		Set(CHANNEL(language)=ru);
+		Set(NETSDS_GLOBAL_LANG=1); 
 	}
 	if (${exten}==0445938548) { 
-		Set(CHANNEL(language)=en); 
+		Set(CHANNEL(language)=en);
+		Set(NETSDS_GLOBAL_LANG=1); 
 	}
 	return; 
 };
