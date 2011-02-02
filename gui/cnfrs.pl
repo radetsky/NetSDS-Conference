@@ -27,7 +27,7 @@ my %s_days = (
     "Sun" => "Вс"
 );
 
-my %langs = ( "ru" => "Русский", "ua" => "Украинский" );
+my %langs = ( "en" => "English","ru" => "Русский", "ua" => "Украинский" );
 
 my $thead = <<EOH;
 <thead>

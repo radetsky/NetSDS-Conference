@@ -1,6 +1,6 @@
 create table config ( 
-	key varchar(32) default not null, 
-	value varchar(128) default not null 
+	key varchar(32) default '' not null, 
+	value varchar(128) default '' not null 
 ); 
 
 insert into config (key, value) values ('addressbook','operator'); 
