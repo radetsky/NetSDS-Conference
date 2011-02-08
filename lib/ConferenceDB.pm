@@ -1281,6 +1281,32 @@ sub get_audio_list {
     return %list;
 }
 
+sub get_audio_table {
+    my $self = shift;
+    my @list = ();
+
+    $self->_connect();
+    my $ab = $self->addressbook;
+    my $q = $ab
+		? "SELECT au_id, description, length(audio_data), to_char(create_date,'YYYY-mm-dd hh24:mi'), login FROM audio LEFT OUTER JOIN admins ON admin_id=oper_id WHERE oper_id=$ab ORDER BY description"
+		: "SELECT au_id, description, length(audio_data), to_char(create_date,'YYYY-mm-dd hh24:mi'), login  FROM audio LEFT OUTER JOIN admins ON admin_id=oper_id ORDER BY description";
+    my $sth = $dbh->prepare($q);
+    $sth->execute();
+    while ( my @tmp = $sth->fetchrow_array() ) {
+		my %tr = (
+			au_id	=>	$tmp[0],
+			descr	=>	$tmp[1],
+			size	=>	$tmp[2],
+			date	=>	$tmp[3],
+			oper	=>	$tmp[4]
+		);
+		push @list, \%tr;
+    }
+    $dbh->rollback();
+    return @list;
+}
+
+
 =item $res = remove_audio($au_id)
 Удаляет выбранный аудио файл
 =cut
@@ -1513,6 +1539,7 @@ sub update_user {
     my $sth;
     
     my $oper_id = defined $self->{oper_id} ? $self->{oper_id} : 1;
+	my $ab = $self->addressbook;
 
     if ( $user{'id'} eq "new" ) {
         $q =
@@ -1524,7 +1551,6 @@ sub update_user {
         );
     }
     else {
-		my $ab = $self->addressbook;
         $q = $ab
 			? "UPDATE users SET full_name=?, position_id=?, org_id=?, department=?, email=? "
           . "WHERE user_id=? AND oper_id=$ab"
