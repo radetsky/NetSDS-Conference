@@ -16,7 +16,9 @@ my $cnfr = ConferenceDB->new;
 
 my $login = $cgi->remote_user();
 
-my $admin = $cnfr->is_admin($login);
+my $oper_id = $cnfr->operator($login);
+my $admin = $cnfr->{oper_admin};
+my $ab = $cnfr->addressbook;
 
 my @rights = $cnfr->get_cnfr_rights($login);
 
