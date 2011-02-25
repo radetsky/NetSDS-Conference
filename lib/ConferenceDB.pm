@@ -469,7 +469,7 @@ sub get_user_list {
 #					"on(u.user_id=adm.user_id) ORDER BY p.position_order, u.user_id, ph.order_nmb";
     
     my $sth = $dbh->prepare($q);
-    warn $q;
+#    warn $q;
     $sth->execute();
     my $uid;
     my @phs    = ();
@@ -1392,6 +1392,7 @@ $user - пользователь, от которого это делается
 =cut 
 
 sub update_orgs {
+
     my $self = shift;
     my $id   = shift;
     my $name = shift;
@@ -1540,6 +1541,13 @@ sub update_user {
     
     my $oper_id = defined $self->{oper_id} ? $self->{oper_id} : 1;
 	my $ab = $self->addressbook;
+
+    # Проверяем на существование пользователя по ФИО 
+    my $is_exists_fio = $self->get_user_by_name($user{'name'},$oper_id,$user{'id'}); 
+    if (  $is_exists_fio  ) { 
+		$error = "Пользователь с таким же ФИО уже существует. Нельзя добавлять второго такого же.";
+		return ();
+	}
 
     if ( $user{'id'} eq "new" ) {
         $q =
@@ -2312,6 +2320,36 @@ sub get_audio {
 	my $res = $sth->fetchrow_hashref; 
 	$dbh->rollback;
 	return $res; 
+}
+
+=item B<get_user_by_phone> 
+
+Пытается найти пользователя по имени. Возвращает hashref, если находит. undef в обратном случае.
+
+=cut 
+
+sub get_user_by_name {
+    my $self  = shift;
+    my $name = shift;
+	my $oper_id = shift; 
+	my $user_id = shift; 
+
+    $self->_connect();
+
+	my $q = undef; 
+	my $result = undef; 
+
+	if ($user_id eq 'new') { 
+		$q = "SELECT * from users where full_name=? and oper_id=?"; 
+		$result = $dbh->selectrow_array( $q, undef, ( $name, $oper_id )  );	
+	} else { 
+		$q = "SELECT * from users where full_name=? and oper_id=? and user_id != ?"; 
+		$result = $dbh->selectrow_array( $q, undef, ( $name, $oper_id, $user_id )  );
+	}
+
+    $dbh->rollback();
+    return $result;
+
 }
 
 1;
