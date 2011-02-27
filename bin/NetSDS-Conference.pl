@@ -41,7 +41,7 @@ use 5.8.0;
 use strict;
 use warnings;
 
-use lib '../lib/';
+use lib '/opt/NetSDS/lib/';
 
 use base qw(NetSDS::App);
 use ConferenceDB;
