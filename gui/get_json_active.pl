@@ -70,7 +70,11 @@ if($res ne 0 and exists $$res{$cid}) {
 				$guests{$ind}{'phone_id'} = $u{'phone_id'};
 				$guests{$ind}{'name'} = $u{'name'};
 			} else {
-				$guests{$ind}{'name'} = "Неизвестный пользователь";
+				if (length($$u_list{$j}{'callerid'}) <= 2) { 
+					$guests{$ind}{'name'} = "Запись конференции";
+				} else { 
+					$guests{$ind}{'name'} = "Неизвестный пользователь";
+				}
 			}
 			$guests{$ind}{'number'} = $$u_list{$j}{'callerid'};
 			$guests{$ind}{'audio'} = $$u_list{$j}{'audio'};

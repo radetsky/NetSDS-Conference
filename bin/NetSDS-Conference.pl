@@ -64,11 +64,9 @@ my $VOICE_REMINDED;
 sub start {
     my ($this) = @_;
 
-    #    warn Dumper ($this->conf);
-
     $this->_add_signal_handlers();
 
-    $this->speak("[$$] NetStyle NetSDS-Conference Service start.");
+    $this->log("info","NetStyle NetSDS-Conference Service start.");
     $this->mk_accessors('mydb');
     $this->mydb( ConferenceDB->new() );
 
@@ -105,7 +103,7 @@ sub _add_signal_handlers {
 
 sub process {
     my ($this) = @_;
-    $this->speak("[$$] Start processing.");
+    $this->log("info","Start processing.");
     while (1) {
         # find non-active next starting conferences
         my $cnfrs = $this->mydb->cnfr_find_4_start();

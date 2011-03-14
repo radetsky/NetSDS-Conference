@@ -120,15 +120,17 @@ sub _sendmail_reminder {
     my $to         = $email;
     my $from       = $this->conf->{'reminder'}->{'email_from'};
 
-    my $subject = MIME::Base64::encode_base64( $this->conf->{'reminder'}->{'email_subject'} );
-
-	unless ( defined ($subject ) ) {
+    my $config_subject = $this->conf->{'reminder'}->{'email_subject'};
+    unless ( defined ($config_subject ) ) {
 		$this->speak("[$$] Can't get subject of mail. Please look in config.");
 		$this->log("warning", " Can't get subject of mail. Please look in config.");
 		return undef; 
-	} 
+    } 
 
+    utf8::encode($config_subject); 
+    my $subject = MIME::Base64::encode_base64( $config_subject );
     $subject =~ s/\n//g;
+
     utf8::encode($template);
     my $email_body = $this->_find_n_replace_macros($template);
     my $data = encode_base64($email_body);

@@ -22,7 +22,11 @@ if(%user) {
 	$json .= ' "user_name": "' . $user{'name'} . '"';
 } else {
 	$json .= ' "known": false, ';
-	$json .= ' "user_name": "Неизвестный пользователь", ';
+	if (length($ph) <= 2) { 
+		$json .= ' "user_name": "Запись конференции", ';
+	} else { 
+		$json .= ' "user_name": "Неизвестный пользователь", ';
+	}
 	$json .= ' "phone": "' . $ph . '"';
 }
 

@@ -2077,7 +2077,7 @@ sub cnfr_get {
       . "'YYYY-MM-DD HH24:MI') as last_start, to_char(last_end, 'YYYY-MM-DD HH24:MI') as last_end, "
       . "to_char(next_start, 'YYYY-MM-DD HH24:MI') as next_start, next_duration, "
       . "auth_type, auth_string, auto_assemble, "
-      . "lost_control, need_record, number_b, audio_lang, au_id FROM "
+      . "lost_control, need_record, number_b, audio_lang, au_id, blocked FROM "
       . "conferences where cnfr_id=$conf";
     $self->_connect();
     my $sth = $dbh->prepare($query);
@@ -2331,8 +2331,8 @@ sub get_audio {
 sub get_user_by_name {
     my $self  = shift;
     my $name = shift;
-	my $oper_id = shift; 
-	my $user_id = shift; 
+    my $oper_id = shift; 
+    my $user_id = shift; 
 
     $self->_connect();
 
@@ -2351,5 +2351,33 @@ sub get_user_by_name {
     return $result;
 
 }
+
+=item B<set_blocked>
+
+	Меняет значение blocked в свойствях конференции. 
+
+=cut 
+
+sub set_blocked { 
+	my $self = shift; 
+	my $conf_id = shift;
+	my $blocked_value = shift;  
+
+	unless ( defined ( $conf_id ) ) { 
+		return undef; 
+	} 
+	unless ( defined ( $blocked_value ) ) { 
+		$blocked_value = 0; 
+	}
+
+	$self->_connect();
+
+	my $q = "update conferences set blocked = ? where cnfr_id = ?"; 
+	my $result = $dbh->do($q, undef, ( $blocked_value, $conf_id ) ); 
+	$dbh->commit();	
+
+	return $result; 
+}
+
 
 1;

@@ -772,17 +772,19 @@ sub _DTMF {
         # Block to accept from new
         my $is_operator = $this->mydb->is_operator( $conf_id, $callerid );
         unless ( defined($is_operator) ) {
-            $this->speak(
-                "[$$] DB ERROR: $callerid is not operator for $conf_id");
+            $this->log("warning", 
+                "DB ERROR: $callerid is not operator for $conf_id");
             return undef;
         }
         unless ($is_operator) {
-            $this->speak("{$$] $callerid is not operator for $conf_id");
+            $this->log("info"," $callerid is not operator for $conf_id");
             return 0;
         }
 
-        $this->{'BLOCK'} = 1;
-        $this->speak("[$$] $conf_id blocked to accept new connections.");
+   	$this->{'BLOCK'} = 1;
+	$this->mydb->set_blocked ( $conf_id, 1 ); 
+        $this->log("info","$conf_id blocked to accept new connections.");
+
     }
 
     if ( $key eq '6' ) {
@@ -812,17 +814,18 @@ sub _DTMF {
         # Unblock
         my $is_operator = $this->mydb->is_operator( $conf_id, $callerid );
         unless ( defined($is_operator) ) {
-            $this->speak(
-                "[$$] DB ERROR: $callerid is not operator for $conf_id");
+            $this->log("warning",
+                "DB ERROR: $callerid is not operator for $conf_id");
             return undef;
         }
         unless ($is_operator) {
-            $this->speak("{$$] $callerid is not operator for $conf_id");
+            $this->log("info","$callerid is not operator for $conf_id");
             return 0;
         }
 
         $this->{'BLOCK'} = 0;
-        $this->speak("[$$] $conf_id unblocked to accept new connections.");
+	$this->mydb->set_blocked ( $conf_id, 0 ); 
+        $this->log("info","$conf_id unblocked to accept new connections.");
 
     }
     if ( $key eq '9' ) {
