@@ -264,3 +264,11 @@ span.ui-dialog-title {
     top: 0;
     left: 0;
 }
+
+div#login {
+	width:302px;
+	border:1px solid #666;
+	box-shadow:5px 5px 5px #999;
+	-moz-box-shadow:5px 5px 5px #999;
+	-webkit-box-shadow:5px 5px 5px $999;
+}

@@ -11,10 +11,8 @@ my $error = '{"status": "error", "message": "%s"}';
 
 my $cgi = CGI->new;
 
-my $login = $cgi->remote_user();
-
 my $cnfr = ConferenceDB->new;
-
+my $login = $cnfr->login;
 my $htpasswd = $cnfr->get_htpasswd();
 
 my $oper_id = $cnfr->operator($login);
@@ -24,7 +22,7 @@ my $ab      = $cnfr->addressbook;
 my %params = $cgi->Vars();
 my %user   = ();
 my %adm    = ();
-print $cgi->header( -type => 'application/json', -charset => 'utf-8' );
+print $cgi->header( -type => 'application/json', -charset => 'utf-8', -cookie=>$cnfr->cookie );
 
 $user{'id'}    = $cgi->param("uid");
 $user{'name'}  = $cgi->param("fio");

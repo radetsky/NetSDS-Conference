@@ -27,10 +27,8 @@ EOH
 
 my $cgi = CGI->new;
 
-my $login = $cgi->remote_user();
-
 my $cnfr = ConferenceDB->new;
-
+my $login = $cnfr->login;
 my $id = $cgi->param('id');
 my $pos_name = $cgi->param('name');
 my $oper_id = $cnfr->operator($login);
@@ -113,7 +111,7 @@ if($admin) {
 
 $out .= "</table>";
 
-print $cgi->header(-type=>'text/html',-charset=>'utf-8');
+print $cgi->header(-type=>'text/html',-charset=>'utf-8',-cookie=>$cnfr->cookie);
 print $out;
 
 exit(0);

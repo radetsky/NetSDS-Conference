@@ -11,8 +11,7 @@ my $error = '{ "error": "%s" }';
 my $cgi = CGI->new;
 
 my $cnfr = ConferenceDB->new;
-
-my $login = $cgi->remote_user();
+my $login = $cnfr->login();
 
 my $cn_id = $cgi->param("cnid");
 
@@ -24,6 +23,6 @@ unless($cnfr->add_participant_to_conference($cn_id, $ph_id, $login)) {
 	$out = sprintf $error, $cnfr->get_error();
 }
 
-print $cgi->header(-type=>'application/json',-charset=>'utf-8');
+print $cgi->header(-type=>'application/json',-charset=>'utf-8',-cookie=>$cnfr->cookie());
 print "$out\n";
 

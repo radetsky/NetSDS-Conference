@@ -14,7 +14,7 @@ my $cgi = CGI->new;
 
 my $cnfr = ConferenceDB->new;
 
-my $login = $cgi->remote_user();
+my $login = $cnfr->login;
 
 my $oper_id = $cnfr->operator($login);
 my $admin = $cnfr->{oper_admin};
@@ -26,7 +26,7 @@ my $id = $cgi->param("id");
 
 if(!grep(/^$id$/, @rights)) {
 	my $out = sprintf $error, "Вы не можете редактировать это совещание";
-	print $cgi->header(-type=>'application/json',-charset=>'utf-8');
+	print $cgi->header(-type=>'application/json',-charset=>'utf-8',-cookie=>$cnfr->cookie);
 	print $out;
 	exit;
 }
@@ -137,5 +137,5 @@ chop $json;
 
 $json .= "]}";
 
-print $cgi->header(-type=>'application/json',-charset=>'utf-8');
+print $cgi->header(-type=>'application/json',-charset=>'utf-8',-cookie=>$cnfr->cookie);
 print "$json\n";

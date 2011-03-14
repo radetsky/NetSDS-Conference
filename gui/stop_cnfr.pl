@@ -10,10 +10,10 @@ my $error = '{ "status": "error", "message": "%s" }';
 
 my $cgi = CGI->new;
 my $cnfr = ConferenceDB->new;
-my $login = $cgi->remote_user();
+my $login = $cnfr->login;
 my $cid = $cgi->param('cid');
 
-print $cgi->header(-type=>'application/json',-charset=>'utf-8');
+print $cgi->header(-type=>'application/json',-charset=>'utf-8',-cookie=>$cnfr->cookie);
 
 $cnfr->stop_cnfr($login, $cid);
 

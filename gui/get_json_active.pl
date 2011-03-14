@@ -11,21 +11,21 @@ my $error = '{ "status": "error", "message": "%s" }';
 
 my $cgi = CGI->new;
 my $cnfr = ConferenceDB->new;
-my $login = $cgi->remote_user();
+my $login = $cnfr->login;
 my $admin = $cnfr->is_admin($login);
 my @rights = $cnfr->get_cnfr_rights($login);
 my $cid = $cgi->param("cid");
 
 unless(defined $cid and length $cid) {
 	my $out = sprintf $error, "Неопределен номер конференции";
-	print $cgi->header(-type=>'application/json',-charset=>'utf-8');
+	print $cgi->header(-type=>'application/json',-charset=>'utf-8',-cookie=>$cnfr->cookie);
 	print $out,"\n";
 	exit;
 }
 
 if(!grep(/^$cid$/, @rights)) {
 	my $out = sprintf $error, "Вы не являетесь оператором данной конференции";
-	print $cgi->header(-type=>'application/json',-charset=>'utf-8');
+	print $cgi->header(-type=>'application/json',-charset=>'utf-8',-cookie=>$cnfr->cookie);
 	print $out,"\n";
 	exit;
 }
@@ -38,7 +38,7 @@ my $res = $konf->konference_list();
 
 unless(defined $res) {
 	my $out = sprintf $error, "Ошибка подключения к Asterisk. Обратитесь к системному администратору.";
-	print $cgi->header(-type=>'application/json',-charset=>'utf-8');
+	print $cgi->header(-type=>'application/json',-charset=>'utf-8',-cookie=>$cnfr->cookie);
 	print $out,"\n";
 	exit;
 }
@@ -127,6 +127,6 @@ chop $json;
 
 $json .= ']';
 
-print $cgi->header(-type=>'application/json',-charset=>'utf-8');
+print $cgi->header(-type=>'application/json',-charset=>'utf-8',-cookie=>$cnfr->cookie);
 print $json;
 exit(0);
