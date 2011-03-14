@@ -72,7 +72,7 @@ my $cgi = CGI->new;
 
 my $cnfr = ConferenceDB->new;
 
-my $login = $cgi->remote_user();
+my $login = $cnfr->login();
 
 my $id = $cgi->param("id");
 
@@ -80,7 +80,7 @@ my %cn = $cnfr->get_cnfr($id);
 
 my $out = sprintf $form, $cn{'id'}, $cn{'name'}, $cn{'number_b'}, "";
 
-print $cgi->header(-type=>'text/html',-charset=>'utf-8');
+print $cgi->header(-type=>'text/html',-charset=>'utf-8',-cookie=>$cnfr->cookie);
 print $out;
 
 exit(0);

@@ -9,15 +9,15 @@ use ConferenceDB;
 my $error = '{ "status": "error", "message": "%s" }';
 
 my $cgi = CGI->new;
-my $login = $cgi->remote_user();
 my $auid = $cgi->param('auid');
 
 my $cnfr = ConferenceDB->new;
+my $login = $cnfr->login;
 my $oper_id = $cnfr->operator($login);
 my $admin = $cnfr->{oper_admin};
 my $ab = $cnfr->addressbook;
 
-print $cgi->header(-type=>'application/json',-charset=>'utf-8');
+print $cgi->header(-type=>'application/json',-charset=>'utf-8',-cookie=>$cnfr->cookie);
 
 unless(defined $auid and length $auid) {
 	my $out = sprintf $error, "Не определен файл для удаления";

@@ -12,7 +12,7 @@ my $cgi = CGI->new;
 
 my $cnfr = ConferenceDB->new;
 
-my $login = $cgi->remote_user();
+my $login = $cnfr->login;
 
 my $oper_id = $cnfr->operator($login);
 
@@ -44,5 +44,5 @@ for(my $i=0; $i<=$#users; $i++) {
 chop $json;
 $json .= "]\n";
 
-print $cgi->header(-type=>'application/json',-charset=>'utf-8');
+print $cgi->header(-type=>'application/json',-charset=>'utf-8',-cookie=>$cnfr->cookie);
 print $json,"\n";

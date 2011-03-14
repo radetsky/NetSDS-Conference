@@ -79,7 +79,7 @@ my $cgi = CGI->new;
 
 my $cnfr = ConferenceDB->new;
 
-my $login = $cgi->remote_user();
+my $login = $cnfr->login;
 
 my $oper_id = $cnfr->operator($login);
 my $admin = $cnfr->{oper_admin};
@@ -161,7 +161,7 @@ if(!(defined $id) or $id eq "new" ) {
 								 $org_options, $user{'department'}, $pos_options, $user{'email'}, $adm, "Сохранить";
 }
 
-print $cgi->header(-type=>'text/html',-charset=>'utf-8');
+print $cgi->header(-type=>'text/html',-charset=>'utf-8',-cookie=>$cnfr->cookie);
 print $out;
 
 exit(0);

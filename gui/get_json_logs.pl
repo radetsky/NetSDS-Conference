@@ -9,10 +9,10 @@ use ConferenceDB;
 my $error = '{ "status": "error", "message": "%s" }';
 
 my $cgi = CGI->new;
-my $login = $cgi->remote_user();
+my $cnfr = ConferenceDB->new;
+my $login = $cnfr->login;
 $login = "root";
 
-my $cnfr = ConferenceDB->new;
 
 my @rights = $cnfr->get_cnfr_rights($login);
 
@@ -20,7 +20,7 @@ my $cid = $cgi->param("cnf");
 my $from = $cgi->param("from");
 my $to = $cgi->param("to");
 
-print $cgi->header(-type=>'application/json',-charset=>'utf-8');
+print $cgi->header(-type=>'application/json',-charset=>'utf-8',-cookie=>$cnfr->cookie);
 
 unless(defined $cid and length $cid) {
 	my $out = sprintf $error, "Неопределен номер конференции";

@@ -3,6 +3,9 @@ package ConferenceDB;
 use strict;
 
 use DBI;
+use CGI;
+use CGI::Session;
+use ConferenceAuth;
 
 =head ConferenceDb package
 
@@ -15,6 +18,9 @@ $conference = ConferenceDB->new;
 my $HTPASSWD = "/usr/bin/htpasswd";
 
 my $dbh;
+my $cgi;
+my $session;
+my $auth;
 
 my $error;
 
@@ -262,6 +268,61 @@ sub is_admin {
 
     return $tmp[0] if ( defined $tmp[0] );
     return 0;
+}
+
+=item $login = login();
+
+Пытается аутентифицировать пользователя по ConferenceAuth
+Возвращает логин 
+Если аутентификация не удалась (нет сессии, сессия закрыта, нет 
+успешной попытки залогиниться) - вылетает с ACCESS DENIED!
+При установленном параметре ($cnfr->login(1)) возвращает undef.
+
+=cut
+
+sub login {
+	my $self = shift;
+	my $nofail = shift;
+
+	$cgi = new CGI;
+	$session = new CGI::Session(undef, $cgi, {Directory=>'/tmp'});
+	$self->_connect();
+	$auth = new ConferenceAuth({ CGI => $cgi, Session => $session, dbh => $dbh });
+	$auth->authenticate();
+  
+	if ($auth->loggedIn) {
+		return $auth->profile('username');
+	} else {
+		return undef if defined $nofail;
+		print $cgi->header(-type=>'text/html',-charset=>'utf-8');       
+		print "ACCESS DENIED\n";                                                  
+		exit;
+	}
+}
+
+=item logout();
+
+Закрывает сессию
+
+=cut
+
+sub logout {
+	my $self = shift;
+	return 0 unless defined $auth; # Если не аутентифицировали, закрывать нечего
+	$auth->logout();
+}
+
+=item $cookie = cookie();
+
+Возвращает Cookie для удержания сессии в формате CGI::Cookie
+Годится для print $cgi->header(-cookie=>$cookie)
+
+=cut
+
+sub cookie {
+	my $self = shift;
+	return undef unless defined $auth;
+	return $auth->sessionCookie();
 }
 
 =item $id = operator($login);

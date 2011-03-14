@@ -12,7 +12,7 @@ my $cgi = CGI->new;
 
 my $cnfr = ConferenceDB->new;
 
-my $login = $cgi->remote_user();
+my $login = $cnfr->login;
 my $oper_id = $cnfr->operator($login);
 my $admin = $cnfr->{oper_admin};
 my $ab = $cnfr->addressbook;
@@ -57,7 +57,7 @@ if(defined $filename) {
 	$msg = "Не определен файл для загрузки.";
 }
 
-print $cgi->header(-type=>'text/plain',-charset=>'utf-8');
+print $cgi->header(-type=>'text/plain',-charset=>'utf-8',-cookie=>$cnfr->cookie);
 print $msg;
 
 exit;

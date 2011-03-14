@@ -17,9 +17,8 @@ my $form =<<EOF;
 EOF
 
 my $cgi = CGI->new;
-my $login = $cgi->remote_user();
-
 my $cnfr = ConferenceDB->new;
+my $login = $cnfr->login;
 my $oper_id = $cnfr->operator($login);
 my $admin = $cnfr->{oper_admin};
 my $ab = $cnfr->addressbook;
@@ -72,7 +71,7 @@ foreach my $row (@a_list) {
 }
 $table .= "</tbody></table>\n";
 
-print $cgi->header(-type=>'text/html',-charset=>'utf-8');
+print $cgi->header(-type=>'text/html',-charset=>'utf-8',-cookie=>$cnfr->cookie);
 print $form;
 print $table;
 

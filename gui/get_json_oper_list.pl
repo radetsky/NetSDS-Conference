@@ -9,11 +9,11 @@ use ConferenceDB;
 my $error = '{ "status": "error", "message": "%s" }';
 
 my $cgi = CGI->new;
-print $cgi->header(-type=>'application/json',-charset=>'utf-8');
 
 my $cnfr = ConferenceDB->new;
 
-my $login = $cgi->remote_user();
+my $login = $cnfr->login;
+print $cgi->header(-type=>'application/json',-charset=>'utf-8',-cookie=>$cnfr->cookie);
 
 my @oper = $cnfr->get_oper_list();
 

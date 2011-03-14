@@ -7,10 +7,9 @@ use lib './lib';
 use ConferenceDB;
 
 my $cgi = CGI->new;
-my $login = $cgi->remote_user();
 
 my $cnfr = ConferenceDB->new;
-
+my $login = $cnfr->login;
 my @c_list = $cnfr->get_cnfr_rights($login);
 
 my @confs = $cnfr->cnfr_list();
@@ -25,7 +24,7 @@ while(my $i = shift @c_list) {
 chop $json;
 $json .= ']';
 
-print $cgi->header(-type=>'application/json',-charset=>'utf-8');
+print $cgi->header(-type=>'application/json',-charset=>'utf-8',-cookie=>$cnfr->cookie);
 print $json;
 
 exit;

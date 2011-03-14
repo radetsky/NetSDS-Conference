@@ -23,9 +23,31 @@
 		<script type="text/javascript" src="js/simple_views.js"></script>
 
 		<script type="text/javascript">
+			var allowRefresh = true;
+		
 			function getSysTime() {
 				$("#systime").load('/systime.pl');
-				setTimeout(getSysTime,1000);
+				if( $('#systime').text().indexOf('DENIED') != -1 ) {
+					$('#logoutForm').submit();
+				}
+			}
+			
+			function setRefresh( id, url, sec ) {
+				if (allowRefresh) {
+					$('#'+id).load(url,function(){
+						$('#'+id).append('<table class="zlph"><tr><td align="left"><img src="css/images/tableft_shadow.png" alt="" /></td><td align="right"><img src="css/images/tabright_shadow.png" alt="" /></td></tr></table>');
+					});
+				}
+			}
+			
+			function refOn(a,b) {
+				allowRefresh = true;
+				$('#systime').css('color','#696');
+			}
+			
+			function refOff(a,b) {
+				allowRefresh = false;
+				$('#systime').css('color','#999');
 			}
 		
 			$(document).ready(function(){
@@ -45,6 +67,8 @@
 				*/
 				
 				getSysTime();
+				setInterval(getSysTime,5*1000);
+				refOff(1,1);
 				
 				registerView('cnfrs','/cnfrs.pl');
 				registerView('users','/user_list.pl');
@@ -63,8 +87,10 @@
 					$('#orgs').append('<table class="zlph"><tr><td align="left"><img src="css/images/tableft_shadow.png" alt="" /></td><td align="right"><img src="css/images/tabright_shadow.png" alt="" /></td></tr></table>');
 					$('#audio').append('<table class="zlph"><tr><td align="left"><img src="css/images/tableft_shadow.png" alt="" /></td><td align="right"><img src="css/images/tabright_shadow.png" alt="" /></td></tr></table>');
 					// $('#logs').append('<table class="zlph"><tr><td align="left"><img src="css/images/tableft_shadow.png" alt="" /></td><td align="right"><img src="css/images/tabright_shadow.png" alt="" /></td></tr></table>');
+					
+					refOn(1,1);
 				});
-
+				setInterval("setRefresh('cnfrs','/cnfrs.pl')",10*1000);
 				
 				$("#log_from").datepicker({ dateFormat: 'yy-mm-dd' });
 				$("#log_to").datepicker({ dateFormat: 'yy-mm-dd' });
@@ -81,22 +107,24 @@
 				});
 
 
-				$('#add_org').dialog({ autoOpen: false, width: 'auto', title: 'Название организации' });
-				$('#add_pos').dialog({ autoOpen: false, width: 'auto', title: 'Название должности' });
-				$('#edit_user').dialog({ autoOpen: false, width: 'auto', title: 'Редактирование пользователя:' });
+				$('#add_org').dialog({ autoOpen: false, width: 'auto', title: 'Название организации', open: refOff, close: refOn });
+				$('#add_pos').dialog({ autoOpen: false, width: 'auto', title: 'Название должности', open: refOff, close: refOn });
+				$('#edit_user').dialog({ autoOpen: false, width: 'auto', title: 'Редактирование пользователя:', open: refOff, close: refOn });
 				// $('#show_active').dialog({ autoOpen: false, width: 800 });
 
 				$('#show_active').dialog({ autoOpen: false, width: 'auto', title: 'Активные совещания',
+					open: refOff, 
 					close: function(event, ui) {
 						$("#cnfrs").empty();
-  					$("#cnfrs").load('/cnfrs.pl');
-				}
-			  }); 
+						$("#cnfrs").load('/cnfrs.pl');
+						refOn(event,ui)
+					}
+				}); 
 
-				$('#new_participant').dialog({ autoOpen: false, width: 'auto', modal: true, title: 'Новый участник совещания' });
-				$('#new_oper').dialog({ autoOpen: false, modal: true, width: 'auto', title: 'Новый оператор совещания' });
-				$('#edit_cnfr').dialog({ autoOpen: false, width: 'auto', title: 'Редактирование совещания' });
-				$('#schedule_select').dialog({ autoOpen: false, modal: true, width: 'auto', title: 'Планирование совещания' });
+				$('#new_participant').dialog({ autoOpen: false, width: 'auto', modal: true, title: 'Новый участник совещания', open: refOff, close: refOn });
+				$('#new_oper').dialog({ autoOpen: false, modal: true, width: 'auto', title: 'Новый оператор совещания', open: refOff, close: refOn });
+				$('#edit_cnfr').dialog({ autoOpen: false, width: 'auto', title: 'Редактирование совещания', open: refOff, close: refOn });
+				$('#schedule_select').dialog({ autoOpen: false, modal: true, width: 'auto', title: 'Планирование совещания', open: refOff, close: refOn });
 
         // $('#add_sched').button();
         $('#add_sched').click( function () {
@@ -120,7 +148,7 @@
         });
         $('#error').dialog({ buttons: { "Ok": function() { $(this).dialog("close"); } },
                              autoOpen: false,
-                             modal: true});
+                             modal: true, open: refOff, close: refOn});
 
       });
 
@@ -582,16 +610,9 @@
 		}
 	});
 </script>
-<script type="text/javascript">
-	function conference_quit() {
-		var current_url = document.location.href; 
-		var new_url = current_url.replace("http://","http://logout:byebye@"); 
-		window.location = new_url;
-	} 
-</script>		 
 <div id='bottom_menu'>
-	 <button onclick='conference_quit()'>Выход</button>
- </div>
+	 <form id="logoutForm" method="get" action="quit.pl"><button>Выход</button></form>
+</div>
 
 <div id="footer">
 		<div style="float:left;text-align:left;"><a href="http://www.datagroup.ua" target="_blank">www.datagroup.ua</a></div>
