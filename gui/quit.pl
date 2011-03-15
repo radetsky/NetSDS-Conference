@@ -13,8 +13,8 @@ $cnfr->logout if defined $login;
 my $proto = $cgi->https ? 'https' : 'http';
 
 print $cgi->redirect(
-    $proto.'://'.$ENV{'HTTP_HOST'}.
-    ($ENV{'HTTP_PORT'} eq '80' ? '' : ':'.$ENV{'HTTP_PORT'}).
+    $proto.'://'.$ENV{'SERVER_NAME'}.
+    ($ENV{'SERVER_PORT'} eq '80' ? '' : ':'.$ENV{'SERVER_PORT'}).
     '/login.html'
 );
 

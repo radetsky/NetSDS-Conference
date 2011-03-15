@@ -24,6 +24,8 @@
 
 		<script type="text/javascript">
 			var allowRefresh = true;
+			var rotor = ['|','/','-','\\'];
+			var rI = 0;
 		
 			function getSysTime() {
 				$("#systime").load('/systime.pl');
@@ -35,19 +37,23 @@
 			function setRefresh( id, url, sec ) {
 				if (allowRefresh) {
 					$('#'+id).load(url,function(){
-						$('#'+id).append('<table class="zlph"><tr><td align="left"><img src="css/images/tableft_shadow.png" alt="" /></td><td align="right"><img src="css/images/tabright_shadow.png" alt="" /></td></tr></table>');
+						$('#'+id).append('<table class="zlph"><tr><td align="left"><img src="css/images/tableft_shadow.png" alt="" /></td><td align="right"><img src="css/images/tabright_shadow.png" alt="" /></td></tr></table><div align="right">'+rotor[rI]+'</div>');
+						rI++;
+						if(rI>3){
+						    rI = 0;
+						}
 					});
 				}
 			}
 			
 			function refOn(a,b) {
-				allowRefresh = true;
-				$('#systime').css('color','#696');
+				// allowRefresh = true;
+				// $('#systime').css('color','#696');
 			}
 			
 			function refOff(a,b) {
-				allowRefresh = false;
-				$('#systime').css('color','#999');
+				// allowRefresh = false;
+				// $('#systime').css('color','#999');
 			}
 		
 			$(document).ready(function(){
@@ -107,12 +113,12 @@
 				});
 
 
-				$('#add_org').dialog({ autoOpen: false, width: 'auto', title: 'Название организации', open: refOff, close: refOn });
-				$('#add_pos').dialog({ autoOpen: false, width: 'auto', title: 'Название должности', open: refOff, close: refOn });
-				$('#edit_user').dialog({ autoOpen: false, width: 'auto', title: 'Редактирование пользователя:', open: refOff, close: refOn });
-				// $('#show_active').dialog({ autoOpen: false, width: 800 });
+				$('#add_org').dialog({ autoOpen: false, width: 'auto', modal: true, title: 'Название организации', open: refOff, close: refOn });
+				$('#add_pos').dialog({ autoOpen: false, width: 'auto', modal: true, title: 'Название должности', open: refOff, close: refOn });
+				$('#edit_user').dialog({ autoOpen: false, width: 'auto', modal: true, title: 'Редактирование пользователя:', open: refOff, close: refOn });
+				// $('#show_active').dialog({ autoOpen: false, width: 800, modal:true });
 
-				$('#show_active').dialog({ autoOpen: false, width: 'auto', title: 'Активные совещания',
+				$('#show_active').dialog({ autoOpen: false, modal: true, width: 'auto', title: 'Активные совещания',
 					open: refOff, 
 					close: function(event, ui) {
 						$("#cnfrs").empty();
@@ -123,7 +129,7 @@
 
 				$('#new_participant').dialog({ autoOpen: false, width: 'auto', modal: true, title: 'Новый участник совещания', open: refOff, close: refOn });
 				$('#new_oper').dialog({ autoOpen: false, modal: true, width: 'auto', title: 'Новый оператор совещания', open: refOff, close: refOn });
-				$('#edit_cnfr').dialog({ autoOpen: false, width: 'auto', title: 'Редактирование совещания', open: refOff, close: refOn });
+				$('#edit_cnfr').dialog({ autoOpen: false, modal: true, width: 'auto', title: 'Редактирование совещания', open: refOff, close: refOn });
 				$('#schedule_select').dialog({ autoOpen: false, modal: true, width: 'auto', title: 'Планирование совещания', open: refOff, close: refOn });
 
         // $('#add_sched').button();
