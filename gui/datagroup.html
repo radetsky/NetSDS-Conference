@@ -86,7 +86,7 @@
 					$('#posns').append('<table class="zlph"><tr><td align="left"><img src="css/images/tableft_shadow.png" alt="" /></td><td align="right"><img src="css/images/tabright_shadow.png" alt="" /></td></tr></table>');
 					$('#orgs').append('<table class="zlph"><tr><td align="left"><img src="css/images/tableft_shadow.png" alt="" /></td><td align="right"><img src="css/images/tabright_shadow.png" alt="" /></td></tr></table>');
 					$('#audio').append('<table class="zlph"><tr><td align="left"><img src="css/images/tableft_shadow.png" alt="" /></td><td align="right"><img src="css/images/tabright_shadow.png" alt="" /></td></tr></table>');
-					// $('#logs').append('<table class="zlph"><tr><td align="left"><img src="css/images/tableft_shadow.png" alt="" /></td><td align="right"><img src="css/images/tabright_shadow.png" alt="" /></td></tr></table>');
+					$('#logs').append('<table class="zlph" id="logsFancy" style="display:none"><tr><td align="left"><img src="css/images/tableft_shadow.png" alt="" /></td><td align="right"><img src="css/images/tabright_shadow.png" alt="" /></td></tr></table>');
 					
 					refOn(1,1);
 				});
@@ -223,7 +223,8 @@
 					по<input type="text" name="log_to" id="log_to" value=""/>
 					<button onclick="select_logs(); return false;">Показать</button>
 				</form>
-				<table id="log_list" style="width: 100%;">
+				<br/>
+				<table id="log_list" class="tab-table" style="width: 100%;">
 				</table>
 			</div>
 <!--		</div> -->
