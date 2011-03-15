@@ -13,15 +13,15 @@ my $proto = $cgi->https ? 'https' : 'http';
 
 if(defined $login){
     print $cgi->redirect(                                                                                               
-	-location => $proto.'://'.$ENV{'HTTP_HOST'}.                                                                                    
-    	    ($ENV{'HTTP_PORT'} eq '80' ? '' : ':'.$ENV{'HTTP_PORT'}).                                                       
+	-location => $proto.'://'.$ENV{'SERVER_NAME'}.                                                                                    
+    	    ($ENV{'SERVER_PORT'} eq '80' ? '' : ':'.$ENV{'SERVER_PORT'}).                                                       
     	    '/datagroup.html',
     	-cookie => $cnfr->cookie                                                                                                   
     );
 } else {
     print $cgi->redirect(                                                                                               
-	-location => $proto.'http://'.$ENV{'HTTP_HOST'}.                                                                                    
-    	    ($ENV{'HTTP_PORT'} eq '80' ? '' : ':'.$ENV{'HTTP_PORT'}).                                                       
+	-location => $proto.'http://'.$ENV{'SERVER_NAME'}.                                                                                    
+    	    ($ENV{'SERVER_PORT'} eq '80' ? '' : ':'.$ENV{'SERVER_PORT'}).                                                       
     	    '/login.html#no'
     );
 }
