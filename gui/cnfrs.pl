@@ -62,7 +62,7 @@ my @cnfrs  = $cnfr->cnfr_list();
 my @rights = $cnfr->get_cnfr_rights($login);
 
 my $row = <<EOR;
-<tr class="%s %s" onclick="%s(%s, '%s'); return false;">
+<tr class="%s %s" onclick="%s(%s, '%s'); return false;" ondblclick="%s(%s, '%s'); return false;">
 <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td>
 <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td>
 </tr>
@@ -89,6 +89,11 @@ while ( my $i = shift @rights ) {
     push @args, $funct{ $cnfrs[$i]{'cnfr_state'} };
     push @args, $i;
     push @args, $cnfrs[$i]{'cnfr_name'};
+    
+    push @args, $funct{ $cnfrs[$i]{'cnfr_state'} };
+    push @args, $i;
+    push @args, $cnfrs[$i]{'cnfr_name'};
+    
     push @args, $i;
     push @args, $cnfrs[$i]{'cnfr_name'};
     push @args, $c_states{ $cnfrs[$i]{'cnfr_state'} };

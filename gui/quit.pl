@@ -10,8 +10,10 @@ my $cnfr = ConferenceDB->new;
 my $login = $cnfr->login(1); # нужно для инициализации сессии
 $cnfr->logout if defined $login;
 
+my $proto = $cgi->https ? 'https' : 'http';
+
 print $cgi->redirect(
-    'http://'.$ENV{'HTTP_HOST'}.
+    $proto.'://'.$ENV{'HTTP_HOST'}.
     ($ENV{'HTTP_PORT'} eq '80' ? '' : ':'.$ENV{'HTTP_PORT'}).
     '/login.html'
 );
