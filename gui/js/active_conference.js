@@ -174,10 +174,11 @@ function show_active(confid, confname) {
 	});
 	$("#stop_cnfr").button();
 	$("#stop_cnfr").click( function() {
-		$.getJSON('stop_cnfr.pl', {"cid": conference_id});
-		alert("Конференция остановлена!");
-		$("#show_active").dialog("close");
-		return false;
+		$.getJSON('stop_cnfr.pl', {"cid": conference_id}, function(data) {
+		    alert("Конференция остановлена!");
+		    $("#show_active").dialog("close");
+		    return false;
+		});
 	});
 
 	$.getJSON('get_json_active.pl', {"cid": confid}, function(data) {
