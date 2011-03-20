@@ -1,27 +1,30 @@
 install:
-	echo -n "Creating base directories..." 
+	echo -ne "Creating base directories..." 
 	mkdir -p /opt/NetSDS
 	mkdir -p /opt/NetSDS/bin 
 	mkdir -p /opt/NetSDS/lib
-	echo -n "Installing main binary..."
+	echo -ne "Installing main binary..."
 	install bin/NetSDS-Conference.pl /opt/NetSDS/bin/
-	echo -n "Installing low-level database library..."
+	echo -ne "Installing low-level database library..."
 	install lib/ConferenceDB.pm /opt/NetSDS/lib/
-	echo -n "Installing NetSDS framework..."
+	install lib/ConferenceAuth.pm /opt/NetSDS/lib/ 
+	echo -ne "Installing NetSDS framework..."
 	cp -a lib/NetSDS /opt/NetSDS/lib
-	ln -s /opt/NetSDS/lib /var/www/astconf/lib 
+	echo -ne "Make /var/run/NetSDS" 
+	mkdir -p /var/run/NetSDS/
 
 config: 
 	mkdir -p /etc/netstyle 
 	install etc/netstyle/conference.conf /etc/netstyle 
 
 gui:
-	
-	install ./gui/*.pl /var/www/astconf/
-	install ./gui/*.html /var/www/astconf/ 
-	install ./lib/ConferenceDB.pm /var/www/astconf/lib/ 
-	install ./gui/js /var/www/astconf/js/ 
-	install ./gui/css /var/www/astconf/css/
- 
-#	cp -fv ./utils/bin/* /var/lib/asterisk/agi-bin
-#	cp -fv ./utils/lib/* /var/lib/asterisk/agi-bin
+	install gui/* -d -t /var/www/html
+	mkdir -p /var/www/html/css/images/kievsvt/
+	install gui/css/* -t /var/www/html/css 
+	install gui/css/images/* -t /var/www/html/css/images 
+	install gui/css/images/kievsvt/* -t /var/www/html/css/images/kievsvt
+	mkdir -p /var/www/html/js
+	install gui/js/* -t /var/www/html/js
+	ln -s /opt/NetSDS/lib /var/www/html/lib 
+
+

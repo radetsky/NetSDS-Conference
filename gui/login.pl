@@ -20,7 +20,7 @@ if(defined $login){
     );
 } else {
     print $cgi->redirect(                                                                                               
-	-location => $proto.'http://'.$ENV{'SERVER_NAME'}.                                                                                    
+	-location => $proto.'://'.$ENV{'SERVER_NAME'}.                                                                                    
     	    ($ENV{'SERVER_PORT'} eq '80' ? '' : ':'.$ENV{'SERVER_PORT'}).                                                       
     	    '/login.html#no'
     );

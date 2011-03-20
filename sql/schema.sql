@@ -16,18 +16,26 @@ CREATE FUNCTION upd_tstamp() RETURNS trigger AS $upd_tstamp$
     END;
 $upd_tstamp$ LANGUAGE plpgsql;
 
-CREATE TABLE Positions(
+CREATE TABLE positions(
  position_id serial primary key,
  position_name varchar(200) NOT NULL,
  position_order integer NOT NULL
 );
 
-CREATE TABLE Organizations(
+CREATE TABLE organizations(
  org_id serial primary key,
  org_name varchar(200) NOT NULL
 );
 
-CREATE TABLE Conferences(
+CREATE TABLE audio(
+	au_id serial primary key,
+	description varchar(200),
+	audio_data bytea,
+	create_date timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE conferences(
  cnfr_id serial primary key,
  cnfr_name varchar(256) NOT NULL,
  cnfr_state varchar(30) NOT NULL,
@@ -45,84 +53,77 @@ CREATE TABLE Conferences(
  voice_remind boolean,
  email_remind boolean,
  remind_ahead interval,
- au_id integer REFERENCES Audio(au_id) ON DELETE RESTRICT,
+ au_id integer REFERENCES audio(au_id) ON DELETE RESTRICT,
  change_date timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TRIGGER Cnfr_stamp BEFORE UPDATE ON Conferences
+CREATE TRIGGER cnfr_stamp BEFORE UPDATE ON conferences
     FOR EACH ROW EXECUTE PROCEDURE upd_tstamp();
 
-CREATE TABLE Schedule(
+CREATE TABLE schedule(
 	sched_id serial primary key,
-	cnfr_id integer REFERENCES Conferences(cnfr_id) ON DELETE CASCADE,
+	cnfr_id integer REFERENCES conferences(cnfr_id) ON DELETE CASCADE,
 	schedule_date varchar(10),
 	schedule_time time,
 	schedule_duration interval,
 	change_date timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TRIGGER Schedule_stamp BEFORE UPDATE ON Schedule
+CREATE TRIGGER schedule_stamp BEFORE UPDATE ON schedule
 		FOR EACH ROW EXECUTE PROCEDURE upd_tstamp();
 
-CREATE TABLE Audio(
-	au_id serial primary key,
-	description varchar(200),
-	audio_data bytea,
-	create_date timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE Users(
+CREATE TABLE users(
  user_id serial primary key,
  full_name varchar(500) NOT NULL,
- position_id integer REFERENCES Positions(position_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
- org_id integer REFERENCES Organizations(org_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+ position_id integer REFERENCES positions(position_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+ org_id integer REFERENCES organizations(org_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
  department varchar(200),
  email varchar(300),
  change_date timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TRIGGER Users_stamp BEFORE UPDATE ON Users
+CREATE TRIGGER users_stamp BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE PROCEDURE upd_tstamp();
 
-CREATE TABLE Admins(
+CREATE TABLE admins(
  admin_id serial primary key,
- user_id integer NOT NULL REFERENCES Users(user_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+ user_id integer NOT NULL REFERENCES users(user_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
  login varchar(30) NOT NULL UNIQUE,
  passwd_hash varchar(30) NOT NULL,
  is_admin boolean
 );
 
-CREATE TABLE Operators_of_Conferences(
- admin_id integer NOT NULL REFERENCES Admins(admin_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
- cnfr_id integer NOT NULL REFERENCES Conferences(cnfr_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+CREATE TABLE operators_of_conferences(
+ admin_id integer NOT NULL REFERENCES admins(admin_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+ cnfr_id integer NOT NULL REFERENCES conferences(cnfr_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
  PRIMARY KEY (admin_id, cnfr_id)
 );
 
-CREATE TABLE Phones(
+CREATE TABLE phones(
  phone_id serial primary key,
- user_id integer NOT NULL REFERENCES Users(user_id) ON UPDATE RESTRICT ON DELETE CASCADE,
+ user_id integer NOT NULL REFERENCES users(user_id) ON UPDATE RESTRICT ON DELETE CASCADE,
  phone_number varchar(30) NOT NULL UNIQUE,
  order_nmb integer NOT NULL,
  line_state varchar(20),
  change_date timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TRIGGER Phones_stamp BEFORE UPDATE ON Phones
+CREATE TRIGGER phones_stamp BEFORE UPDATE ON phones
     FOR EACH ROW EXECUTE PROCEDURE upd_tstamp();
 
-CREATE TABLE Users_on_Conference(
+CREATE TABLE users_on_conference(
  record_id serial primary key,
- cnfr_id integer NOT NULL REFERENCES Conferences(cnfr_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
- phone_id integer NOT NULL REFERENCES Phones(phone_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+ cnfr_id integer NOT NULL REFERENCES conferences(cnfr_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+ phone_id integer NOT NULL REFERENCES phones(phone_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
  participant_order integer NOT NULL,
  priority_member boolean,
  change_date timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TRIGGER UoC_stamp BEFORE UPDATE ON Users_on_Conference
+CREATE TRIGGER UoC_stamp BEFORE UPDATE ON users_on_conference
     FOR EACH ROW EXECUTE PROCEDURE upd_tstamp();
 
-CREATE TABLE Change_log(
+CREATE TABLE change_log(
 	change_id serial primary key,
 	auth_user varchar(100) NOT NULL,
 	created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
