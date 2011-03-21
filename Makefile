@@ -7,6 +7,7 @@ install:
 	install bin/NetSDS-Conference.pl /opt/NetSDS/bin/
 	echo -n "Installing low-level database library..."
 	install lib/ConferenceDB.pm /opt/NetSDS/lib/
+	install lib/ConferenceAuth.pm /opt/NetSDS/lib/
 	echo -n "Installing NetSDS framework..."
 	cp -a lib/NetSDS /opt/NetSDS/lib
 	ln -s /opt/NetSDS/lib /var/www/astconf/lib 
@@ -19,7 +20,6 @@ gui:
 	
 	install ./gui/*.pl /var/www/astconf/
 	install ./gui/*.html /var/www/astconf/ 
-	install ./lib/ConferenceDB.pm /var/www/astconf/lib/ 
 	install ./gui/js /var/www/astconf/js/ 
 	install ./gui/css /var/www/astconf/css/
  
