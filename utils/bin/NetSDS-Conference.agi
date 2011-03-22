@@ -1,0 +1,57 @@
+#!/usr/bin/perl 
+
+use warnings; 
+use strict; 
+
+use lib '/opt/NetSDS/lib'; 
+
+use ConferenceDB; 
+use Asterisk::AGI;
+
+my $AGI = new Asterisk::AGI; 
+
+my $method = $ARGV[0];
+unless ( defined ( $method ) ) { 
+	die "Where is your name of method ? "; 
+}
+
+if ($method =~ /is_blocked/i) { 
+	_agi_is_blocked ($ARGV[1],$ARGV[2]); 
+}
+
+exit(0);
+#------------
+sub _agi_is_blocked { 
+
+	my $conf_id = shift; 
+	my $caller_id = shift; 
+
+	unless ( defined ( $conf_id ) ) { 
+		return undef; 
+	}
+	unless ( defined ( $caller_id ) ) { 
+		return undef; 
+	}
+	
+	my $cdb = ConferenceDB->new(); 
+	my $cnfr = $cdb->cnfr_get($conf_id); 
+
+	unless ( defined ($cnfr ) ) {
+		$AGI->set_variable ('IS_BLOCKED',0);
+		return 0; 
+	}
+	unless ( $cnfr ) { 
+		$AGI->set_variable ('IS_BLOCKED',0);
+		return 0;
+	}
+	my $is_operator = $cdb->is_operator($conf_id,$caller_id);	
+	if ( $is_operator ) { 
+		 $AGI->set_variable ('IS_BLOCKED',0);
+	} else {
+		$AGI->set_variable ('IS_BLOCKED',$cnfr->{'blocked'});
+	}
+	return 1;
+}
+
+
+
