@@ -19,6 +19,8 @@ perl-CGI-Session
 perl-CGI-Session-Auth (from CPAN now, does not exist in the Sisyphus) 
 perl-Date-Manip
 perl-Sys-Proctitle  (from CPAN now, does not exist in the Sisyphus) 
+perl-asterisk-perl 
+perl-Asterisk-FastAGI 
 
 cd NetSDS-Conference 
 make install 
@@ -32,4 +34,11 @@ It does install gui/* to /var/www/html
 // Configure the apache2 to run .pl as .cgi 
 a2enmod proxy proxy_http
 configure default.conf like this: 
+..
+
+
+
+
+
+Install asterisk-configs, utils, etc/netstyle/conference.conf 
 

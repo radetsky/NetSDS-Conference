@@ -175,16 +175,30 @@ sub _start_assemble {
     $this->speak("[$$] Set CallerID to $callerid");
     $this->log( "info", "Set CallerID to $callerid" );
 
+    my $defaultrouter = $this->conf->{'defaultrouter'}; 
+    unless ( defined ( $this->conf->{'defaultrouter'}) ) { 
+	    $defaultrouter = 'softswitch'; 
+    }
+    my $local_extension_length = $this->conf->{'local_extension_length'}; 
+    unless ( defined ( $this->conf->{'local_extension_length'} ) ) { 
+	    $local_extension_length = 3; 
+    }
+    
     # we have a list to originate. Start it. and Return to KONF_ID in asterisk.
     foreach my $dst (@phones) {
-        my $orig = NetSDS::Asterisk::Originator->new(
+	my $channel = sprintf("SIP/%s@%s",$dst,$defaultrouter); 
+        if (length($dst) <= $local_extension_length ) { 
+		$channel = sprintf("SIP/%s",$dst); 
+	}; 
+	
+	my $orig = NetSDS::Asterisk::Originator->new(
             actionid       => $dst,
             destination    => $dst,
             callerid       => $callerid,
             return_context => 'NetSDS-Conference-Outgoing',
             variables      => 'KONFNUM=' . $konf_id . '|DIAL=' . $dst,
             ,
-            channel => sprintf( "SIP/%s@%s", $dst, "softswitch" ),
+            channel => $channel,
         );
         my $reply = $orig->originate( '127.0.0.1', '5038', 'asterikastwww',
             'asterikastwww' );

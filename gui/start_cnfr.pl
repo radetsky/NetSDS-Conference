@@ -68,7 +68,8 @@ if($next_type eq "next") {
 	$next_duration = "00:00:00";
 }
 
-$next_start = UnixDate("today", "%Y-%m-%d %H:%M");
+
+$next_start = UnixDate("now", "%Y-%m-%d %H:%M");
 
 my $auth_type = "";
 my $auth_string = $cgi->param('auth_string');
