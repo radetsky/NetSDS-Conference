@@ -165,12 +165,12 @@ sub _start_assemble {
     my $callerid = $this->conf->{'general_callerid'};
     if (
         (
-            defined( $this->{'conf_properties'}->{'number_b'} )
-            and ( $this->{'conf_properties'}->{'number_b'} ne '' )
+            defined( $this->{'konf'}->{'number_b'} )
+            and ( $this->{'konf'}->{'number_b'} ne '' )
         )
       )
     {
-        $callerid = $this->{'conf_properties'}->{'number_b'};
+        $callerid = $this->{'konf'}->{'number_b'};
     }
     $this->speak("[$$] Set CallerID to $callerid");
     $this->log( "info", "Set CallerID to $callerid" );
@@ -197,8 +197,7 @@ sub _start_assemble {
             callerid       => $callerid,
             return_context => 'NetSDS-Conference-Outgoing',
             variables      => 'KONFNUM=' . $konf_id . '|DIAL=' . $dst,
-            ,
-            channel => $channel,
+            channel 	   => $channel,
         );
         my $reply = $orig->originate( '127.0.0.1', '5038', 'asterikastwww',
             'asterikastwww' );
@@ -884,10 +883,33 @@ sub _restore_control {
         return undef;
     }
 
+    # Set CallerID
     my $callerid = $this->conf->{'general_callerid'};
-    if ( defined( $this->{'konf'}->{'number_b'} ) ) {
+    if (
+        (   
+            defined( $this->{'konf'}->{'number_b'} )
+            and ( $this->{'konf'}->{'number_b'} ne '' )
+        )
+      )
+    {   
         $callerid = $this->{'konf'}->{'number_b'};
     }
+    $this->speak("[$$] Set CallerID to $callerid");
+    $this->log( "info", "Set CallerID to $callerid" );
+
+    my $defaultrouter = $this->conf->{'defaultrouter'};
+    unless ( defined ( $this->conf->{'defaultrouter'}) ) {
+            $defaultrouter = 'softswitch';
+    }
+    my $local_extension_length = $this->conf->{'local_extension_length'};
+    unless ( defined ( $this->conf->{'local_extension_length'} ) ) {
+            $local_extension_length = 3;
+    }
+
+    my $channel = sprintf("SIP/%s@%s",$dst,$defaultrouter);
+    if (length($dst) <= $local_extension_length ) {
+                $channel = sprintf("SIP/%s",$dst);
+    };
 
     my $orig = NetSDS::Asterisk::Originator->new(
         actionid       => $dst,
@@ -895,7 +917,7 @@ sub _restore_control {
         callerid       => $callerid,
         return_context => 'NetSDS-Conference-Outgoing',
         variables      => 'KONFNUM=' . $konf_id . '|DIAL=' . $dst,
-        channel        => sprintf( "SIP/%s@%s", $dst, "softswitch" ),
+        channel        => $channel,
     );
     my $reply =
       $orig->originate( '127.0.0.1', '5038', 'asterikastwww', 'asterikastwww' );
