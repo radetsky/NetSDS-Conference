@@ -470,7 +470,7 @@ sub process {
 
                 unless ( defined($next_stop) ) {
                     $this->log("warning", Dumper( $start, $delta ) ); 
-                    $this->log("warning", "Error occures while Date Calculating at the check_stop_0.";
+                    $this->log("warning", "Error occures while Date Calculating at the check_stop_0.");
                     return undef;
                 }
                 my $date_now = ParseDate('now');
