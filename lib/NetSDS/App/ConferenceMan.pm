@@ -332,6 +332,8 @@ sub process {
                       $this->_DTMF( $channel, $key, $mute, $callerid,
                         $conf_id );
                     if ( $rc == 2 ) {    # Stop the conference
+											  $this->speak ("[$$] Admin stops the conference via DTMF method."); 
+												$this->log ("info","Admin stops the conference via DTMF method."); 
                         return 1;
                     }
 
@@ -449,8 +451,8 @@ sub process {
             goto check_stop_0;
         }
         else {
-	    $this->speak("[$$] Button stop pressed. ");
-	    $this->log("info","Button stop pressed. "); 
+	    			$this->speak("[$$] Button stop pressed. ");
+	    			$this->log("info","Button stop pressed. "); 
             return 1;
         }
 
@@ -467,8 +469,8 @@ sub process {
                 my $next_stop = DateCalc( $start, $delta );
 
                 unless ( defined($next_stop) ) {
-                    warn Dumper( $start, $delta );
-                    warn "Error occures while Date Calculating.";
+                    $this->log("warning", Dumper( $start, $delta ) ); 
+                    $this->log("warning", "Error occures while Date Calculating at the check_stop_0.";
                     return undef;
                 }
                 my $date_now = ParseDate('now');
@@ -523,11 +525,11 @@ sub process {
                 # Exit from main_loop means that we will stop
                 $this->speak(
                     "[$$] Stop the conference because conference is empty.");
-                return 1;
                 $this->log( "info",
                         "Stop the conference #"
                       . $this->{'konf'}->{'cnfr_id'}
                       . " because it is empty." );
+								return 1;  
             }
             next;
         }

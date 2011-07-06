@@ -188,7 +188,9 @@ context NetSDS-Conference-Outgoing {
 	Answer();
 	Wait(1); 
 	Playback(netsds-welcome-to-conference); 
-	NETSDS_CONFNUM=${KONFNUM}; 
+	NETSDS_CONFNUM=${KONFNUM};
+	AGI(netsds_get_conf_lang,${NETSDS_CONFNUM});
+	Set(CHANNEL(language)=${LANG});
 
 check_pin:
 	AUTH_PIN = 0; 
