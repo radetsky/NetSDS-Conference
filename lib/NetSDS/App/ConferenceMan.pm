@@ -584,6 +584,7 @@ sub stop {
             cnfr_state => '\'inactive\'',
             last_end   => 'now()',
             next_start => $this->_calculate_next(),
+						blocked => 0,
         }
     );
 
