@@ -1,3 +1,5 @@
+%define installdir /opt/NetSDS
+
 Name: NetSDS-Conference
 Version: 0.01
 Release: alt1
@@ -13,12 +15,6 @@ Packager: Dmitriy Kruglikov <dkr@netstyle.com.ua>
 
 BuildArch: noarch
 Source: NetSDS-Conference.tar
-
-BuildPreReq: rpm-build-NetSDS
-BuildPreReq: NetSDS-common
-
-PreReq: NetSDS-common
-PreReq: perl-NetSDS
 
 Requires: asterisk1.6.2 
 Requires: asterisk1.6.2-chan_sip 
@@ -44,6 +40,9 @@ Requires: perl-Date-Manip
 Requires: perl-CGI-Session-Auth
 Requires: perl-Sys-Proctitle
 
+%add_findreq_skiplist */NetSDS/*pm
+%add_findreq_skiplist */NetSDS/*pl
+
 %description
 NetSDS Conferencing platform.
 
@@ -57,7 +56,11 @@ NetSDS Conferencing platform.
 
 %pre
 
+%post
+
 %files
+%installdir/*
+%config(noreplace) %_sysconfdir/netstyle/conference.conf
 
 %changelog
 * Wed Nov 23 2011 Dmitriy Kruglikov <dkr@netstyle.com.ua> 0.01-alt1
