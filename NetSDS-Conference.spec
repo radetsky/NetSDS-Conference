@@ -1,8 +1,8 @@
 %define installdir /opt/NetSDS
 
 Name: NetSDS-Conference
-Version: 0.01
-Release: alt1
+Version: 0.02
+Release: alt2
 
 Summary: NetSDS Conferencing
 
@@ -42,6 +42,7 @@ Requires: perl-Sys-Proctitle
 
 %add_findreq_skiplist */NetSDS/*pm
 %add_findreq_skiplist */NetSDS/*pl
+%add_findreq_skiplist */conference/*pl
 
 %description
 NetSDS Conferencing platform.
@@ -60,9 +61,19 @@ NetSDS Conferencing platform.
 
 %files
 %installdir/*
+/var/www/webapps/conference/*
+/usr/share/asterisk/sounds/*
+/usr/share/NetSDS/Conference/*
 %config(noreplace) %_sysconfdir/netstyle/conference.conf
+%config(noreplace) %_sysconfdir/httpd2/conf/addon.d/A.conference.conf
 
 %changelog
+* Tue Nov 24 2011 Dmitriy Kruglikov <dkr@netstyle.com.ua> 0.02-alt2
+- Added asterisk files and apache config
+
+* Wed Nov 23 2011 Dmitriy Kruglikov <dkr@netstyle.com.ua> 0.02-alt1
+- Added WEB gui files
+
 * Wed Nov 23 2011 Dmitriy Kruglikov <dkr@netstyle.com.ua> 0.01-alt1
 - Initial RMP build
 
