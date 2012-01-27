@@ -2,7 +2,7 @@
 
 Name: NetSDS-Conference
 Version: 0.02
-Release: alt2
+Release: alt3
 
 Summary: NetSDS Conferencing
 
@@ -24,6 +24,7 @@ Requires: postgresql9.0-server
 Requires: postgresql9.0 
 Requires: apache2  
 Requires: apache2-mod_fastcgi 
+Requires: apache2-mod_perl
 Requires: perl-Class-Accessor-Class
 Requires: perl-Data-Structure-Util
 Requires: perl-Unix-Syslog
@@ -68,6 +69,9 @@ NetSDS Conferencing platform.
 %config(noreplace) %_sysconfdir/httpd2/conf/addon.d/A.conference.conf
 
 %changelog
+* Fri Jan 27 2012 Dmitriy Kruglikov <drk@altlinux.ru> 0.02-alt3
+- Fixed bugs in Apache configuration
+
 * Tue Nov 24 2011 Dmitriy Kruglikov <dkr@netstyle.com.ua> 0.02-alt2
 - Added asterisk files and apache config
 
