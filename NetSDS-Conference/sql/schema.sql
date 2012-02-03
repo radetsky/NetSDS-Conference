@@ -1,12 +1,4 @@
 
-CREATE USER astconf password 'Rjyathtywbz';
-
-CREATE DATABASE astconf OWNER astconf ENCODING 'UTF8';
-
-GRANT ALL ON DATABASE astconf TO astconf;
-
-\c astconf;
-
 CREATE LANGUAGE plpgsql;
 
 CREATE FUNCTION upd_tstamp() RETURNS trigger AS $upd_tstamp$
@@ -133,7 +125,9 @@ CREATE TABLE change_log(
 
 INSERT INTO USERS (full_name) VALUES ('Администратор конференции');
 INSERT INTO Admins (user_id, login, passwd_hash, is_admin) 
-	SELECT user_id, 'root', 'r8oqyKsqD43cU', 'true' FROM Users WHERE full_name='Администратор конференции';
+	SELECT user_id, 'root', 'QIkzcsXfzQ/pI', 'true' FROM Users WHERE full_name='Администратор конференции';
+--- Default password='q1w2e3r4t5' 
+
 
 INSERT INTO Conferences (cnfr_name, cnfr_state) VALUES ('Конференция 1','inactive');
 INSERT INTO Conferences (cnfr_name, cnfr_state) VALUES ('Конференция 2','inactive');
@@ -217,81 +211,5 @@ alter table organizations add oper_id integer default 1 not null;
 alter table positions add oper_id integer default 0 not null; 
 
 alter table users add oper_id integer default 1 not null; 
-
-
-ALTER TABLE ONLY admins
-    ADD CONSTRAINT admins_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(user_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
-
-
---
--- Name: conferences_au_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: astconf
---
-
-ALTER TABLE ONLY conferences
-    ADD CONSTRAINT conferences_au_id_fkey FOREIGN KEY (au_id) REFERENCES audio(au_id) ON DELETE RESTRICT;
-
-
---
--- Name: operators_of_conferences_admin_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: astconf
---
-
-ALTER TABLE ONLY operators_of_conferences
-    ADD CONSTRAINT operators_of_conferences_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES admins(admin_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
-
-
---
--- Name: operators_of_conferences_cnfr_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: astconf
---
-
-ALTER TABLE ONLY operators_of_conferences
-    ADD CONSTRAINT operators_of_conferences_cnfr_id_fkey FOREIGN KEY (cnfr_id) REFERENCES conferences(cnfr_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
-
-
---
--- Name: phones_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: astconf
---
-
-ALTER TABLE ONLY phones
-    ADD CONSTRAINT phones_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(user_id) ON UPDATE RESTRICT ON DELETE CASCADE;
-
-
---
--- Name: schedule_cnfr_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: astconf
---
-
-ALTER TABLE ONLY schedule
-    ADD CONSTRAINT schedule_cnfr_id_fkey FOREIGN KEY (cnfr_id) REFERENCES conferences(cnfr_id) ON DELETE CASCADE;
-
-
---
--- Name: users_on_conference_cnfr_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: astconf
---
-
-ALTER TABLE ONLY users_on_conference
-    ADD CONSTRAINT users_on_conference_cnfr_id_fkey FOREIGN KEY (cnfr_id) REFERENCES conferences(cnfr_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
-
-
---
--- Name: users_on_conference_phone_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: astconf
---
-
-ALTER TABLE ONLY users_on_conference
-    ADD CONSTRAINT users_on_conference_phone_id_fkey FOREIGN KEY (phone_id) REFERENCES phones(phone_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
-
-
---
--- Name: users_org_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: astconf
---
-
-ALTER TABLE ONLY users
-    ADD CONSTRAINT users_org_id_fkey FOREIGN KEY (org_id) REFERENCES organizations(org_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
-
-
---
--- Name: users_position_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: astconf
---
-
-ALTER TABLE ONLY users
-    ADD CONSTRAINT users_position_id_fkey FOREIGN KEY (position_id) REFERENCES positions(position_id) ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
