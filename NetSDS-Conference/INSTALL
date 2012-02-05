@@ -1,44 +1,16 @@
-Requirements: 
-
-apt-get install 
-asterisk1.6.2 asterisk1.6.2-chan_sip asterisk1.6.2-ael asterisk1.6.2-pgsql
-postgresql9.0-server postgresql9.0 
-apache2  apache2-mod_fastcgi 
-
-perl-NetSDS (may be included in the package) 
-perl-Class-Accessor-Class
-perl-Data-Structure-Util
-perl-Unix-Syslog
-perl-Config-General 
-perl-JSON
-perl-libwww
-perl-TimeDate
-perl-Proc-Daemon
-perl-Proc-PID-File
-perl-CGI-Session 
-perl-CGI-Session-Auth (from CPAN now, does not exist in the Sisyphus) 
-perl-Date-Manip
-perl-Sys-Proctitle  (from CPAN now, does not exist in the Sisyphus) 
-perl-asterisk-perl 
-perl-Asterisk-FastAGI 
-
 cd NetSDS-Conference 
+make depends-ubuntu
 make install 
+make gui-install
 
+# psql -U postgres -i sql/pgsql.sql 
 # psql -U postgres -i sql/schema.sql 
 It does create new database called 'astconf' with user 'astconf'. 
-
-# make gui 
-It does install gui/* to /var/www/html 
 
 // Configure the apache2 to run .pl as .cgi 
 a2enmod proxy proxy_http
 configure default.conf like this: 
 ..
-
-
-
-
 
 Install asterisk-configs, utils, etc/netstyle/conference.conf 
 

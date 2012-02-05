@@ -46,7 +46,8 @@ CREATE TABLE conferences(
  email_remind boolean,
  remind_ahead interval,
  au_id integer REFERENCES audio(au_id) ON DELETE RESTRICT,
- change_date timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+ change_date timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ blocked smallint default 0,
 );
 
 CREATE TRIGGER cnfr_stamp BEFORE UPDATE ON conferences

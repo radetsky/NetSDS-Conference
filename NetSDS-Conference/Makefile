@@ -14,8 +14,22 @@ depends-ubuntu:
 	cd CGI-Session-Auth-1.07
 	perl Makefile.PL
 	make 
+	sudo make install
+	cd .. 
+	wget http://search.cpan.org/CPAN/authors/id/R/RJ/RJBS/Class-Accessor-Class-0.501.tar.gz 
+	tar zxvf ./Class-Accessor-Class-0.501.tar.gz
+	cd Class-Accessor-Class-0.501/
+	perl Makefile.PL
+	make 
 	sudo make install 
-
+	cd ..
+	wget http://search.cpan.org/CPAN/authors/id/O/OP/OPI/Sys-Proctitle-0.04.tar.gz
+	tar zxvf ./Sys-Proctitle-0.04.tar.gz
+	cd Sys-Proctitle-0.04/
+	perl Makefile.PL
+	make 
+	sudo make install 
+	cd ..
 install:
 	mkdir -p $(HOMEDIR)/opt/NetSDS/bin
 	mkdir -p $(HOMEDIR)/opt/NetSDS/lib
@@ -39,4 +53,7 @@ gui-install:
 	cp -a gui/* $(HOMEDIR)/var/www/conference
 	ln -s $(HOMEDIR)/opt/NetSDS/lib $(HOMEDIR)/var/www/conference/lib
 
-	
+asterisk-configs:
+	cp -a asterisk-configs/manager.conf /etc/asterisk 
+	asterisk -rx "manager reload" 
+		
