@@ -163,7 +163,8 @@ function set_pr(phid) {
 }
 
 function show_active(confid, confname) {
-	conference_id = confid;
+	var conference_id = confid;
+
 	$("#show_active table").empty();
 	$("#show_active").dialog("option", "title", confname);
 	$("#rem_prior").button();
@@ -174,11 +175,22 @@ function show_active(confid, confname) {
 	});
 	$("#stop_cnfr").button();
 	$("#stop_cnfr").click( function() {
-		$.getJSON('stop_cnfr.pl', {"cid": conference_id}, function(data) {
-		    alert("Конференция остановлена!");
-		    $("#show_active").dialog("close");
-		    return false;
+		var request = $.ajax ('stop_cnfr.pl' , {
+			type: "GET",
+			data: {"cid": conference_id}, 
+ 			dataType: "json",
 		});
+		request.done (function (msg) { 
+			alert ("Конференция остановлена!");
+			$("#stop_cnfr").off(); // Remove handler from button 'stop' 
+	                $("#show_active").dialog("close");
+			return false;
+		});
+		request.fail(function(jqXHR, textStatus, errorThrown) {
+                        alert( "stop_cnfr request failed: " + textStatus + errorThrown);
+			return false; 
+                });
+		return false;
 	});
 
 	$.getJSON('get_json_active.pl', {"cid": confid}, function(data) {

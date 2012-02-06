@@ -1,0 +1,47 @@
+<html>
+<head>
+<title> jquery test </title>
+</head>
+<script src="../js/jquery-1.7.1.js"></script>
+<script>
+function localinit() { 
+	alert("localinit!");
+	dologin('konference','MoNit041fConf');
+
+}
+
+function dologin (username,secret) { 
+	sendreq ('action=login&username=' + username + "&secret=" + secret, callback_login);
+}
+
+function callback_login(text) { 
+	alert('callback login:'+ text); 
+}
+
+function sendreq ( request, callback ) { 
+
+var request = $.ajax({
+  url: "/konference/rawman",
+  type: "GET",
+  data: request,
+  dataType: "html"
+});
+
+request.done(function(msg) {
+  callback_login ( msg );
+});
+
+request.fail(function(jqXHR, textStatus) {
+  alert( "Request failed: " + textStatus );
+});
+	
+
+} 
+
+</script>
+
+<body onload='localinit()'>
+<div id='dest'> </div>
+
+</body>
+

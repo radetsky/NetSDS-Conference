@@ -268,6 +268,9 @@ sub konference_kick {
 		# Что-то получили. Парсим. Должно быть что-то наподобие:
 		# User #: 1 kicked
 		my ( $KUser, $KConfirm) = split( ':', $row );
+		unless ( defined ( $KConfirm ) ) { 
+			next;
+		}
 		if ($KConfirm =~ /kicked/i) { 
 			return 1; 
 		}

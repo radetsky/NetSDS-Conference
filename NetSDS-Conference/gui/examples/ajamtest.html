@@ -1,5 +1,5 @@
-<script src="../js/prototype.js"></script>
-<script src="../js/astman.js"></script>
+<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+<script src="astman-jah.js"></script>
 <link href="../css/astman.css" media="all" rel="Stylesheet" type="text/css" />
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 
@@ -13,12 +13,16 @@
 	var demo = new Object;
 	
 	demo.logins = function(msgs) {
-		$('statusbar').innerHTML = msgs[0].headers['message'];
-		astmanEngine.pollEvents(); 
+		response = msgs[0].headers['response'];
+		alert('login result: ' + response);
+		$('#statusbar').text( msgs[0].headers['message'] );
+		if (response !='Error') {
+			astmanEngine.pollEvents();
+		}
 	}
 	
 	function doLogin(username,secret) {
-		$('statusbar').innerHTML = "<i>Logging in...</i>";
+		$('#statusbar').html("<i>Logging in...</i>");
 		astmanEngine.sendRequest('action=login&username=' + username + "&secret=" + secret, demo.logins);
 	}
 	
@@ -35,31 +39,31 @@
 				state = 'Молчит'; 
 			}
  
-			$('konferenceState').innerHTML = channel + ' ' + state;
+			$('konferenceState').html(channel + ' ' + state);
 		     } 
 
 		     if (eventname == 'ConferenceJoin') { 
 		        conferencename = msgs[x].headers['conferencename']; 
 			callerid = msgs[x].headers['callerid']; 
-			$('konferenceState').innerHTML = callerid + " Присоединился к конференции " + conferencename; 
+			$('konferenceState').html(callerid + " Присоединился к конференции " + conferencename);
 		     }
 
 		     if (eventname == 'ConferenceLeave') { 
 			conferencename = msgs[x].headers['conferencename']; 
 			callerid = msgs[x].headers['callerid']; 
-			$('konferenceState').innerHTML = callerid + " Вышел из конфренеции  " + conferencename; 
+			$('konferenceState').html(callerid + " Вышел из конфренеции  " + conferencename);
 		     }
 		    
                      if (eventname == 'Hangup') { 
 			channel = msgs[x].headers['channel']; 
-			$('konferenceState').innerHTML = channel + " Положил трубку "; 
+			$('konferenceState').html(channel + " Положил трубку "); 
 		     }
 	
 		     if (eventname == 'VarSet') { 
 			var_variable = msgs[x].headers['variable']; 
 			var_value    = msgs[x].headers['value']; 
 			if (var_variable == 'DIAL') {
-			    $('konferenceState').innerHTML = "Дозваниваемся до " + $var_value; 
+			    $('konferenceState').html("Дозваниваемся до " + $var_value);
 			}
 		     }
 		
@@ -67,9 +71,9 @@
 			response = msgs[x].headers['response']; 
 		        exten = msgs[x].headers['exten']; 
 	                if (response == 'Success') { 
-			   $('konferenceState').innerHTML = ' Дозвонились до ' + exten; 
+			   $('konferenceState').html(' Дозвонились до ' + exten);
 			} else { 
-			   $('konferenceState').innerHTML = ' Ошибка дозвона до ' + exten;
+			   $('konferenceState').html( ' Ошибка дозвона до ' + exten);
 			}
 		     }
 
@@ -77,14 +81,14 @@
                         test = test + "msg "+ (x + 1) + "/" + msgs[x].names[y] + "/" + msgs[x].headers[msgs[x].names[y]] + "<br>";
                      }
                 } 
-		$('eventlist').innerHTML = test;
-		$('statusbar').innerHTML = "<i>Got " + msgs.length + "events. </i>";
+		$('#eventlist').html(test);
+		$('#statusbar').html("<i>Got " + msgs.length + "events. </i>");
 		astmanEngine.pollEvents();
 
 	}
 	
 	function localajaminit() {
-		astmanEngine.setURL('http://192.168.1.252:8081/konference/rawman');
+		astmanEngine.setURL('/konference/rawman');
 		astmanEngine.setEventCallback(demo.eventCB);
 		doLogin('konference','MoNit040fConf');
 		
