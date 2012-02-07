@@ -7,7 +7,7 @@ depends-ubuntu:
 	libclass-accessor-perl libconfig-general-perl libconfig-json-perl \
 	libdata-structure-util-perl libdate-manip-perl libdbd-pg-perl \
 	libdbi-perl libproc-daemon-perl libproc-pid-file-perl \
-	libtimedate-perl libunix-syslog-perl liburi-perl libwww-perl \
+	libtimedate-perl libunix-syslog-perl liburi-perl libwww-perl libasterisk-agi-perl \
 	apache2 apache2-mpm-prefork apache2-utils apache2.2-common libapache2-mod-php5 
 	wget http://search.cpan.org/CPAN/authors/id/G/GE/GEEWIZ/CGI-Session-Auth-1.07.tar.gz
 	tar zxvf CGI-Session-Auth-1.07.tar.gz
@@ -47,6 +47,11 @@ install:
 	cp -a ivr/dialplan/conference.ael $(HOMEDIR)/usr/share/NetSDS/Conference/
 	mkdir -p $(HOMEDIR)/usr/share/asterisk/sounds
 	cp -ar sounds $(HOMEDIR)/usr/share/asterisk
+	mkdir -p  $(HOMEDIR)/usr/lib/astconf 
+	cp utils/lib/sh-agi.inc /usr/lib/astconf 
+	cp utils/bin/* $(HOMEDIR)/usr/share/asterisk/agi-bin
+
+
 
 gui-install:
 	mkdir -p /var/www/conference 

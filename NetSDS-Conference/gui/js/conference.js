@@ -1,5 +1,9 @@
 var sched_strings;
 
+// -------------------------------------------
+// Edit the conference 
+// --------------------------------------------
+
 function edit_cnfr(confid, confname) {
 	sched_strings = new Array();
 	$.getJSON('/get_json_cnfr.pl', {"id":confid}, function(data){
@@ -49,60 +53,90 @@ function edit_cnfr(confid, confname) {
 			$("#dur_min").removeAttr("disabled");
 			$("#next").attr('checked','checked');
 		}
-
+// -----------------------------------------------
+// Setting the flag of authentication by PIN-code 
+// -----------------------------------------------
 		if( data.pin_auth == true ) {
-			$("#pin_auth").attr('checked', 'checked');
+			$("#pin_auth").prop('checked','checked');
 			$("#auth_string").removeAttr("disabled");
 			$("#auth_string").val(data.auth_string);
 		} else {
-			$("#pin_auth").attr('checked', '');
+			$("#pin_auth").prop('checked','');
 			$("#auth_string").val('');
 			$("#auth_string").attr('disabled','disabled');
 		}
+// -----------------------------------------------
+// Setting the flag of authentication by CallerID 
+// -----------------------------------------------
 		if( data.number_auth == true ) {
-			$("#number_auth").attr('checked', 'checked');
+			$("#number_auth").prop('checked','checked');
 			data.auto_assemble = 0;
-			$("#auto_assemble").attr('checked', '');
-			$("#auto_assemble").attr('disabled','disabled');
+			$("#auto_assemble").prop('checked', '');
+			$("#auto_assemble").prop('disabled','disabled');
 		} else {
-			$("#number_auth").attr('checked', '');
+			$("#number_auth").prop('checked', '');
 			$("#number_auth").removeAttr("disabled");
 		}
+// -----------------------------------------------
+// Setting the auto assemble flag 
+// -----------------------------------------------
+
 		if ( data.auto_assemble == 1 ) {
-			$("#auto_assemble").attr('checked', 'checked');
-			$("#number_auth").attr('checked', '');
-			$("#number_auth").attr('disabled','disabled');
+			$("#auto_assemble").prop('checked', 'checked');
+			$("#number_auth").prop('checked', '');
+			$("#number_auth").prop('disabled','disabled');
 		} else {
-			$("#auto_assemble").attr('checked', '');
+			$("#auto_assemble").prop('checked', '');
 			$("#auto_assemble").removeAttr("disabled");
 		}
+// -----------------------------------------------
+// Setting the 'restoring dial' flag 
+// -----------------------------------------------
+
 		if ( data.lost_control == 1 ) {
-			$("#lost_control").attr('checked', 'checked');
+			$("#lost_control").prop('checked', 'checked');
 		} else {
-			$("#lost_control").attr('checked', '');
+			$("#lost_control").prop('checked', '');
 		}
+// -----------------------------------------------
+// Setting the 'record conference' flag 
+// -----------------------------------------------
+
 		if ( data.need_record == 1 ) {
-			$("#need_record").attr('checked', 'checked');
+			$("#need_record").prop('checked', 'checked');
 		} else {
-			$("#need_record").attr('checked', '');
+			$("#need_record").prop('checked', '');
 		}
+
 		$("#audio_lang").val(data.audio_lang);
 
+// -----------------------------------------------
+// Setting the 'remind by phone' flag 
+// ----------------------------------------------- 
 		var rem_t_en = false;
 		if(data.ph_remind == 1) {
-			$("#ph_remind").attr('checked', 'checked');
+			$("#ph_remind").prop('checked', 'checked');
 			$('#audio_id').removeAttr("disabled");
 			rem_t_en = true;
 		} else {
-			$("#ph_remind").attr('checked', '');
-			$('#audio_id').attr("disabled", "disabled");
+			$("#ph_remind").prop('checked', '');
+			$('#audio_id').prop("disabled", "disabled");
 		}
+
+// -----------------------------------------------
+// Setting 'remind by e-mail' flag
+// -----------------------------------------------
+
 		if(data.em_remind == 1) {
-			$("#em_remind").attr('checked', 'checked');
+			$("#em_remind").prop('checked', 'checked');
 			rem_t_en = true;
 		} else {
-			$("#em_remind").attr('checked', '');
+			$("#em_remind").prop('checked', '');
 		}
+// ------------------------------------------------
+// if one of the reminders is on we set the time value 
+// ------------------------------------------------
+
 		if(rem_t_en) {
 			$("#remind_time").val(data.remind_time);
 			$("#remind_time").removeAttr("disabled");
@@ -110,12 +144,15 @@ function edit_cnfr(confid, confname) {
 			$("#remind_time").val('00 00:15:00');
 			$("#remind_time").attr("disabled", "disabled");
 		}
-
+// -------------------------------------------------
+// Audio file for phone reminder 
+// -------------------------------------------------
 		if(data.audio.length == 0) {
-			$('#ph_remind').attr("disabled", "disabled");
+			$('#ph_remind').prop("disabled", "disabled");
 		} else {
 			$('#ph_remind').removeAttr("disabled");
 		}
+
 
 		$('#audio_id').empty();
 		for(var t=0; t<data.audio.length; t++) {
@@ -127,7 +164,9 @@ function edit_cnfr(confid, confname) {
 			y += data.audio[t].name+'</option>';
 			$('#audio_id').append(y);
 		}
-
+// --------------------------------------------
+// Something with operators list 
+// --------------------------------------------
 		$("#operator_list").empty();
 		if(data.admin == true) {
 			$("#number_b").val(data.number_b);
@@ -144,6 +183,11 @@ function edit_cnfr(confid, confname) {
 			$("#operator_block").remove();
 			$("#number_b_block").remove();
 		}
+
+// -------------------------------------------
+// Something with participats list 
+// -------------------------------------------
+
 
 		$("#participant_list").empty();
 		for(x=0; x<data.users.length; x++) {
@@ -282,18 +326,20 @@ function start_now() {
 }
 
 function auth_change() {
-	if($("#number_auth").attr('checked') == true) {
-		$("#auto_assemble").attr("disabled", "disabled");
+
+	if($("#number_auth").prop('checked') == true) {
+		$("#auto_assemble").prop("disabled", "disabled");
 	} else {
-		$("#auto_assemble").attr("disabled", '');
+		$("#auto_assemble").prop("disabled", '');
 	}
 }
 
 function assem_change() {
-	if($("#auto_assemble").attr('checked') == true) {
-		$("#number_auth").attr("disabled", "disabled");
+
+	if($("#auto_assemble").prop('checked') == true) {
+		$("#number_auth").prop("disabled", "disabled");
 	} else {
-		$("#number_auth").attr("disabled", '');
+		$("#number_auth").prop("disabled", '');
 	}
 }
 
@@ -477,26 +523,34 @@ function close_sched_dialog() {
 	$('#schedule_select').dialog("close");
 }
 
+// -----------------------------------------------------
+// Handler of the chnage properties of reminer by phone 
+// -----------------------------------------------------
+
 function phrem_change() {
-	if($('#ph_remind').attr('checked') == true) {
+	if($('#ph_remind').prop('checked') == true) {
 		$('#audio_id').removeAttr("disabled");
 	} else {
-		$('#audio_id').attr("disabled", "disabled");
+		$('#audio_id').prop("disabled", "disabled");
 	}
 
-	if($('#ph_remind').attr('checked') == true || $('#em_remind').attr('checked') == true) {
+	if($('#ph_remind').prop('checked') == true || $('#em_remind').prop('checked') == true) {
 		$('#remind_time').removeAttr("disabled");
 	} else {
-		$('#remind_time').attr('disabled', 'disabled');
+		$('#remind_time').prop('disabled', 'disabled');
 		$('#remind_time').val('00 00:15:00');
 	}
 }
 
+// ----------------------------------------------------
+// Handler of the email reminder properties changes
+// ----------------------------------------------------
+
 function emrem_change() {
-	if($('#ph_remind').attr('checked') == true || $('#em_remind').attr('checked') == true) {
+	if($('#ph_remind').prop('checked') == true || $('#em_remind').prop('checked') == true) {
 		$('#remind_time').removeAttr("disabled");
 	} else {
-		$('#remind_time').attr('disabled', 'disabled');
+		$('#remind_time').prop('disabled', 'disabled');
 		$('#remind_time').val('00 00:15:00');
 	}
 }

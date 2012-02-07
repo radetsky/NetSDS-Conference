@@ -558,7 +558,8 @@
 </div>
 <script>
 	$("#pin_auth").change(function() {
-		if($(this).attr("checked") == true) {
+		//alert($(this).attr('checked')); 
+		if($(this).attr("checked") == 'checked') {
 			$("#auth_string").removeAttr("disabled");
 		} else {
 			$("#auth_string").val('');
