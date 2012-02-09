@@ -15,7 +15,7 @@ if(defined $login){
     print $cgi->redirect(                                                                                               
 	-location => $proto.'://'.$ENV{'SERVER_NAME'}.                                                                                    
     	    ($ENV{'SERVER_PORT'} eq '80' ? '' : ':'.$ENV{'SERVER_PORT'}).                                                       
-    	    '/datagroup.html',
+    	    '/index.html',
     	-cookie => $cnfr->cookie                                                                                                   
     );
 } else {
