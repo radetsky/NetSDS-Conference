@@ -11,9 +11,12 @@ var online_conf = new Array();
 var msgs_cont = new Object;
 
 watcher.logins = function(msgs) {
-	eventname = msgs[0].headers['response'];
-//	alert(eventname); 
-	astmanEngine.pollEvents(); 
+	response = msgs[0].headers['response'];
+	if (response == 'Error') { 
+		alert('Ошибка подключения к rawman: ' +  msgs[0].headers['message'] );
+		return false; 
+	}
+        astmanEngine.pollEvents();
 }
 
 function doLogin(username,secret) {
@@ -21,13 +24,18 @@ function doLogin(username,secret) {
 }
 
 watcher.eventCB = function(msgs) {
+	var debugStr = ''; 
+	for (x=0;x<msgs.length;x++) { 
+		debugStr = debugStr + current_time()+" "+ msgs[x].headers['event']+"<br>"; 
+	}
+	debugStr = debugStr + "received " + msgs.length + " events"; 
+	$('#eventname').html(debugStr);
 	
 	for (x=0;x<msgs.length;x++) {
 		eventname = msgs[x].headers['event'];
+
 		if(eventname == 'ConferenceState') {
-//			alert(msgs[x].headers['state']);
-//			alert('online_conf.length='+online_conf.length);
-//			alert('caller_id='+msgs[x].headers['channel']);
+			//alert ("ConferenceState: " + msgs[x].headers['state']);
 			for(y=0; y<online_conf.length; y++) {
 				if(online_conf[y].channel == msgs[x].headers['channel']) {
 //				alert(msgs[x].headers['state']);
@@ -44,6 +52,7 @@ watcher.eventCB = function(msgs) {
 //		alert('names='+msgs[x].names[y]);
 //	    }
 		if(msgs[x].headers['conferencename'] == conference_id) {
+			alert (eventname + conference_id + msgs[x].headers['callerid']); 
 			var found = false;
 			for(y=0; y<online_conf.length; y++) {
 				if(online_conf[y].phone == msgs[x].headers['callerid']) {
@@ -166,13 +175,17 @@ function show_active(confid, confname) {
 	var conference_id = confid;
 
 	$("#show_active table").empty();
+// Create a dialog 	
 	$("#show_active").dialog("option", "title", confname);
+// Create 'remove prio' button 
 	$("#rem_prior").button();
 	$("#rem_prior").click( function() {
 		$(".prior").removeAttr("checked");
 		$.getJSON('set_priority.pl', {"cid": conference_id, "phid": "empty"});
 		return false;
 	});
+
+// Create 'stop conference' button 
 	$("#stop_cnfr").button();
 	$("#stop_cnfr").click( function() {
 		var request = $.ajax ('stop_cnfr.pl' , {
@@ -193,6 +206,8 @@ function show_active(confid, confname) {
 		return false;
 	});
 
+// Создаем запрос на сервер для инциализации окна активной конференции 
+ 
 	$.getJSON('get_json_active.pl', {"cid": confid}, function(data) {
 		if(data.status == 'error') {
 			$("#error_text").empty();
@@ -200,19 +215,21 @@ function show_active(confid, confname) {
 			$("#error").dialog('open');
 			return;
 		}
+// Обрабатываем полученные данные 
 		online_conf = data;
 		for(x=0; x<data.length; x++) {
-			y = '<tr><td rowspan="2">'+data[x].user_name+'</td>';
+			y = '<tr><td rowspan="2">'+data[x].user_name+'</td>'; // Имя абонента 
 			y += '<td rowspan="2">';
-			if(data[x].known) {
-				if(data[x].state == 'offline') {
+			if(data[x].known) {  // Если пользователь "знакомый" 
+				if(data[x].state == 'offline') { 
 					y += '<input type="radio" id="sel'+x+'" class="prior" name="pr_user" onchange="set_pr('+data[x].phone_id+');" disabled="disabled" /></td>';
 				} else {
 					y += '<input type="radio" id="sel'+x+'" class="prior" name="pr_user" onchange="set_pr('+data[x].phone_id+');"/></td>';
-				}
+				}    // Выставили кнопки приоритета. 
 			} else {
-				y += '&nbsp;</td>';
+				y += '&nbsp;</td>'; //  Если пользователь не знакомый, то кнопки приоритета ему не положено. 
 			}
+
 			if(data[x].state == 'offline') {
 				y += '<td rowspan="2" id="st'+x+'"><img src="/css/images/thumbs_003207-green-jelly-icon-media-a-media292-minus3.png" alt="Отключен"/></td>';
 			} else {
@@ -242,7 +259,11 @@ function show_active(confid, confname) {
 			y += '<tr><td><img src="/css/images/dyn_icon.png" alt="Dyn" /></td>';
 			y += '<td class="vol-slider"><div id="dn'+x+'"></div>';
 			y += '</td></tr>';
+
+// Добавили новую строку в таблицу 
+
 			$("#show_active table").append(y);
+// Назначаем слайдерам свойства 
 			$('#ph'+x).slider({
 				value: 10, min: 0, max: 20, step: 10,
 				change: function (event, ui) {
@@ -310,4 +331,10 @@ function change_mute(mid) {
 function drop_line(mid) {
 	astmanEngine.sendRequest('action=command&command=konference%20kickchannel%20'+online_conf[mid].channel);
 }
+
+function current_time() { 
+	var now = new Date(); 
+	var t = now.getHours()+":"+now.getMinutes()+":"+now.getSeconds();
+	return t; 
+} 
 

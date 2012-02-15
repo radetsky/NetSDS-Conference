@@ -244,7 +244,7 @@ function Astman() {
 		});
 
 		request.fail(function(jqXHR, textStatus, errorThrown) {
-  			alert( "Astman-jah request failed: " + textStatus + errorThrown);
+  			alert( "Astman-jah sendRequest failed: " + textStatus + errorThrown);
 		});
 	
 
@@ -260,7 +260,7 @@ function Astman() {
 			me.eventResponse(msg);
 		});
 		request.fail(function(jqXHR, textStatus, errorThrown) {
-  			alert( "Astman-jah request failed: " + textStatus + errorThrown);
+  			alert( "Astman-jah pollEvents failed: " + textStatus + errorThrown);
 		});
 	};
 };
