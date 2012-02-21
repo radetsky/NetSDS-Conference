@@ -2,7 +2,7 @@ HOMEDIR=$(DESTDIR)
 all: install
 
 depends-ubuntu:
-	apt-get install asterisk asterisk-dev asterisk-config asterisk-sounds-main \
+	sudo apt-get install asterisk asterisk-dev asterisk-config asterisk-sounds-main \
 	libcgi-session-expiresessions-perl libcgi-session-perl \
 	libclass-accessor-perl libconfig-general-perl libconfig-json-perl \
 	libdata-structure-util-perl libdate-manip-perl libdbd-pg-perl \
@@ -11,25 +11,14 @@ depends-ubuntu:
 	apache2 apache2-mpm-prefork apache2-utils apache2.2-common libapache2-mod-php5 
 	wget http://search.cpan.org/CPAN/authors/id/G/GE/GEEWIZ/CGI-Session-Auth-1.07.tar.gz
 	tar zxvf CGI-Session-Auth-1.07.tar.gz
-	cd CGI-Session-Auth-1.07
-	perl Makefile.PL
-	make 
-	sudo make install
-	cd .. 
+	cd CGI-Session-Auth-1.07 &&	perl Makefile.PL && make && sudo make install && cd .. 
 	wget http://search.cpan.org/CPAN/authors/id/R/RJ/RJBS/Class-Accessor-Class-0.501.tar.gz 
 	tar zxvf ./Class-Accessor-Class-0.501.tar.gz
-	cd Class-Accessor-Class-0.501/
-	perl Makefile.PL
-	make 
-	sudo make install 
-	cd ..
+	cd Class-Accessor-Class-0.501/ && perl Makefile.PL && make && sudo make install && cd ..
 	wget http://search.cpan.org/CPAN/authors/id/O/OP/OPI/Sys-Proctitle-0.04.tar.gz
 	tar zxvf ./Sys-Proctitle-0.04.tar.gz
-	cd Sys-Proctitle-0.04/
-	perl Makefile.PL
-	make 
-	sudo make install 
-	cd ..
+	cd Sys-Proctitle-0.04/ && perl Makefile.PL && make && sudo make install && cd ..
+
 install:
 	mkdir -p $(HOMEDIR)/opt/NetSDS/bin
 	mkdir -p $(HOMEDIR)/opt/NetSDS/lib
