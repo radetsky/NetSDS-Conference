@@ -42,6 +42,7 @@ install:
 	cp etc/init.d/nibelite-conference /etc/init.d/nibelite-conference
 	update-rc.d nibelite-conference defaults 98 
 	update-rc.d nibelite-conference enable 
+	cd contrib/konference && make && make install && make clean 
  
 sql-install:
 	su - postgres -c 'psql -i ./sql/pgsql.sql'
