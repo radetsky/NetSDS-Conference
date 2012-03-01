@@ -61,6 +61,7 @@ apache2-configs:
 	a2ensite conference
 	a2dissite default 
 	a2enmod proxy
+	a2enmod proxy_http 
 	/etc/init.d/apache2 restart 
 
 
