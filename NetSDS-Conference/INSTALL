@@ -1,11 +1,13 @@
-cd NetSDS-Conference 
-make depends-ubuntu
-make install 
-make gui-install
 
-# psql -U postgres -i sql/pgsql.sql 
-# psql -U postgres -i sql/schema.sql 
-It does create new database called 'astconf' with user 'astconf'. 
+$ cd NetSDS-Conference 
+$ sudo make depends-ubuntu
+$ sudo make install 
+$ sudo make gui-install
+
+Configure your pg_hba.conf to use trust or md5 method to authenticate user astconf.
+Reload your postgresql service.
+
+$ sudo make sql-install 
 
 // Configure the apache2 to run .pl as .cgi 
 a2enmod proxy proxy_http

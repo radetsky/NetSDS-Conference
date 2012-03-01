@@ -23,7 +23,7 @@ use strict;
 use warnings;
 
 NetSDSConference->run(
-    daemon      => undef,
+    daemon      => 1,
     verbose     => 1,
     use_pidfile => 1,
     has_conf    => 1,

@@ -39,8 +39,13 @@ install:
 	mkdir -p  $(HOMEDIR)/usr/lib/astconf 
 	cp utils/lib/sh-agi.inc /usr/lib/astconf 
 	cp utils/bin/* $(HOMEDIR)/usr/share/asterisk/agi-bin
-
-
+	cp etc/init.d/nibelite-conference /etc/init.d/nibelite-conference
+	update-rc.d nibelite-conference defaults 98 
+	update-rc.d nibelite-conference enable 
+ 
+sql-install:
+	su - postgres -c 'psql -i ./sql/pgsql.sql'
+	psql -U astconf -i ./sql/schema.sql
 
 gui-install:
 	mkdir -p /var/www/conference 
@@ -48,6 +53,14 @@ gui-install:
 	ln -s $(HOMEDIR)/opt/NetSDS/lib $(HOMEDIR)/var/www/conference/lib
 
 asterisk-configs:
-	cp -a asterisk-configs/manager.conf /etc/asterisk 
-	asterisk -rx "manager reload" 
-		
+	cp -a etc/asterisk/* /etc/asterisk 
+	asterisk -rx "core restart now" 
+
+apache2-configs:
+	cp etc/apache2/conference /etc/apache2/sites-available
+	a2ensite conference
+	a2dissite default 
+	a2enmod proxy
+	/etc/init.d/apache2 restart 
+
+
