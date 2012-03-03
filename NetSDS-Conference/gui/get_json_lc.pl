@@ -15,10 +15,12 @@ my @c_list = $cnfr->get_cnfr_rights($login);
 my @confs = $cnfr->cnfr_list();
 
 my $json = "[";
-
+my $cn_name = undef; 
 while(my $i = shift @c_list) {
 	$json .= '{ "id": "' . $i . '", ';
-	$json .= '"name": "' . $confs[$i]{'cnfr_name'} . '"},';
+	$cn_name = $confs[$i]{'cnfr_name'};
+	$cn_name =~ s/"/\\"/g;
+	$json .= '"name": "' . $cn_name . '"},';
 }
 
 chop $json;
