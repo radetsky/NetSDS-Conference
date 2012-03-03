@@ -24,36 +24,31 @@ function doLogin(username,secret) {
 }
 
 watcher.eventCB = function(msgs) {
-	var debugStr = ''; 
-	for (x=0;x<msgs.length;x++) { 
-		debugStr = debugStr + current_time()+" "+ msgs[x].headers['event']+"<br>"; 
-	}
-	debugStr = debugStr + "received " + msgs.length + " events"; 
-	$('#eventname').html(debugStr);
-	
+	var eventname; 
+  var found = false; 
+	var next_ids = 0; 
+
 	for (x=0;x<msgs.length;x++) {
 		eventname = msgs[x].headers['event'];
-
+//
+// Someone speaking or not.
+// 
 		if(eventname == 'ConferenceState') {
-			//alert ("ConferenceState: " + msgs[x].headers['state']);
-			for(y=0; y<online_conf.length; y++) {
-				if(online_conf[y].channel == msgs[x].headers['channel']) {
-//				alert(msgs[x].headers['state']);
-					$('#st'+y).empty();
-					if( msgs[x].headers['state'] == 'speaking') {
-						$('#st'+y).append('<img src="/css/images/thumbs_063449-green-grunge-clipart-icon-people-things-speech.png" alt="Говорит"/>');
-					} else {
-						$('#st'+y).append('<img src="/css/images/thumbs_063565-green-jelly-icon-people-things-people-head.png" alt="Молчит"/>');
+				for(y=0; y<online_conf.length; y++) {
+					if(online_conf[y].channel == msgs[x].headers['channel']) {
+						$('#st'+y).empty();
+						if( msgs[x].headers['state'] == 'speaking') {
+							$('#st'+y).append('<img src="/css/images/thumbs_063449-green-grunge-clipart-icon-people-things-speech.png" alt="Говорит"/>');
+						} else {
+							$('#st'+y).append('<img src="/css/images/thumbs_063565-green-jelly-icon-people-things-people-head.png" alt="Молчит"/>');
+						}
 					}
 				}
-			}
 		}
-//	    for(y=0;y<msgs[x].names.length;y++) {
-//		alert('names='+msgs[x].names[y]);
-//	    }
+		
 		if(msgs[x].headers['conferencename'] == conference_id) {
-			alert (eventname + conference_id + msgs[x].headers['callerid']); 
-			var found = false;
+			alert (eventname + ' ' + conference_id + ' ' + msgs[x].headers['callerid']); 
+		  found = false;
 			for(y=0; y<online_conf.length; y++) {
 				if(online_conf[y].phone == msgs[x].headers['callerid']) {
 					found = true;
@@ -86,14 +81,12 @@ watcher.eventCB = function(msgs) {
 						$("#sel"+y).removeAttr("checked");
 						$("#sel"+y).attr("disabled", "disabled");
 					}
-//					if (eventname == 'Hangup') {
-//						$('#st'+y).append('Отключен');
-//					}
 				}
 			}
+
 			if(!found) {
 				msgs_cont = msgs[x];
-				var next_idx = online_conf.length;
+				next_idx = online_conf.length;
 				online_conf.length = next_idx+1;
 				online_conf[next_idx] = new Object;
 				$.getJSON('/guest_suggest.pl', { "phone": msgs[x].headers['callerid'] }, function(data){
@@ -158,10 +151,6 @@ watcher.eventCB = function(msgs) {
 				});
 			}
 		}
-//		if(conference_id == msgs[x].headers['conferencename']) {
-//			eventname = msgs[x].headers['event'];
-//			alert(eventname);
-//		}
 	}
 
 	astmanEngine.pollEvents();
@@ -172,8 +161,8 @@ function set_pr(phid) {
 }
 
 function show_active(confid, confname) {
-	var conference_id = confid;
 
+	conference_id = confid;
 	$("#show_active table").empty();
 // Create a dialog 	
 	$("#show_active").dialog("option", "title", confname);

@@ -35,9 +35,12 @@ my %cn = $cnfr->get_cnfr($id);
 
 my ($next_d, $next_t, $hours_begin, $min_begin, $dur_hours, $dur_min) = ("","","","","","");
 
+my $cn_name = $cn{'name'}; 
+$cn_name =~ s/"/\\"/g; 
+
 my $json = "{";
 $json .= '"id": '.$cn{'id'};
-$json .= ', "name": "'. $cn{'name'} . '"';
+$json .= ', "name": "'. $cn_name . '"';
 if($admin) {
 	$json .= ', "admin": true';
 } else {

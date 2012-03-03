@@ -5,6 +5,7 @@ use CGI;
 
 use lib './lib';
 use ConferenceDB;
+use NetSDS::Util::String; 
 
 my %c_states = (
     "inactive" => "Выкл",
@@ -86,13 +87,17 @@ while ( my $i = shift @rights ) {
         $evenodd = 'gray';
     }
 
+	  my $bs_cnfr_name = str_decode($cnfrs[$i]{'cnfr_name'});
+		$bs_cnfr_name =~ s/\'/\\\'/g;
+		my $escaped_cnfr_name = CGI::escapeHTML($bs_cnfr_name);
+
     push @args, $funct{ $cnfrs[$i]{'cnfr_state'} };
     push @args, $i;
-    push @args, $cnfrs[$i]{'cnfr_name'};
+    push @args, $escaped_cnfr_name; 
     
     push @args, $funct{ $cnfrs[$i]{'cnfr_state'} };
     push @args, $i;
-    push @args, $cnfrs[$i]{'cnfr_name'};
+    push @args, $escaped_cnfr_name; 
     
     push @args, $i;
     push @args, $cnfrs[$i]{'cnfr_name'};
