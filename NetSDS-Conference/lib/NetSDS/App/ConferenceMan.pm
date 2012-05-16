@@ -60,7 +60,7 @@ sub start {
         warn "[$$] SIGTERM caught";
         exit(1);
     };
-	$SIG{CHLD} = 'IGNORE'; 
+    $SIG{CHLD} = 'IGNORE';
 
     setproctitle( "ConferenceMan (" . $this->{'konf'}->{'cnfr_id'} . ")" );
 
@@ -161,7 +161,8 @@ sub _getPhones {
 sub _start_assemble {
     my ( $this, $konf_id, @phones ) = @_;
 
-    # Set CallerID
+# Set CallerID to config->general_callerid
+# Но если конференции присвоен номер Б, то подставляем его.
     my $callerid = $this->conf->{'general_callerid'};
     if (
         (
@@ -175,29 +176,53 @@ sub _start_assemble {
     $this->speak("[$$] Set CallerID to $callerid");
     $this->log( "info", "Set CallerID to $callerid" );
 
-    my $defaultrouter = $this->conf->{'defaultrouter'}; 
-    unless ( defined ( $this->conf->{'defaultrouter'}) ) { 
-	    $defaultrouter = 'softswitch'; 
+    my $defaultrouter = $this->conf->{'defaultrouter'};
+
+# Проверяем наличие префикса, означающего протокол.
+    if ( $defaultrouter =~ /\// ) {
+
+        #  Префикс есть, значит ничего не делаем.
     }
-    my $local_extension_length = $this->conf->{'local_extension_length'}; 
-    unless ( defined ( $this->conf->{'local_extension_length'} ) ) { 
-	    $local_extension_length = 3; 
+    else {
+
+# Префикса нет, значит добавляем 'SIP/' в начало строки.
+        $defaultrouter = 'SIP/' . $defaultrouter;
     }
-    
+    unless ( defined( $this->conf->{'defaultrouter'} ) ) {
+        $defaultrouter = 'SIP/softswitch';
+    }
+
+# С 15.05.12 defaultrouter должен в конце концов иметь значение вместе с протоколом.
+# То есть SIP/softswitch, DAHDI/g1, etc.
+
+    my $local_extension_length = $this->conf->{'local_extension_length'};
+    unless ( defined( $this->conf->{'local_extension_length'} ) ) {
+        $local_extension_length = 3;
+    }
+    my $localmask = $this->conf->{'localmask'};
+    unless ( defined( $this->conf->{'localmask'} ) ) {
+        $localmask = 'NULL';
+    }
+
     # we have a list to originate. Start it. and Return to KONF_ID in asterisk.
     foreach my $dst (@phones) {
-	my $channel = sprintf("SIP/%s@%s",$dst,$defaultrouter); 
-        if (length($dst) <= $local_extension_length ) { 
-		$channel = sprintf("SIP/%s",$dst); 
-	}; 
-	
-	my $orig = NetSDS::Asterisk::Originator->new(
+        my $channel = sprintf( "%s/%s", $defaultrouter, $dst );
+        if ( length($dst) <= $local_extension_length ) {
+            $channel = sprintf( "SIP/%s", $dst );
+        }
+        if ( $dst =~ /$localmask/ ) {
+
+# Попали под локальную маску, значит звоним по SIP/номер
+            $channel = sprintf( "SIP/%s", $dst );
+        }
+
+        my $orig = NetSDS::Asterisk::Originator->new(
             actionid       => $dst,
             destination    => $dst,
             callerid       => $callerid,
             return_context => 'NetSDS-Conference-Outgoing',
             variables      => 'KONFNUM=' . $konf_id . '|DIAL=' . $dst,
-            channel 	   => $channel,
+            channel        => $channel,
         );
         my $reply = $orig->originate( '127.0.0.1', '5038', 'asterikastwww',
             'asterikastwww' );
@@ -279,16 +304,16 @@ sub process {
             }
             $prev_time = $time;
             usleep(250);
-            goto check_stop; 
+            goto check_stop;
         }
 
         # Работаем с приоритетом
-	unless ( defined ( $event->{'Event'} ) ) {
-	   warn Dumper ($event);
-	   $this->log("warning",Dumper($event));
-	   goto check_stop;
-	
-	}
+        unless ( defined( $event->{'Event'} ) ) {
+            warn Dumper($event);
+            $this->log( "warning", Dumper($event) );
+            goto check_stop;
+
+        }
 
         if ( $event->{'Event'} =~ /ConferenceState/i ) {
 
@@ -332,8 +357,10 @@ sub process {
                       $this->_DTMF( $channel, $key, $mute, $callerid,
                         $conf_id );
                     if ( $rc == 2 ) {    # Stop the conference
-											  $this->speak ("[$$] Admin stops the conference via DTMF method."); 
-												$this->log ("info","Admin stops the conference via DTMF method."); 
+                        $this->speak(
+                            "[$$] Admin stops the conference via DTMF method.");
+                        $this->log( "info",
+                            "Admin stops the conference via DTMF method." );
                         return 1;
                     }
 
@@ -451,8 +478,8 @@ sub process {
             goto check_stop_0;
         }
         else {
-	    			$this->speak("[$$] Button stop pressed. ");
-	    			$this->log("info","Button stop pressed. "); 
+            $this->speak("[$$] Button stop pressed. ");
+            $this->log( "info", "Button stop pressed. " );
             return 1;
         }
 
@@ -469,8 +496,10 @@ sub process {
                 my $next_stop = DateCalc( $start, $delta );
 
                 unless ( defined($next_stop) ) {
-                    $this->log("warning", Dumper( $start, $delta ) ); 
-                    $this->log("warning", "Error occures while Date Calculating at the check_stop_0.");
+                    $this->log( "warning", Dumper( $start, $delta ) );
+                    $this->log( "warning",
+"Error occures while Date Calculating at the check_stop_0."
+                    );
                     return undef;
                 }
                 my $date_now = ParseDate('now');
@@ -529,7 +558,7 @@ sub process {
                         "Stop the conference #"
                       . $this->{'konf'}->{'cnfr_id'}
                       . " because it is empty." );
-								return 1;  
+                return 1;
             }
             next;
         }
@@ -584,7 +613,7 @@ sub stop {
             cnfr_state => '\'inactive\'',
             last_end   => 'now()',
             next_start => $this->_calculate_next(),
-						blocked => 0,
+            blocked    => 0,
         }
     );
 
@@ -788,18 +817,18 @@ sub _DTMF {
         # Block to accept from new
         my $is_operator = $this->mydb->is_operator( $conf_id, $callerid );
         unless ( defined($is_operator) ) {
-            $this->log("warning", 
-                "DB ERROR: $callerid is not operator for $conf_id");
+            $this->log( "warning",
+                "DB ERROR: $callerid is not operator for $conf_id" );
             return undef;
         }
         unless ($is_operator) {
-            $this->log("info"," $callerid is not operator for $conf_id");
+            $this->log( "info", " $callerid is not operator for $conf_id" );
             return 0;
         }
 
-   	$this->{'BLOCK'} = 1;
-	$this->mydb->set_blocked ( $conf_id, 1 ); 
-        $this->log("info","$conf_id blocked to accept new connections.");
+        $this->{'BLOCK'} = 1;
+        $this->mydb->set_blocked( $conf_id, 1 );
+        $this->log( "info", "$conf_id blocked to accept new connections." );
 
     }
 
@@ -830,18 +859,18 @@ sub _DTMF {
         # Unblock
         my $is_operator = $this->mydb->is_operator( $conf_id, $callerid );
         unless ( defined($is_operator) ) {
-            $this->log("warning",
-                "DB ERROR: $callerid is not operator for $conf_id");
+            $this->log( "warning",
+                "DB ERROR: $callerid is not operator for $conf_id" );
             return undef;
         }
         unless ($is_operator) {
-            $this->log("info","$callerid is not operator for $conf_id");
+            $this->log( "info", "$callerid is not operator for $conf_id" );
             return 0;
         }
 
         $this->{'BLOCK'} = 0;
-	$this->mydb->set_blocked ( $conf_id, 0 ); 
-        $this->log("info","$conf_id unblocked to accept new connections.");
+        $this->mydb->set_blocked( $conf_id, 0 );
+        $this->log( "info", "$conf_id unblocked to accept new connections." );
 
     }
     if ( $key eq '9' ) {
@@ -886,33 +915,63 @@ sub _restore_control {
         return undef;
     }
 
-    # Set CallerID
+    #  ---------------------->>>>>>>><<<<<<<<<---------------
+# Set CallerID to config->general_callerid
+# Но если конференции присвоен номер Б, то подставляем его.
     my $callerid = $this->conf->{'general_callerid'};
     if (
-        (   
+        (
             defined( $this->{'konf'}->{'number_b'} )
             and ( $this->{'konf'}->{'number_b'} ne '' )
         )
       )
-    {   
+    {
         $callerid = $this->{'konf'}->{'number_b'};
     }
     $this->speak("[$$] Set CallerID to $callerid");
     $this->log( "info", "Set CallerID to $callerid" );
 
-    my $defaultrouter = $this->conf->{'defaultrouter'};
-    unless ( defined ( $this->conf->{'defaultrouter'}) ) {
-            $defaultrouter = 'softswitch';
+
+my $defaultrouter = $this->conf->{'defaultrouter'};
+
+# Проверяем наличие префикса, означающего протокол.
+    if ( $defaultrouter =~ /\// ) {
+
+        #  Префикс есть, значит ничего не делаем.
     }
-    my $local_extension_length = $this->conf->{'local_extension_length'};
-    unless ( defined ( $this->conf->{'local_extension_length'} ) ) {
-            $local_extension_length = 3;
+    else {
+
+# Префикса нет, значит добавляем 'SIP/' в начало строки.
+        $defaultrouter = 'SIP/' . $defaultrouter;
+    }
+    unless ( defined( $this->conf->{'defaultrouter'} ) ) {
+        $defaultrouter = 'SIP/softswitch';
     }
 
-    my $channel = sprintf("SIP/%s@%s",$dst,$defaultrouter);
-    if (length($dst) <= $local_extension_length ) {
-                $channel = sprintf("SIP/%s",$dst);
-    };
+# С 15.05.12 defaultrouter должен в конце концов иметь значение вместе с протоколом.
+# То есть SIP/softswitch, DAHDI/g1, etc.
+
+    my $local_extension_length = $this->conf->{'local_extension_length'};
+    unless ( defined( $this->conf->{'local_extension_length'} ) ) {
+        $local_extension_length = 3;
+    }
+    my $localmask = $this->conf->{'localmask'};
+    unless ( defined( $this->conf->{'localmask'} ) ) {
+        $localmask = 'NULL';
+    }
+
+    # we have a list to originate. Start it. and Return to KONF_ID in asterisk.
+    my $channel = sprintf( "%s/%s", $defaultrouter, $dst );
+    if ( length($dst) <= $local_extension_length ) {
+        $channel = sprintf( "SIP/%s", $dst );
+    }
+    if ( $dst =~ /$localmask/ ) {
+
+# Попали под локальную маску, значит звоним по SIP/номер
+        $channel = sprintf( "SIP/%s", $dst );
+    }
+
+    #	---------------------->>>>>>>><<<<<<<<<---------------
 
     my $orig = NetSDS::Asterisk::Originator->new(
         actionid       => $dst,
@@ -966,7 +1025,7 @@ sub _unmute_nonpriority_channels {
 }
 
 sub _check_button_stop {
-    my ($this)  = @_;
+    my ($this) = @_;
 
     my $cnfr_id = $this->{'konf'}->{'cnfr_id'};
     my %conf    = $this->mydb->get_cnfr($cnfr_id);
