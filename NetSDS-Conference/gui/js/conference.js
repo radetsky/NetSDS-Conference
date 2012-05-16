@@ -458,7 +458,7 @@ function add_schedule() {
 
 function fill_sched() {
 	var ddd = '';
-	if($("#sched-day").attr("checked") == true) {
+	if($("#sched-day").attr("checked") == 'checked') {
 		$("#day-selectable .ui-selected").each(function(){
 			ddd += $(this).text()+' ';
 		});
