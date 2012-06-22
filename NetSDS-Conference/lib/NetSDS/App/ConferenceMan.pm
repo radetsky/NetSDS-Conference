@@ -161,6 +161,8 @@ sub _getPhones {
 sub _start_assemble {
     my ( $this, $konf_id, @phones ) = @_;
 
+    $this->log( "info", "Start assembling the conference : $konf_id" );
+
 # Set CallerID to config->general_callerid
 # Но если конференции присвоен номер Б, то подставляем его.
     my $callerid = $this->conf->{'general_callerid'};
@@ -173,7 +175,6 @@ sub _start_assemble {
     {
         $callerid = $this->{'konf'}->{'number_b'};
     }
-    $this->speak("[$$] Set CallerID to $callerid");
     $this->log( "info", "Set CallerID to $callerid" );
 
     my $defaultrouter = $this->conf->{'defaultrouter'};
@@ -215,6 +216,8 @@ sub _start_assemble {
 # Попали под локальную маску, значит звоним по SIP/номер
             $channel = sprintf( "SIP/%s", $dst );
         }
+
+        $this->log( "info", "Calling to $dst via $channel" );
 
         my $orig = NetSDS::Asterisk::Originator->new(
             actionid       => $dst,
@@ -890,6 +893,8 @@ sub _DTMF {
 sub _restore_control {
     my ( $this, $dst, $konf_id ) = @_;
 
+    $this->log("Restoring control to $dst for conference: $konf_id");
+
     unless ( defined( $this->manager_queries ) ) {
         $this->manager_queries->{$dst} = { try => 1, ActionID => $dst . "_1" };
     }
@@ -915,7 +920,7 @@ sub _restore_control {
         return undef;
     }
 
-    #  ---------------------->>>>>>>><<<<<<<<<---------------
+#  ---------------------->>>>>>>><<<<<<<<<---------------
 # Set CallerID to config->general_callerid
 # Но если конференции присвоен номер Б, то подставляем его.
     my $callerid = $this->conf->{'general_callerid'};
@@ -928,11 +933,9 @@ sub _restore_control {
     {
         $callerid = $this->{'konf'}->{'number_b'};
     }
-    $this->speak("[$$] Set CallerID to $callerid");
     $this->log( "info", "Set CallerID to $callerid" );
 
-
-my $defaultrouter = $this->conf->{'defaultrouter'};
+    my $defaultrouter = $this->conf->{'defaultrouter'};
 
 # Проверяем наличие префикса, означающего протокол.
     if ( $defaultrouter =~ /\// ) {
@@ -972,6 +975,8 @@ my $defaultrouter = $this->conf->{'defaultrouter'};
     }
 
     #	---------------------->>>>>>>><<<<<<<<<---------------
+
+    $this->log("Calling to $dst via $channel");
 
     my $orig = NetSDS::Asterisk::Originator->new(
         actionid       => $dst,
