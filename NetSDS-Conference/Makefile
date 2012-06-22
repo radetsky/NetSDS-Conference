@@ -32,8 +32,6 @@ install:
 	mkdir -p $(HOMEDIR)/etc/httpd2/conf/addon.d
 	install etc/apache2/A.conference.conf $(HOMEDIR)/etc/httpd2/conf/addon.d/A.conference.conf
 	mkdir -p $(HOMEDIR)/usr/share/NetSDS/Conference
-	cp -ar asterisk-configs $(HOMEDIR)/usr/share/NetSDS/Conference
-	cp -a ivr/dialplan/conference.ael $(HOMEDIR)/usr/share/NetSDS/Conference/
 	mkdir -p $(HOMEDIR)/usr/share/asterisk/sounds
 	cp -ar sounds $(HOMEDIR)/usr/share/asterisk
 	mkdir -p  $(HOMEDIR)/usr/lib/astconf 
