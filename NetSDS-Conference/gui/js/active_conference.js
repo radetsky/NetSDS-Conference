@@ -47,7 +47,7 @@ watcher.eventCB = function(msgs) {
 		}
 		
 		if(msgs[x].headers['conferencename'] == conference_id) {
-			alert (eventname + ' ' + conference_id + ' ' + msgs[x].headers['callerid']); 
+			//alert (eventname + ' ' + conference_id + ' ' + msgs[x].headers['callerid']); 
 		  found = false;
 			for(y=0; y<online_conf.length; y++) {
 				if(online_conf[y].phone == msgs[x].headers['callerid']) {
@@ -305,13 +305,13 @@ function show_active(confid, confname) {
 function change_mute(mid) {
 	but = $('#mute'+mid).val();
 	if(but == 'green') {
-		astmanEngine.sendRequest('action=command&command=konference%20mute%20'+conference_id+'%20'+online_conf[mid].member_id)
+		astmanEngine.sendRequest('action=command&command=konference%20mute%20'+conference_id+'%20'+online_conf[mid].member_id,watcher.eventCB);
 		$('#mute'+mid).val('red');
 		$('#mute'+mid).attr('src', 'css/images/red_mphone.png');
 		$('#st'+mid).empty();
 		$('#st'+mid).append('<img src="/css/images/thumbs_063565-green-jelly-icon-people-things-people-head.png" alt="Молчит"/>');
 	} else {
-		astmanEngine.sendRequest('action=command&command=konference%20unmute%20'+conference_id+'%20'+online_conf[mid].member_id)
+		astmanEngine.sendRequest('action=command&command=konference%20unmute%20'+conference_id+'%20'+online_conf[mid].member_id,watcher.eventCB);
 		$('#mute'+mid).val('green');
 		$('#mute'+mid).attr('src', 'css/images/green_mphone.png');
 	}
