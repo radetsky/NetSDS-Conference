@@ -58,7 +58,7 @@ watcher.eventCB = function(msgs) {
 						online_conf[y].channel = msgs[x].headers['channel'];
 						online_conf[y].member_id = msgs[x].headers['member'];
 						$('#td_mute'+y).empty();
-						$('#td_mute'+y).append('<input id="mute'+y+'" type="image" src="css/images/green_mphone.png" value="green" onclick="change_mute('+y+'); return false;"/>');
+						$('#td_mute'+y).append('<input id="mute'+y+'" type="image" src="css/images/green_mphone.png" value="green" onclick="change_mute('+y+',\''+online_conf[y].channel+'\'); return false;"/>');
 						$('#td_drop'+y).empty();
 						$('#td_drop'+y).append('<input type="image" src="css/images/drop.png" onclick="drop_line('+y+'); return false;" />');
 						$('#hidin'+y).append('<input type="hidden" id="chan'+y+'" value="'+online_conf[y].channel+'" />');
@@ -106,7 +106,7 @@ watcher.eventCB = function(msgs) {
 					y += '<td class="vol-slider" id="hidin'+x+'"><div id="ph'+next_idx+'"></div>';
 					y += '<input type="hidden" id="chan'+next_idx+'" value="'+online_conf[next_idx].channel+'" />';
 					y += '</td>';
-					y += '<td rowspan="2" id="td_mute'+next_idx+'"><input id="mute'+next_idx+'" type="image" src="css/images/green_mphone.png" value="green" onclick="change_mute('+next_idx+'); return false;"/></td>';
+					y += '<td rowspan="2" id="td_mute'+next_idx+'"><input id="mute'+next_idx+'" type="image" src="css/images/green_mphone.png" value="green" onclick="change_mute('+next_idx+',\''+online_conf[next_idx].channel+'\'); return false;"/></td>';
 					y += '<td rowspan="2" id="td_drop'+next_idx+'"><input type="image" src="css/images/drop.png" onclick="drop_line('+next_idx+'); return false;" /></td>';
 					y += '<td rowspan="2">'+online_conf[next_idx].phone+'</td></tr>';
 					y += '<tr><td><img src="/css/images/dyn_icon.png" alt="Dyn" /></td>';
@@ -234,7 +234,7 @@ function show_active(confid, confname) {
 			if(data[x].state == 'offline') {
 				y += '<img src="css/images/grey_mphone.png" alt="Offline" />';
 			} else {
-				y += '<input id="mute'+x+'" type="image" src="css/images/green_mphone.png" value="green" onclick="change_mute('+x+'); return false;"/>';
+				y += '<input id="mute'+x+'" type="image" src="css/images/green_mphone.png" value="green" onclick="change_mute('+x+',\''+data[x].channel+'\'); return false;"/>';
 			}
 			y += '</td>';
 			y += '<td rowspan="2" id="td_drop'+x+'">';
@@ -302,16 +302,17 @@ function show_active(confid, confname) {
 	doLogin('konference','MoNit040fConf');
 }
 
-function change_mute(mid) {
+function change_mute(mid,channel) {
 	but = $('#mute'+mid).val();
 	if(but == 'green') {
-		astmanEngine.sendRequest('action=command&command=konference%20mute%20'+conference_id+'%20'+online_conf[mid].member_id,watcher.eventCB);
+		astmanEngine.sendRequest('action=command&command=konference%20mutechannel%20'+channel,watcher.eventCB);
 		$('#mute'+mid).val('red');
 		$('#mute'+mid).attr('src', 'css/images/red_mphone.png');
 		$('#st'+mid).empty();
 		$('#st'+mid).append('<img src="/css/images/thumbs_063565-green-jelly-icon-people-things-people-head.png" alt="Молчит"/>');
 	} else {
-		astmanEngine.sendRequest('action=command&command=konference%20unmute%20'+conference_id+'%20'+online_conf[mid].member_id,watcher.eventCB);
+		astmanEngine.sendRequest('action=command&command=konference%20unmutechannel%20'+channel,watcher.eventCB);
+
 		$('#mute'+mid).val('green');
 		$('#mute'+mid).attr('src', 'css/images/green_mphone.png');
 	}
