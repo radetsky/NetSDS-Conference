@@ -230,8 +230,12 @@ sub _start_assemble {
         my $reply = $orig->originate( '127.0.0.1', '5038', 'asterikastwww',
             'asterikastwww' );
         unless ( defined($reply) ) {
-            $this->speak("[$$] Originate to $dst failed.");
+            $this->log("info","Originate to $dst failed.");
         }
+	if ( $reply != 1 ) { 
+		$this->log("info",$reply->{'Response'}); 
+		$this->log("info",$reply->{'Message'}); 
+	}
     }
 }
 
@@ -633,16 +637,18 @@ sub stop {
     if ( ( defined($members) ) and $members != 0 ) {
         foreach my $member ( keys %$members ) {
             my $res =
-              $konf->konference_kick( $this->{'konf'}->{'cnfr_id'}, $member );
+              $konf->konference_kick( $members->{$member}->{'channel'} );
             unless ( defined($res) ) {
                 $this->speak( "[$$] Kicking '" 
-                      . $member
-                      . "' from Konference '"
+                      . $member . "' with channel " . $members->{$member}->{'channel'}
+                      . " from Konference "
                       . $this->{'konf'}->{'cnfr_id'}
-                      . "' failed." );
+                      . " failed." );
+		$this->log("info","Kicking $member with channel " . $members->{$member}->{'channel'} . " from Konference ".$this->{'konf'}->{'cnfr_id'}. " failed.");
             }
             else {
                 $this->speak( "[$$] Member '" . $member . "' kicked." );
+		$this->log("info","Member '" . $member . "' with channel " . $members->{$member}->{'channel'}." kicked." );
             }
         }
     }

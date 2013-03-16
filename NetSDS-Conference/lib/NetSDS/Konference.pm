@@ -199,6 +199,8 @@ sub konference_list_konf {
 	my $ret = undef;
 	if ( $reply->{'Response'} =~ /^follows/i ) {
 		my $lines = $reply->{'raw'}; 
+		shift @$lines;                # Пропускаем первую строку вида "Х:", где Х - номер конференции. 
+					     # Патч от 16.03.2013 
 		foreach my $row ( @$lines ) {
 			# warn Dumper ($row);
 			# Что-то получили. Парсим. Должно быть что-то наподобие:
@@ -224,7 +226,7 @@ sub konference_list_konf {
 
 	my @replies = $this->AMI->get_status(); 
 	foreach my $status (@replies) { 
-		foreach my $member (keys %$ret) { 
+		foreach my $member (keys %$ret) {
 			if ( $status->{'Channel'} eq $ret->{$member}->{'channel'} ) { 
 				unless ( defined ( $status->{'CallerIDNum'} ) ) { 
 					next; 
@@ -239,44 +241,30 @@ sub konference_list_konf {
 }
 #***********************************************************************
 
-=item B<konference_kick(<conference>,<member id>)> - Kicks out Member from conference
+=item B<konference_kick(<channel>)> - Kicks out Member from conference
 
 RETURN: undef if error, 1 if ok. 
+
+From version 2.3 of Konference , since 16.03.2013 konference kick command was replaced by konference kickchannel
 
 =cut
 
 #-----------------------------------------------------------------------
 
 sub konference_kick { 
-	my ( $this, $konfnum, $member_id )  = @_; 
+	my ( $this, $channel )  = @_; 
 
-	unless ( defined ( $konfnum ) ) { return undef; } 
-	unless ( defined ( $member_id ) ) { return undef; } 
+	unless ( defined ( $channel ) ) { return undef; } 
 	
 	my $sent = $this->AMI->sendcommand ( 
 		Action => 'Command', 
-		Command => "konference kick $konfnum $member_id"
+		Command => "konference kickchannel $channel"
  	); 
 
 	unless ( defined ( $sent ) ) { return undef; } 
 	my $reply = $this->_receive_raw();
 	unless ( defined($reply) ) { return undef; }               
-	if ($reply->{'raw_strings_count'} == 0) { return undef; }  # If no confirmation like "User #: 1 kicked" - error
-	my $lines = $reply->{'raw'}; 
-	foreach my $row ( @$lines ) {
-		# warn Dumper ($row);
-		# Что-то получили. Парсим. Должно быть что-то наподобие:
-		# User #: 1 kicked
-		my ( $KUser, $KConfirm) = split( ':', $row );
-		unless ( defined ( $KConfirm ) ) { 
-			next;
-		}
-		if ($KConfirm =~ /kicked/i) { 
-			return 1; 
-		}
-	} ## end foreach
-	
-	return undef; 
+	return 1;  
 }
 #***********************************************************************
 
